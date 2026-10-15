@@ -1,0 +1,503 @@
+<?xml version="1.0" encoding="utf-8"?>
+<index version="1" name="ReaTooled">
+  <category name="Clipboard Manager">
+    <reapack name="ReaTooled Clipboard Manager" type="script" desc="ReaTooled Clipboard Manager">
+      <version name="1.0" author="Brendan Baker">
+        <source file="ReaTooled_Clipboard Manager - Capture selection.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Clipboard%20Manager/ReaTooled_Clipboard%20Manager%20-%20Capture%20selection.lua</source>
+        <source file="ReaTooled_Clipboard Manager - Copy and capture.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Clipboard%20Manager/ReaTooled_Clipboard%20Manager%20-%20Copy%20and%20capture.lua</source>
+        <source file="ReaTooled_Clipboard Manager.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Clipboard%20Manager/ReaTooled_Clipboard%20Manager.lua</source>
+        <source file="ReaTooled_ClipboardManager_core.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Clipboard%20Manager/ReaTooled_ClipboardManager_core.lua</source>
+      </version>
+    </reapack>
+  </category>
+  <category name="Edit">
+    <reapack name="ReaTooled Smart Nudge" type="script" desc="ReaTooled Smart Nudge">
+      <version name="1.2.0" author="Brendan Baker">
+        <source file="ReaTooled_Smart Nudge Left.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Smart%20Nudge%20Left.lua</source>
+        <source file="ReaTooled_Smart Nudge Right.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Smart%20Nudge%20Right.lua</source>
+        <source file="ReaTooled_SmartNudge_Core.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_SmartNudge_Core.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Add Stretch Marker (Hover Mode Dependent).lua" type="script" desc="ReaTooled - Add Stretch Marker (Hover Mode Dependant)">
+      <version name="1.1" author="Brendan Baker">
+        <source file="ReaTooled_Add Stretch Marker (Hover Mode Dependent).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Add%20Stretch%20Marker%20%28Hover%20Mode%20Dependent%29.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Add Sync Point (Hover Mode Dependent).lua" type="script" desc="ReaTooled - Add Synch Point (Hover Mode Dependant)">
+      <version name="1.0" author="Brendan Baker">
+        <source file="ReaTooled_Add Sync Point (Hover Mode Dependent).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Add%20Sync%20Point%20%28Hover%20Mode%20Dependent%29.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Auto crossfade at edit cursor.lua" type="script" desc="ReaTooled - Convert Butt Joint to Centered Crossfade">
+      <version name="1.0" author="Brendan Baker">
+        <source file="ReaTooled_Auto crossfade at edit cursor.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Auto%20crossfade%20at%20edit%20cursor.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Clear take envelopes and Reset Volume to 0db.lua" type="script" desc="Clear Take Envelopes &amp; Reset Item/Take Volume to 0dB">
+      <version name="1.0" author="Brendan Baker">
+        <source file="ReaTooled_Clear take envelopes and Reset Volume to 0db.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Clear%20take%20envelopes%20and%20Reset%20Volume%20to%200db.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Copy razor area or time selection to all tracks.lua" type="script" desc="ReaTooled_Copy Razor (Union) or Time Selection to All Tracks + Set Time Selection">
+      <version name="1.6" author="Brendan Baker">
+        <source file="ReaTooled_Copy razor area or time selection to all tracks.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Copy%20razor%20area%20or%20time%20selection%20to%20all%20tracks.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Create razor area on empty track space.lua" type="script" desc="ReaTooled - Create Razor Edit to Fill Gap at Edit Cursor">
+      <version name="1.5" author="Brendan Baker">
+        <source file="ReaTooled_Create razor area on empty track space.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Create%20razor%20area%20on%20empty%20track%20space.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Create razor edit and time selection from edit cursor to end of project.lua" type="script" desc="ReaTooled - Create razor edit and time selection from the edit cursor to the end of project">
+      <version name="1.0" author="Brendan Baker">
+        <source file="ReaTooled_Create razor edit and time selection from edit cursor to end of project.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Create%20razor%20edit%20and%20time%20selection%20from%20edit%20cursor%20to%20end%20of%20project.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Create razor edit and time selection from edit cursor to start of project.lua" type="script" desc="ReaTooled - Create razor edit and time selection from the edit cursor to the start of project">
+      <version name="1.0" author="Brendan Baker">
+        <source file="ReaTooled_Create razor edit and time selection from edit cursor to start of project.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Create%20razor%20edit%20and%20time%20selection%20from%20edit%20cursor%20to%20start%20of%20project.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Create razor edit area on all tracks from time selection.lua" type="script" desc="ReaTooled_Convert Time or Loop Selection to Razor Area on All Tracks (for mouse modifier)">
+      <version name="1.0" author="Brendan Baker">
+        <source file="ReaTooled_Create razor edit area on all tracks from time selection.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Create%20razor%20edit%20area%20on%20all%20tracks%20from%20time%20selection.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Create razor edit from edit cursor to end of project.lua" type="script" desc="ReaTooled - Create razor edit from the edit cursor to the end of project">
+      <version name="1.2" author="Brendan Baker">
+        <source file="ReaTooled_Create razor edit from edit cursor to end of project.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Create%20razor%20edit%20from%20edit%20cursor%20to%20end%20of%20project.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Create razor edit from edit cursor to start of project.lua" type="script" desc="ReaTooled - Create razor edit from the edit cursor to the start of project">
+      <version name="1.2" author="Brendan Baker">
+        <source file="ReaTooled_Create razor edit from edit cursor to start of project.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Create%20razor%20edit%20from%20edit%20cursor%20to%20start%20of%20project.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Create Tone Generator from Time selection.lua" type="script" desc="ReaTooled - Create Tone Generator from Time Selection">
+      <version name="1.0" author="Brendan Baker">
+        <source file="ReaTooled_Create Tone Generator from Time selection.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Create%20Tone%20Generator%20from%20Time%20selection.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Extend razor area to mouse.lua" type="script" desc="ReaTooled - Razor From Cursor To Mouse">
+      <version name="2.1" author="Brendan Baker">
+        <source file="ReaTooled_Extend razor area to mouse.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Extend%20razor%20area%20to%20mouse.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Extend razor area to track above.lua" type="script" desc="ReaTooled - Extend Razor Areas Upward or Create From Items/TS (track-aware)">
+      <version name="1.4.1" author="Brendan Baker">
+        <source file="ReaTooled_Extend razor area to track above.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Extend%20razor%20area%20to%20track%20above.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Extend razor area to track below.lua" type="script" desc="ReaTooled - Extend Razor Areas Downward or Create From Items/TS (track-aware)">
+      <version name="1.5.1" author="Brendan Baker">
+        <source file="ReaTooled_Extend razor area to track below.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Extend%20razor%20area%20to%20track%20below.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Extend time selection to next (right) transient or item edge (Tab to Transient toggle dependent).lua" type="script" desc="ReaTooled - Extend time selection + razor area to next (right) transient or item edge (gap-aware)">
+      <version name="1.5.2" author="Brendan Baker">
+        <source file="ReaTooled_Extend time selection to next (right) transient or item edge (Tab to Transient toggle dependent).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Extend%20time%20selection%20to%20next%20%28right%29%20transient%20or%20item%20edge%20%28Tab%20to%20Transient%20toggle%20dependent%29.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Extend time selection to previous (left) transient or item edge (Tab to Transient toggle dependent).lua" type="script" desc="ReaTooled - Extend time selection + razor area to previous (left) transient or item edge (gap-aware)">
+      <version name="1.0.0" author="Brendan Baker">
+        <source file="ReaTooled_Extend time selection to previous (left) transient or item edge (Tab to Transient toggle dependent).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Extend%20time%20selection%20to%20previous%20%28left%29%20transient%20or%20item%20edge%20%28Tab%20to%20Transient%20toggle%20dependent%29.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Fade In to Edit Cursor Or Mouse (Hover Mode Dependent).lua" type="script" desc="ReaTooled - Fade In to Edit Cursor or Mouse (Hover Mode Dependant)">
+      <version name="1.2" author="Brendan Baker">
+        <source file="ReaTooled_Fade In to Edit Cursor Or Mouse (Hover Mode Dependent).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Fade%20In%20to%20Edit%20Cursor%20Or%20Mouse%20%28Hover%20Mode%20Dependent%29.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Fade Out From Edit Cursor Or Mouse (Hover Mode Dependent).lua" type="script" desc="ReaTooled - Fade Out From Edit Cursor or Mouse (Hover Mode Dependant)">
+      <version name="1.2" author="Brendan Baker">
+        <source file="ReaTooled_Fade Out From Edit Cursor Or Mouse (Hover Mode Dependent).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Fade%20Out%20From%20Edit%20Cursor%20Or%20Mouse%20%28Hover%20Mode%20Dependent%29.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Glide Envelope Points.lua" type="script" desc="GLIDE envelopes to selection/items (ReaTooled, inspired by TJF)">
+      <version name="3.0" author="Brendan Baker">
+        <source file="ReaTooled_Glide Envelope Points.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Glide%20Envelope%20Points.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Grid and Nudge Settings.lua" type="script" desc="ReaTooled - Grid &amp; Nudge Settings (Dockable GUI)">
+      <version name="2.1.6" author="Brendan Baker">
+        <source file="ReaTooled_Grid and Nudge Settings.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Grid%20and%20Nudge%20Settings.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Move edit cursor to next (right) transient or item edge (Tab to Transient toggle dependent).lua" type="script" desc="ReaTooled - TAB honoring fades/crossfades (SelectionSet restore + only-if-offscreen centering)">
+      <version name="1.17" author="Brendan Baker">
+        <source file="ReaTooled_Move edit cursor to next (right) transient or item edge (Tab to Transient toggle dependent).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Move%20edit%20cursor%20to%20next%20%28right%29%20transient%20or%20item%20edge%20%28Tab%20to%20Transient%20toggle%20dependent%29.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Move edit cursor to previous (left) transient or item edge (Tab to Transient toggle dependent).lua" type="script" desc="ReaTooled - TAB honoring fades/crossfades (SelectionSet restore + only-if-offscreen centering)">
+      <version name="1.17" author="Brendan Baker">
+        <source file="ReaTooled_Move edit cursor to previous (left) transient or item edge (Tab to Transient toggle dependent).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Move%20edit%20cursor%20to%20previous%20%28left%29%20transient%20or%20item%20edge%20%28Tab%20to%20Transient%20toggle%20dependent%29.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Move Tool Left Click (Select item under mouse cursor, move cursor to start of items).lua" type="script" desc="ReaTooled - Move Tool Left Click (Select Under Mouse + Cursor to Item/Group Start) [no-flicker + loop-if-linked]">
+      <version name="5.8" author="Brendan Baker">
+        <source file="ReaTooled_Move Tool Left Click (Select item under mouse cursor, move cursor to start of items).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Move%20Tool%20Left%20Click%20%28Select%20item%20under%20mouse%20cursor%2C%20move%20cursor%20to%20start%20of%20items%29.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Move Tool Left Shift-Click (Select item and extend razor edit).lua" type="script" desc="ReaTooled - Bottom-half Shift-Click ADD (preserve selection) + Cursor/Loop-if-Linked [single script]">
+      <version name="6.3" author="Brendan Baker">
+        <source file="ReaTooled_Move Tool Left Shift-Click (Select item and extend razor edit).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Move%20Tool%20Left%20Shift-Click%20%28Select%20item%20and%20extend%20razor%20edit%29.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Nudge left by last nudge dialogue settings and move cursor.lua" type="script" desc="ReaTooled_Nudge Items Left via Last Nudge Settings + Move Cursor to First Item">
+      <version name="1.1" author="Brendan Baker">
+        <source file="ReaTooled_Nudge left by last nudge dialogue settings and move cursor.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Nudge%20left%20by%20last%20nudge%20dialogue%20settings%20and%20move%20cursor.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Nudge right by last nudge dialogue settings and move cursor.lua" type="script" desc="ReaTooled_Nudge Items Right via Last Nudge Settings + Move Cursor to First Item">
+      <version name="1.1" author="Brendan Baker">
+        <source file="ReaTooled_Nudge right by last nudge dialogue settings and move cursor.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Nudge%20right%20by%20last%20nudge%20dialogue%20settings%20and%20move%20cursor.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Nudge Settings.lua" type="script" desc="ReaTooled_Nudge Settings">
+      <version name="1.0" author="Brendan Baker">
+        <source file="ReaTooled_Nudge Settings.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Nudge%20Settings.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Paste Special - Repeat to fill selection.lua" type="script" desc="ReaTooled - Paste Special = Repeat to fill LOOP selection">
+      <version name="1.1" author="Brendan Baker">
+        <source file="ReaTooled_Paste Special - Repeat to fill selection.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Paste%20Special%20-%20Repeat%20to%20fill%20selection.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Remove item under mouse cursor ignoring groups.lua" type="script" desc="ReaTooled: Delete Item Under Mouse (Suspend Groups)">
+      <version name="1.0" author="Brendan Baker">
+        <source file="ReaTooled_Remove item under mouse cursor ignoring groups.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Remove%20item%20under%20mouse%20cursor%20ignoring%20groups.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Render item(s) and store original in lane.lua" type="script" desc="ReaTooled - Render and Archive to Lane">
+      <version name="1.4" author="Brendan Baker">
+        <source file="ReaTooled_Render item(s) and store original in lane.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Render%20item%28s%29%20and%20store%20original%20in%20lane.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Ripple left edge.lua" type="script" desc="ReaTooled_Ripple left edge">
+      <version name="1.0" author="Brendan Baker">
+        <source file="ReaTooled_Ripple left edge.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Ripple%20left%20edge.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Select Tool Double Click.lua" type="script" desc="ReaTooled - Select Tool Double Click">
+      <version name="1.1" author="Brendan Baker">
+        <source file="ReaTooled_Select Tool Double Click.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Select%20Tool%20Double%20Click.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Select Tool Left Click.lua" type="script" desc="ReaTooled - Select Tool Left Click (Edit Cursor + Group Aware)">
+      <version name="1.3" author="Brendan Baker">
+        <source file="ReaTooled_Select Tool Left Click.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Select%20Tool%20Left%20Click.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Select Tool Shift+Double Click.lua" type="script" desc="ReaTooled - Select Tool Double Click (Add to Selection) [SHIFT+DOUBLE-CLICK]">
+      <version name="1.2" author="Brendan Baker">
+        <source file="ReaTooled_Select Tool Shift+Double Click.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Select%20Tool%20Shift%2BDouble%20Click.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Set Envelope Point Value - Use last value.lua" type="script" desc="ReaTooled: Set Envelope Point Value — Use Last Value (Auto-Fallback)">
+      <version name="1.4" author="Brendan Baker">
+        <source file="ReaTooled_Set Envelope Point Value - Use last value.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Set%20Envelope%20Point%20Value%20-%20Use%20last%20value.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Set Envelope Point Value.lua" type="script" desc="ReaTooled: Set Envelope Point Value (Interactive)">
+      <version name="1.3" author="Brendan Baker">
+        <source file="ReaTooled_Set Envelope Point Value.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Set%20Envelope%20Point%20Value.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Smart Remove.lua" type="script" desc="ReaTooled - Smart Remove">
+      <version name="1.8" author="Brendan Baker">
+        <source file="ReaTooled_Smart Remove.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Smart%20Remove.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Special Paste + Trim Edges to Adjacent Items (Expand to fill, Loop Source and Section On).lua" type="script" desc="ReaTooled_Special Paste (Expand to fill gaps per track, Loop Source and Section On)">
+      <version name="4.1" author="Brendan Baker">
+        <source file="ReaTooled_Special Paste + Trim Edges to Adjacent Items (Expand to fill, Loop Source and Section On).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Special%20Paste%20%2B%20Trim%20Edges%20to%20Adjacent%20Items%20%28Expand%20to%20fill%2C%20Loop%20Source%20and%20Section%20On%29.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Special Paste + Trim Item Edges to Next and Previous Items (Expand to fill between neighboring items).lua" type="script" desc="ReaTooled - ReaTooled_Special Paste + Trim Item Edges to Next and Previous Items (Expand to fill between neighboring items)">
+      <version name="3.13" author="Brendan Baker">
+        <source file="ReaTooled_Special Paste + Trim Item Edges to Next and Previous Items (Expand to fill between neighboring items).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Special%20Paste%20%2B%20Trim%20Item%20Edges%20to%20Next%20and%20Previous%20Items%20%28Expand%20to%20fill%20between%20neighboring%20items%29.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Split Item (Hover Mode Dependent).lua" type="script" desc="ReaTooled Split Item Smart (Precise Time Selection Logic)">
+      <version name="1.6" author="Brendan Baker">
+        <source file="ReaTooled_Split Item (Hover Mode Dependent).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Split%20Item%20%28Hover%20Mode%20Dependent%29.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Toggle mute items, ignoring grouping.lua" type="script" desc="ReaTooled: Toggle Item Mute (Ignore Groups, Mouse-Track Scoped, Majority-Based)">
+      <version name="1.2" author="Brendan Baker">
+        <source file="ReaTooled_Toggle mute items, ignoring grouping.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Toggle%20mute%20items%2C%20ignoring%20grouping.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Trim Item Edges to Next and Previous Items (Expand to fill between neighboring items).lua" type="script" desc="ReaTooled_Trim Item Edges to Next and Previous Items (Expand to fill between neighboring items, preserve sync)">
+      <version name="1.2" author="Brendan Baker">
+        <source file="ReaTooled_Trim Item Edges to Next and Previous Items (Expand to fill between neighboring items).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Trim%20Item%20Edges%20to%20Next%20and%20Previous%20Items%20%28Expand%20to%20fill%20between%20neighboring%20items%29.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Trim Item Edges to Next and Previous Items (Expand to fill between neighboring items, Loop Source On).lua" type="script" desc="ReaTooled_Trim Item Edges to Next and Previous Items (Expand to fill, Loop Source ON + SWS Loop Section BEFORE resize, only if missing, preserve sync)">
+      <version name="1.4" author="Brendan Baker">
+        <source file="ReaTooled_Trim Item Edges to Next and Previous Items (Expand to fill between neighboring items, Loop Source On).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Trim%20Item%20Edges%20to%20Next%20and%20Previous%20Items%20%28Expand%20to%20fill%20between%20neighboring%20items%2C%20Loop%20Source%20On%29.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Trim Item Left Edge to Previous Item (with Loop Item Source Off).lua" type="script" desc="ReaTooled_Trim Item Left Edge to Previous Item (preserve sync; Loop Source state unchanged)">
+      <version name="1.2" author="Brendan Baker">
+        <source file="ReaTooled_Trim Item Left Edge to Previous Item (with Loop Item Source Off).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Trim%20Item%20Left%20Edge%20to%20Previous%20Item%20%28with%20Loop%20Item%20Source%20Off%29.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Trim Item Left Edge to Previous Item (with Loop Item Source On).lua" type="script" desc="ReaTooled_Trim Item Left Edge to Previous Item (Loop Source ON + SWS Loop Section BEFORE resize, only if missing, preserve sync)">
+      <version name="1.4" author="Brendan Baker">
+        <source file="ReaTooled_Trim Item Left Edge to Previous Item (with Loop Item Source On).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Trim%20Item%20Left%20Edge%20to%20Previous%20Item%20%28with%20Loop%20Item%20Source%20On%29.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Trim Item Right Edge to Next Item (with Loop Item Source Off).lua" type="script" desc="ReaTooled_Trim Item Right Edge to Next Item (with Loop Item Source Off)">
+      <version name="1.1" author="Brendan Baker">
+        <source file="ReaTooled_Trim Item Right Edge to Next Item (with Loop Item Source Off).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Trim%20Item%20Right%20Edge%20to%20Next%20Item%20%28with%20Loop%20Item%20Source%20Off%29.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Trim Item Right Edge to Next Item (with Loop Item Source On).lua" type="script" desc="ReaTooled_Trim Item Right Edge to Next Item (Loop Source ON + SWS Loop Section BEFORE resize, only if missing)">
+      <version name="1.3" author="Brendan Baker">
+        <source file="ReaTooled_Trim Item Right Edge to Next Item (with Loop Item Source On).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Trim%20Item%20Right%20Edge%20to%20Next%20Item%20%28with%20Loop%20Item%20Source%20On%29.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Trim left side of items (Hover Mode Dependent).lua" type="script" desc="ReaTooled - Trim left side of items (Hover Mode Dependant)">
+      <version name="1.0" author="Brendan Baker">
+        <source file="ReaTooled_Trim left side of items (Hover Mode Dependent).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Trim%20left%20side%20of%20items%20%28Hover%20Mode%20Dependent%29.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Trim right side of items (Hover Mode Dependent).lua" type="script" desc="ReaTooled - Trim right side of items (Hover Mode Dependant)">
+      <version name="1.0" author="Brendan Baker">
+        <source file="ReaTooled_Trim right side of items (Hover Mode Dependent).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Trim%20right%20side%20of%20items%20%28Hover%20Mode%20Dependent%29.lua</source>
+      </version>
+    </reapack>
+  </category>
+  <category name="Helpers">
+    <reapack name="ReaTooled - AGC to Volume envelope.lua" type="script" desc="ReaTooled - AGC to Volume envelope">
+      <version name="1.0" author="Brendan Baker">
+        <source file="ReaTooled - AGC to Volume envelope.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Helpers/ReaTooled%20-%20AGC%20to%20Volume%20envelope.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Link razor area and item selection.lua" type="script" desc="ReaTooled - Link Razor Area to Item Selection (Context-Aware)">
+      <version name="4.6" author="Brendan Baker">
+        <source file="ReaTooled_Link razor area and item selection.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Helpers/ReaTooled_Link%20razor%20area%20and%20item%20selection.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Show Spectrogram on Selected Track(s).lua" type="script" desc="Spectrogram on Selected Track Only (Defer; batch-consistent, no undo points)">
+      <version name="1.4" author="Brendan Baker">
+        <source file="ReaTooled_Show Spectrogram on Selected Track(s).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Helpers/ReaTooled_Show%20Spectrogram%20on%20Selected%20Track%28s%29.lua</source>
+      </version>
+    </reapack>
+  </category>
+  <category name="Mouse Actions">
+    <reapack name="ReaTooled_Mousewheel adjust pitch of item under cursor.lua" type="script" desc="Adjust Item Pitch by Mousewheel (ReaTooled Compatible)">
+      <version name="1.1" author="Brendan Baker">
+        <source file="ReaTooled_Mousewheel adjust pitch of item under cursor.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Mouse%20Actions/ReaTooled_Mousewheel%20adjust%20pitch%20of%20item%20under%20cursor.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Mousewheel to change take volume for selected items.lua" type="script" desc="@description Adjust Take Volume by Mousewheel">
+      <version name="1.1" author="Brendan Baker">
+        <source file="ReaTooled_Mousewheel to change take volume for selected items.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Mouse%20Actions/ReaTooled_Mousewheel%20to%20change%20take%20volume%20for%20selected%20items.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Mousewheel to zoom items peaks view gain.lua" type="script" desc="Adjust Peaks View Gain by Mousewheel (ReaTooled Compatible)">
+      <version name="1.1" author="Brendan Baker">
+        <source file="ReaTooled_Mousewheel to zoom items peaks view gain.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Mouse%20Actions/ReaTooled_Mousewheel%20to%20zoom%20items%20peaks%20view%20gain.lua</source>
+      </version>
+    </reapack>
+  </category>
+  <category name="Startup">
+    <reapack name="ReaTooled Startup" type="script" desc="ReaTooled Startup">
+      <version name="2.4.5" author="Brendan Baker">
+        <source file="ReaTooled_Enable Link Edit Cursor and Play Cursor.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Enable%20Link%20Edit%20Cursor%20and%20Play%20Cursor.lua</source>
+        <source file="ReaTooled_Install startup hook.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Install%20startup%20hook.lua</source>
+        <source file="ReaTooled_Recall Hover Mode State.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Recall%20Hover%20Mode%20State.lua</source>
+        <source file="ReaTooled_Startup.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Startup.lua</source>
+      </version>
+    </reapack>
+  </category>
+  <category name="Toggles">
+    <reapack name="ReaTooled - Ripple Off (Slip).lua" type="script" desc="ReaTooled - Ripple OFF indicator (button ON when ripple OFF)">
+      <version name="1.2" author="Brendan Baker">
+        <source file="ReaTooled - Ripple Off (Slip).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Toggles/ReaTooled%20-%20Ripple%20Off%20%28Slip%29.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled MULTI Icon toggle.lua" type="script" desc="ReaTooled MULTI Icon toggle">
+      <version name="1.0" author="Brendan Baker">
+        <source file="ReaTooled MULTI Icon toggle.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Toggles/ReaTooled%20MULTI%20Icon%20toggle.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_At loop end, move cursor to loop end and clear selection (only when loop button is off).lua" type="script" desc="ReaTooled - Loop END stop+cursor handler (pref-aware, INI-read on startup)">
+      <version name="2.6" author="Brendan Baker">
+        <source file="ReaTooled_At loop end, move cursor to loop end and clear selection (only when loop button is off).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Toggles/ReaTooled_At%20loop%20end%2C%20move%20cursor%20to%20loop%20end%20and%20clear%20selection%20%28only%20when%20loop%20button%20is%20off%29.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Cycle Peaks Display Mode.lua" type="script" desc="ReaTooled_Cycle Peaks Display Mode">
+      <version name="1.0" author="Brendan Baker">
+        <source file="ReaTooled_Cycle Peaks Display Mode.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Toggles/ReaTooled_Cycle%20Peaks%20Display%20Mode.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Hover Edit Mode.lua" type="script" desc="ReaTooled - Hover Edit Mode">
+      <version name="1.0" author="Brendan Baker">
+        <source file="ReaTooled_Hover Edit Mode.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Toggles/ReaTooled_Hover%20Edit%20Mode.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Invert mousewheel direction (for natural scrolling).lua" type="script" desc="Toggle ReaTooled Mousewheel Inversion">
+      <version name="1.0" author="Brendan Baker">
+        <source file="ReaTooled_Invert mousewheel direction (for natural scrolling).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Toggles/ReaTooled_Invert%20mousewheel%20direction%20%28for%20natural%20scrolling%29.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Link Track and Item and Razor Selection.lua" type="script" desc="ReaTooled - Link Track and Item and Razor Selection (Main Function)">
+      <version name="2.22" author="Brendan Baker">
+        <source file="ReaTooled_Link Track and Item and Razor Selection.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Toggles/ReaTooled_Link%20Track%20and%20Item%20and%20Razor%20Selection.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Loudness normalize new items.lua" type="script" desc="ReaTooled_Loudness normalize new items">
+      <version name="1.0" author="Brendan Baker">
+        <source file="ReaTooled_Loudness normalize new items.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Toggles/ReaTooled_Loudness%20normalize%20new%20items.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Recall ReaTooled Button States.lua" type="script" desc="ReaTooled - Recall ReaTooled Button States">
+      <version name="1.4" author="Brendan Baker">
+        <source file="ReaTooled_Recall ReaTooled Button States.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Toggles/ReaTooled_Recall%20ReaTooled%20Button%20States.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Recall ReaTooled Keymap State.lua" type="script" desc="ReaTooled - Recall ReaTooled Keymap Saved State">
+      <version name="1.0" author="Brendan Baker">
+        <source file="ReaTooled_Recall ReaTooled Keymap State.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Toggles/ReaTooled_Recall%20ReaTooled%20Keymap%20State.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Region Shuffle.lua" type="script" desc="ReaTooled_Region Shuffle">
+      <version name="1.0" author="Brendan Baker">
+        <source file="ReaTooled_Region Shuffle.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Toggles/ReaTooled_Region%20Shuffle.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Synch razor areas on grouped items.lua" type="script" desc="ReaTooled - Razor Edit Group Sync (Preserve Area, Envelope-Aware)">
+      <version name="1.1" author="Brendan Baker">
+        <source file="ReaTooled_Synch razor areas on grouped items.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Toggles/ReaTooled_Synch%20razor%20areas%20on%20grouped%20items.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Toggle Edit Cursor follows Playback on Stop.lua" type="script" desc="ReaTooled Toggle Edit Cursor follows Playback on Stop">
+      <version name="1.1" author="Brendan Baker">
+        <source file="ReaTooled_Toggle Edit Cursor follows Playback on Stop.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Toggles/ReaTooled_Toggle%20Edit%20Cursor%20follows%20Playback%20on%20Stop.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Toggle envelope lanes visible or in lane.lua" type="script" desc="ReaTooled_Toggle In-Lane Volume Envelope (Using Action 40891)">
+      <version name="1.0" author="Brendan Baker">
+        <source file="ReaTooled_Toggle envelope lanes visible or in lane.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Toggles/ReaTooled_Toggle%20envelope%20lanes%20visible%20or%20in%20lane.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Toggle item volume envelope for all items.lua" type="script" desc="ReaTooled ToggleToggle visibility of all take volume envelopes">
+      <version name="1.0" author="Brendan Baker">
+        <source file="ReaTooled_Toggle item volume envelope for all items.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Toggles/ReaTooled_Toggle%20item%20volume%20envelope%20for%20all%20items.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Toggle Layered Editing.lua" type="script" desc="ReaTooled - Layered Editing (inverse of 41117, synced)">
+      <version name="1.1" author="Brendan Baker">
+        <source file="ReaTooled_Toggle Layered Editing.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Toggles/ReaTooled_Toggle%20Layered%20Editing.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Toggle Link Play Cursor to Edit Cursor.lua" type="script" desc="ReaTooled - Toggle Link loop points and razor areas (with ▶ management &amp; last-known play pos)">
+      <version name="1.5" author="Brendan Baker">
+        <source file="ReaTooled_Toggle Link Play Cursor to Edit Cursor.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Toggles/ReaTooled_Toggle%20Link%20Play%20Cursor%20to%20Edit%20Cursor.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Toggle Link Track and Item and Razor Selection.lua" type="script" desc="ReaTooled Toggle Link Track and Item and Razor Selection">
+      <version name="1.0" author="Brendan Baker">
+        <source file="ReaTooled_Toggle Link Track and Item and Razor Selection.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Toggles/ReaTooled_Toggle%20Link%20Track%20and%20Item%20and%20Razor%20Selection.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Toggle Markers Follow Ripple All vs Locked.lua" type="script" desc="ReaTooled - Toggle: Ripple All affects Regions/Markers">
+      <version name="1.2" author="Brendan Baker">
+        <source file="ReaTooled_Toggle Markers Follow Ripple All vs Locked.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Toggles/ReaTooled_Toggle%20Markers%20Follow%20Ripple%20All%20vs%20Locked.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Toggle ReaTooled Shortcuts.lua" type="script" desc="ReaTooled - Toggle ReaTooled Shortcuts">
+      <version name="1.0" author="Brendan Baker">
+        <source file="ReaTooled_Toggle ReaTooled Shortcuts.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Toggles/ReaTooled_Toggle%20ReaTooled%20Shortcuts.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Toggle Tab to Transient.lua" type="script" desc="ReaTooled - Toggle Tab to Transient">
+      <version name="1.0" author="Brendan Baker">
+        <source file="ReaTooled_Toggle Tab to Transient.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Toggles/ReaTooled_Toggle%20Tab%20to%20Transient.lua</source>
+      </version>
+    </reapack>
+  </category>
+  <category name="Tools">
+    <reapack name="ReaTooled Tools" type="script" desc="ReaTooled Tools">
+      <version name="7.2.0" author="Brendan Baker">
+        <source file="Default Multi Tool (Smart)_ReaTooled.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/Default%20Multi%20Tool%20%28Smart%29_ReaTooled.lua</source>
+        <source file="Move Tool (Grabber)_ReaTooled.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/Move%20Tool%20%28Grabber%29_ReaTooled.lua</source>
+        <source file="Razor Select Tool (Selector)_ReaTooled.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/Razor%20Select%20Tool%20%28Selector%29_ReaTooled.lua</source>
+        <source file="ReaTooled_AdjustItemEdge.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/ReaTooled_AdjustItemEdge.lua</source>
+        <source file="ReaTooled_Trim Tool (Background).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/ReaTooled_Trim%20Tool%20%28Background%29.lua</source>
+        <source file="ReaTooled_Trim Tool Click.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/ReaTooled_Trim%20Tool%20Click.lua</source>
+        <source file="Scrub Tool_ReaTooled.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/Scrub%20Tool_ReaTooled.lua</source>
+        <source file="Trim Tool_ReaTooled.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/Trim%20Tool_ReaTooled.lua</source>
+        <source file="Zoom Tool_ReaTooled.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/Zoom%20Tool_ReaTooled.lua</source>
+      </version>
+    </reapack>
+  </category>
+  <category name="Transport">
+    <reapack name="ReaTooled_Play-Stop (with memory, edit-play toggles, and no undo).lua" type="script" desc="ReaTooled - Transport (LP-first start, v2.4 stop-cursor behavior, Loop Points only) + v1.2-style Play Marker (LP+EC OFF) [ID 0 forced]">
+      <version name="2.7.6" author="Brendan Baker">
+        <source file="ReaTooled_Play-Stop (with memory, edit-play toggles, and no undo).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Transport/ReaTooled_Play-Stop%20%28with%20memory%2C%20edit-play%20toggles%2C%20and%20no%20undo%29.lua</source>
+      </version>
+    </reapack>
+  </category>
+  <category name="Utilities">
+    <reapack name="ReaTooled_Create backup key map.lua" type="script" desc="ReaTooled_Create backup key map">
+      <version name="1.0" author="Brendan Baker">
+        <source file="ReaTooled_Create backup key map.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Utilities/ReaTooled_Create%20backup%20key%20map.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Merge backup key map with current key map.lua" type="script" desc="ReaTooled - Merge backup key map with current key map">
+      <version name="1.0" author="Brendan Baker">
+        <source file="ReaTooled_Merge backup key map with current key map.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Utilities/ReaTooled_Merge%20backup%20key%20map%20with%20current%20key%20map.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Update key map from .ReaperConfigZip file.lua" type="script" desc="ReaTooled_Update key map from .ReaperConfigZip file">
+      <version name="1.0" author="Brendan Baker">
+        <source file="ReaTooled_Update key map from .ReaperConfigZip file.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Utilities/ReaTooled_Update%20key%20map%20from%20.ReaperConfigZip%20file.lua</source>
+      </version>
+    </reapack>
+  </category>
+  <category name="Zoom">
+    <reapack name="ReaTooled Zoom Presets" type="script" desc="ReaTooled Zoom Presets">
+      <version name="1.0" author="Brendan Baker">
+        <source file="ReaTooled_Recall zoom preset 1.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Zoom/ReaTooled_Recall%20zoom%20preset%201.lua</source>
+        <source file="ReaTooled_Recall zoom preset 2.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Zoom/ReaTooled_Recall%20zoom%20preset%202.lua</source>
+        <source file="ReaTooled_Recall zoom preset 3.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Zoom/ReaTooled_Recall%20zoom%20preset%203.lua</source>
+        <source file="ReaTooled_Recall zoom preset 4.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Zoom/ReaTooled_Recall%20zoom%20preset%204.lua</source>
+        <source file="ReaTooled_Recall zoom preset 5.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Zoom/ReaTooled_Recall%20zoom%20preset%205.lua</source>
+        <source file="ReaTooled_Save zoom preset 1.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Zoom/ReaTooled_Save%20zoom%20preset%201.lua</source>
+        <source file="ReaTooled_Save zoom preset 2.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Zoom/ReaTooled_Save%20zoom%20preset%202.lua</source>
+        <source file="ReaTooled_Save zoom preset 3.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Zoom/ReaTooled_Save%20zoom%20preset%203.lua</source>
+        <source file="ReaTooled_Save zoom preset 4.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Zoom/ReaTooled_Save%20zoom%20preset%204.lua</source>
+        <source file="ReaTooled_Save zoom preset 5.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Zoom/ReaTooled_Save%20zoom%20preset%205.lua</source>
+        <source file="ReaTooled_Reset zoom presets to default.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Zoom/ReaTooled_Reset%20zoom%20presets%20to%20default.lua</source>
+        <source file="ReaTooled_Zoom presets lib.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Zoom/ReaTooled_Zoom%20presets%20lib.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Zoom Horizontally (Mousewheel).lua" type="script" desc="Zoom Horizontally by Mousewheel (ReaTooled-Compatible)">
+      <version name="1.2" author="Brendan Baker">
+        <source file="ReaTooled_Zoom Horizontally (Mousewheel).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Zoom/ReaTooled_Zoom%20Horizontally%20%28Mousewheel%29.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Zoom Out Horizontally to Entire Project (Preserve Vertical Zoom).lua" type="script" desc="ReaTooled_Zoom Out Horizontally to Entire Project">
+      <version name="1.0" author="Brendan Baker">
+        <source file="ReaTooled_Zoom Out Horizontally to Entire Project (Preserve Vertical Zoom).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Zoom/ReaTooled_Zoom%20Out%20Horizontally%20to%20Entire%20Project%20%28Preserve%20Vertical%20Zoom%29.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Zoom Tool - Zoom in.lua" type="script" desc="ReaTooled - Zoom Tool - Zoom in">
+      <version name="1.0" author="Brendan Baker">
+        <source file="ReaTooled_Zoom Tool - Zoom in.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Zoom/ReaTooled_Zoom%20Tool%20-%20Zoom%20in.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Zoom Tool - Zoom out.lua" type="script" desc="ReaTooled - Zoom Tool - Zoom out">
+      <version name="1.0" author="Brendan Baker">
+        <source file="ReaTooled_Zoom Tool - Zoom out.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Zoom/ReaTooled_Zoom%20Tool%20-%20Zoom%20out.lua</source>
+      </version>
+    </reapack>
+  </category>
+  <metadata>
+    <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+  </metadata>
+</index>
