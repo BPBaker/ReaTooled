@@ -309,6 +309,7 @@
         <source file="ReaTooled_Enable Link Edit Cursor and Play Cursor.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Enable%20Link%20Edit%20Cursor%20and%20Play%20Cursor.lua</source>
         <source file="ReaTooled_Install startup hook.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Install%20startup%20hook.lua</source>
         <source file="ReaTooled_Recall Hover Mode State.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Recall%20Hover%20Mode%20State.lua</source>
+        <source file="ReaTooled_Set up ReaTooled.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Set%20up%20ReaTooled.lua</source>
         <source file="ReaTooled_Startup.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Startup.lua</source>
       </version>
     </reapack>

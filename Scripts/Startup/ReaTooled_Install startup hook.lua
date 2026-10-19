@@ -1,6 +1,6 @@
 --[[
 -- @description ReaTooled - Install startup hook
--- @version 1.0
+-- @version 1.1
 -- @author Brendan Baker
 -- @link http://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -10,6 +10,9 @@
     Data/ReaTooled/Backups/startup/.
     Also disables the lines from the old ReaTooled __startup.lua (v1.x),
     so nothing launches twice.
+-- CHANGELOG
+-- v1.1 Can be run by "Set up ReaTooled" without its own prompts
+-- v1.0 Initial version
 --]]
 
 local RES        = reaper.GetResourcePath():gsub("\\", "/")
@@ -83,7 +86,8 @@ local function remove_block(lines)
       out[#out + 1] = line
     end
   end
-  -- drop blank lines left at the end
+  -- drop blank lines left at the start (where the block was) and the end
+  while #out > 0 and out[1]:match("^%s*$") do table.remove(out, 1) end
   while #out > 0 and out[#out]:match("^%s*$") do out[#out] = nil end
   return out, found
 end
@@ -129,7 +133,20 @@ end
 
 ------------------------------------------------------------
 
-local choice = reaper.ShowMessageBox(
+-- When "Set up ReaTooled" runs this file, it passes a table in
+-- REATOOLED_SETUP: the block is added without asking, and the result is
+-- handed back in that table instead of shown in a message box.
+local SETUP = type(_G.REATOOLED_SETUP) == "table" and _G.REATOOLED_SETUP or nil
+
+local function say(text, ok)
+  if SETUP then
+    SETUP.ok, SETUP.result = ok, text
+  else
+    reaper.ShowMessageBox(text, TITLE, 0)
+  end
+end
+
+local choice = SETUP and 6 or reaper.ShowMessageBox(
   "YES = add or update the ReaTooled startup block\n" ..
   "NO = remove the ReaTooled startup block\n\n" ..
   "Everything else in __startup.lua is left as it is, and the file is backed up first.",
@@ -145,7 +162,7 @@ local backup_path = nil
 if text and #text > 0 then
   backup_path = backup(text)
   if not backup_path then
-    reaper.ShowMessageBox("Could not back up __startup.lua, so nothing was changed.", TITLE, 0)
+    say("Could not back up __startup.lua, so nothing was changed.", false)
     return
   end
 end
@@ -169,10 +186,12 @@ if choice == 6 then
   if disabled > 0 then
     summary = summary .. "\nDisabled " .. disabled .. " line(s) from the old ReaTooled startup script."
   end
-  summary = summary .. "\n\nRestart REAPER for it to take effect."
+  if not SETUP then
+    summary = summary .. "\n\nRestart REAPER for it to take effect."
+  end
 else
   if not had_block then
-    reaper.ShowMessageBox("There is no ReaTooled startup block in __startup.lua. Nothing was changed.", TITLE, 0)
+    say("There is no ReaTooled startup block in __startup.lua. Nothing was changed.", true)
     return
   end
   summary = "Removed the ReaTooled startup block.\n\nRestart REAPER for it to take effect."
@@ -180,11 +199,11 @@ end
 
 local new_text = (#lines > 0) and (table.concat(lines, eol) .. eol) or ""
 if not write_file(STARTUP, new_text) then
-  reaper.ShowMessageBox("Could not write __startup.lua. Nothing was changed.", TITLE, 0)
+  say("Could not write __startup.lua. Nothing was changed.", false)
   return
 end
 
 if backup_path then
   summary = summary .. "\n\nBackup of the previous file:\n" .. backup_path
 end
-reaper.ShowMessageBox(summary, TITLE, 0)
+say(summary, true)
