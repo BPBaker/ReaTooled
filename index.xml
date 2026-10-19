@@ -10,6 +10,16 @@
       </version>
     </reapack>
   </category>
+  <category name="Config">
+    <reapack name="ReaTooled Config" type="data" desc="ReaTooled configuration (applied by Set up ReaTooled)">
+      <version name="1.20261019.1921" author="Brendan Baker">
+        <source file="ReaTooled/Config/keymap.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/keymap.ini</source>
+        <source file="ReaTooled/Config/menus.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/menus.ini</source>
+        <source file="ReaTooled/Config/mouse.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/mouse.ini</source>
+        <source file="ReaTooled/Config/prefs.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/prefs.ini</source>
+      </version>
+    </reapack>
+  </category>
   <category name="Edit">
     <reapack name="ReaTooled Smart Nudge" type="script" desc="ReaTooled Smart Nudge">
       <version name="1.2.0" author="Brendan Baker">

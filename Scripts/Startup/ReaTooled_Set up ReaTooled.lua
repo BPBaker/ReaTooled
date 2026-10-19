@@ -1,6 +1,6 @@
 --[[
 -- @description ReaTooled - Set up ReaTooled
--- @version 1.0
+-- @version 1.0.1
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -17,6 +17,7 @@
     Safe to run again: later runs make a new dated backup and update
     the startup block.
 -- CHANGELOG
+-- v1.0.1 Fixed the call that turns on auto-install in ReaPack
 -- v1.0 Initial version
 --]]
 
@@ -199,7 +200,8 @@ end
 
 -- autoInstall = 1: when ReaPack synchronizes, it installs any ReaTooled
 -- package that isn't installed yet (now, and new scripts added later).
-local repo_ok, repo_err = reaper.ReaPack_AddSetRepository(REPO_NAME, REPO_URL, true, 1, true, "")
+local repo_ok, repo_err = reaper.ReaPack_AddSetRepository(REPO_NAME, REPO_URL, true, 1, "")
+if repo_ok then reaper.ReaPack_ProcessQueue(true) end  -- save ReaPack's settings now
 local repo_note
 if repo_ok then
   repo_note = "ReaPack will install every ReaTooled script."
