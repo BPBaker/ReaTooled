@@ -1,0 +1,32 @@
+{
+  "name": "ReaTooled",
+  "sub_title": "Pro Tools-style editing for REAPER",
+  "description": "Installs REAPER, ReaPack, the extensions ReaTooled needs, the ReaTooled core and the scripts by other developers that ReaTooled uses. After installing, open REAPER and follow the ReaTooled setup guide.",
+  "website": "https://brendanpatrickbaker.com/reatooled/",
+  "required_packages": [
+    "https://github.com/ReaTeam/Extensions/raw/master/index.xml#p=Extensions/reaper-oss_SWS.ext",
+    "https://github.com/ReaTeam/Extensions/raw/master/index.xml#p=API/js_ReaScriptAPI.ext",
+    "https://github.com/ReaTeam/Extensions/raw/master/index.xml#p=API/reaper_imgui.ext",
+    "https://raw.githubusercontent.com/BPBaker/ReaTooled/main/index.xml#p=Startup/ReaTooled%20Startup",
+
+    "https://github.com/ReaTeam/ReaScripts/raw/master/index.xml#p=Cursor/Place%20play%20cursor%20into%20view%20(when%20playing)%20or%20Center%20edit%20cursor%20(when%20stopped).eel",
+    "https://github.com/ReaTeam/ReaScripts/raw/master/index.xml#p=Items%20Editing/az_Fade%20tool%20(work%20on%20context%20of%20mouse,%20razor%20or%20time%20selection).lua",
+    "https://github.com/ReaTeam/ReaScripts/raw/master/index.xml#p=Items%20Editing/az_Open%20item%20copy%20in%20primary%20external%20editor%20with%20handles.lua",
+    "https://github.com/ReaTeam/ReaScripts/raw/master/index.xml#p=Items%20Editing/rodilab_Duplicate%20items%20or%20tracks%20(depending%20on%20focus%20and%20time%20selection).lua",
+    "https://github.com/ReaTeam/ReaScripts/raw/master/index.xml#p=Items%20Properties/rodilab_Loop%20section%20of%20audiomidi%20item%20source%20within%20time%20selection,%20if%20any.lua",
+    "https://github.com/ReaTeam/ReaScripts/raw/master/index.xml#p=Various/rodilab_Color%20palette.lua",
+    "https://github.com/X-Raym/REAPER-ReaScripts/raw/master/index.xml#p=Envelopes/On%20Tracks/X-Raym_Add%20envelope%20points%20at%20time%20selection%20edges%20from%20center%20to%20center%20preserving%20edges.lua",
+    "https://github.com/X-Raym/REAPER-ReaScripts/raw/master/index.xml#p=FX/X-Raym_Set%20selected%20tracks%20FX%20parameter%20value%20from%20last%20focused%20FX%20last%20touch%20parameter.lua",
+    "https://github.com/X-Raym/REAPER-ReaScripts/raw/master/index.xml#p=Items%20Editing/X-Raym_Move%20selected%20items%20to%20end%20of%20previous%20items%20on%20all%20visible%20tracks.lua",
+    "https://github.com/X-Raym/REAPER-ReaScripts/raw/master/index.xml#p=Items%20Editing/X-Raym_Move%20selected%20items%20to%20next%20item%20on%20all%20visible%20tracks.lua",
+    "https://github.com/X-Raym/REAPER-ReaScripts/raw/master/index.xml#p=Razor%20Edit/X-Raym_Set%20selected%20tracks%20razor%20edit%20area%20to%20time%20selection.lua",
+    "https://github.com/MichaelPilyavskiy/ReaScripts/raw/master/index.xml#p=FX/mpl_Adjust%20normalized%20last%20touched%20parameter.lua",
+    "https://github.com/MichaelPilyavskiy/ReaScripts/raw/master/index.xml#p=Various/mpl_ImportSessionData.lua",
+    "https://github.com/sonictim/TJF-Scripts/raw/master/index.xml#p=Editing/Reverse/TJF%20Non%20Destructive%20Reverse%20Time%20selection.lua",
+    "https://github.com/sonictim/TJF-Scripts/raw/master/index.xml#p=Editing/Takes/TJF%20Toggle%20Mute%20(Match%20First%20Selected).lua",
+    "https://github.com/sonictim/TJF-Scripts/raw/master/index.xml#p=Editing/TJF%20Toggle%20Item%20Lock%20(matches%20first%20item).lua",
+    "https://github.com/sonictim/TJF-Scripts/raw/master/index.xml#p=Envelopes%20or%20Automation/TJF%20Write%20Punch%20ALL%20envelopes%20to%20Time,%20RazorEdit,%20or%20Item%20Selection.lua",
+    "https://github.com/sonictim/TJF-Scripts/raw/master/index.xml#p=Session%20Navigation/TJF%20Decrease%20Selected%20Track%20Heights.lua",
+    "https://github.com/sonictim/TJF-Scripts/raw/master/index.xml#p=Session%20Navigation/TJF%20Increase%20Selected%20Track%20Heights.lua"
+  ]
+}
