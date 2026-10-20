@@ -1,7 +1,7 @@
 {
   "name": "ReaTooled",
   "sub_title": "Pro Tools-style editing for REAPER",
-  "description": "Installs REAPER, ReaPack, the extensions ReaTooled needs, the ReaTooled core and the scripts by other developers that ReaTooled uses. After installing, open REAPER and follow the ReaTooled setup guide.",
+  "description": "Installs REAPER, ReaPack, the extensions ReaTooled needs, the ReaTooled core, configuration and themes, and the scripts by other developers that ReaTooled uses. Then open REAPER and run Set up ReaTooled.lua from your download.",
   "website": "https://brendanpatrickbaker.com/reatooled/",
   "required_packages": [
     "https://raw.githubusercontent.com/BPBaker/ReaTooled/main/index.xml#p=Startup/ReaTooled%20Startup",
@@ -104,6 +104,8 @@
     "https://github.com/ReaTeam/Extensions/raw/master/index.xml#p=Extensions/reaper-oss_SWS.ext",
     "https://github.com/ReaTeam/Extensions/raw/master/index.xml#p=API/js_ReaScriptAPI.ext",
     "https://github.com/ReaTeam/Extensions/raw/master/index.xml#p=API/reaper_imgui.ext",
+    "https://raw.githubusercontent.com/smandrap/reAAF/refs/heads/main/index.xml#p=Extensions/reAAF.ext",
+    "https://raw.githubusercontent.com/Sakhnovkrg/ReaSmoothPlayheadReapack/main/index.xml#p=Extensions/ReaSmoothPlayhead",
     "https://github.com/ReaTeam/ReaScripts/raw/master/index.xml#p=Cursor/Place%20play%20cursor%20into%20view%20(when%20playing)%20or%20Center%20edit%20cursor%20(when%20stopped).eel",
     "https://github.com/ReaTeam/ReaScripts/raw/master/index.xml#p=Items%20Editing/az_Fade%20tool%20(work%20on%20context%20of%20mouse,%20razor%20or%20time%20selection).lua",
     "https://github.com/ReaTeam/ReaScripts/raw/master/index.xml#p=Items%20Editing/az_Open%20item%20copy%20in%20primary%20external%20editor%20with%20handles.lua",
@@ -117,6 +119,7 @@
     "https://github.com/X-Raym/REAPER-ReaScripts/raw/master/index.xml#p=Razor%20Edit/X-Raym_Set%20selected%20tracks%20razor%20edit%20area%20to%20time%20selection.lua",
     "https://github.com/MichaelPilyavskiy/ReaScripts/raw/master/index.xml#p=FX/mpl_Adjust%20normalized%20last%20touched%20parameter.lua",
     "https://github.com/MichaelPilyavskiy/ReaScripts/raw/master/index.xml#p=Various/mpl_ImportSessionData.lua",
+    "https://github.com/Odedd/ReaScripts/raw/main/index.xml#p=Various/Project%20Archiver/Odedd_Project%20Archiver.lua",
     "https://github.com/sonictim/TJF-Scripts/raw/master/index.xml#p=Editing/Reverse/TJF%20Non%20Destructive%20Reverse%20Time%20selection.lua",
     "https://github.com/sonictim/TJF-Scripts/raw/master/index.xml#p=Editing/Takes/TJF%20Toggle%20Mute%20(Match%20First%20Selected).lua",
     "https://github.com/sonictim/TJF-Scripts/raw/master/index.xml#p=Editing/TJF%20Toggle%20Item%20Lock%20(matches%20first%20item).lua",
