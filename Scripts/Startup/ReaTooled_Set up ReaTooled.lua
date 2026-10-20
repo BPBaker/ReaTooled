@@ -1,6 +1,6 @@
 --[[
 -- @description ReaTooled - Set up ReaTooled
--- @version 2.1.1
+-- @version 2.2
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -19,6 +19,9 @@
     When you click OK at the end, REAPER quits, the helper writes those files,
     and the same copy of REAPER opens again by itself.
 -- CHANGELOG
+-- v2.2 Saves a record of exactly what it changed (with the backup), so
+--      Restore can remove ReaTooled but keep the user's later changes
+-- v2.1.2 The helper can also remove files (used by Restore settings from a backup)
 -- v2.1.1 Also applies the floating toolbar window settings
 -- v2.1 Quits REAPER and reopens the same copy when you click OK; the ReaPack
 --      download moves to the first start after setup
@@ -64,7 +67,7 @@ local FOLDERS = {
 ------------------------------------------------------------
 
 local TITLE        = "Set up ReaTooled"
-local SETUP_VER    = "2.1.1"
+local SETUP_VER    = "2.2"
 local RES          = reaper.GetResourcePath():gsub("\\", "/")
 local CONFIG       = RES .. "/Data/ReaTooled/Config"
 local PENDING      = RES .. "/Data/ReaTooled/Pending"
@@ -251,6 +254,7 @@ BEGIN {
       if (!(sec in seen)) { seen[sec] = 1; order[++n] = sec }
       continue
     }
+    if (substr(line, 1, 8) == "!delete ") { del[sec SUBSEP substr(line, 9)] = 1; continue }
     eq = index(line, "=")
     if (eq == 0) continue
     k = substr(line, 1, eq - 1)
@@ -272,6 +276,7 @@ BEGIN {
   eq = index($0, "=")
   if (eq > 0 && (cur in seen)) {
     k = substr($0, 1, eq - 1)
+    if ((cur SUBSEP k) in del) next
     if ((cur SUBSEP k) in val) {
       if (!((cur SUBSEP k) in done)) { print val[cur SUBSEP k]; done[cur SUBSEP k] = 1 }
       next
@@ -290,6 +295,12 @@ END {
 {
   echo "=== ReaTooled setup helper: $(date)"
   ok=1
+  if [ -f "$P/remove.txt" ]; then
+    while IFS= read -r rel || [ -n "$rel" ]; do
+      [ -z "$rel" ] && continue
+      if [ ! -e "$RES/$rel" ] || rm -f "$RES/$rel"; then echo "removed $rel"; else echo "FAILED  remove $rel"; ok=0; fi
+    done < "$P/remove.txt"
+  fi
   if [ -f "$P/copy.txt" ]; then
     while IFS= read -r rel || [ -n "$rel" ]; do
       [ -z "$rel" ] && continue
@@ -346,7 +357,7 @@ Start-Sleep -Seconds 2
 
 function Merge-Ini([string]$target, [string]$patch) {
   $order = New-Object System.Collections.ArrayList
-  $vals = @{}; $keyOrder = @{}
+  $vals = @{}; $keyOrder = @{}; $dels = @{}
   $sec = ""
   foreach ($line in [IO.File]::ReadAllLines($patch, $Utf8)) {
     $line = $line.TrimEnd("`r")
@@ -356,6 +367,7 @@ function Merge-Ini([string]$target, [string]$patch) {
       if (-not $keyOrder.ContainsKey($sec)) { [void]$order.Add($sec); $keyOrder[$sec] = New-Object System.Collections.ArrayList }
       continue
     }
+    if ($line.StartsWith("!delete ")) { $dels["$sec`0" + $line.Substring(8)] = 1; continue }
     $eq = $line.IndexOf("=")
     if ($eq -lt 1) { continue }
     $k = $line.Substring(0, $eq)
@@ -382,6 +394,7 @@ function Merge-Ini([string]$target, [string]$patch) {
     $eq = $line.IndexOf("=")
     if ($eq -gt 0 -and $keyOrder.ContainsKey($cur)) {
       $k = $line.Substring(0, $eq)
+      if ($dels.ContainsKey("$cur`0$k")) { continue }
       if ($vals.ContainsKey("$cur`0$k")) {
         if (-not $done.ContainsKey("$cur`0$k")) { [void]$out.Add($vals["$cur`0$k"]); $done["$cur`0$k"] = 1 }
         continue
@@ -399,6 +412,17 @@ function Merge-Ini([string]$target, [string]$patch) {
 $ok = $true
 $log = New-Object System.Collections.ArrayList
 [void]$log.Add("=== ReaTooled setup helper: " + (Get-Date))
+$removeList = Join-Path $P "remove.txt"
+if (Test-Path -LiteralPath $removeList) {
+  foreach ($rel in [IO.File]::ReadAllLines($removeList, $Utf8)) {
+    if ($rel -eq "") { continue }
+    $dst = Join-Path $Res ($rel -replace '/', '\')
+    try {
+      if (Test-Path -LiteralPath $dst) { Remove-Item -LiteralPath $dst -Force -ErrorAction Stop }
+      [void]$log.Add("removed $rel")
+    } catch { [void]$log.Add("FAILED  remove $rel : $_"); $ok = $false }
+  }
+}
 $copyList = Join-Path $P "copy.txt"
 if (Test-Path -LiteralPath $copyList) {
   foreach ($rel in [IO.File]::ReadAllLines($copyList, $Utf8)) {
@@ -455,10 +479,16 @@ local function launch_helper(relaunch)
   return true
 end
 
--- The startup script uses this to restart a helper that never got to run
+-- Other ReaTooled scripts use this to start the helper for files they prepared
+-- in Pending: the startup script (a helper that never got to run) and
+-- Restore settings from a backup ({ relaunch = true } reopens REAPER).
 if _G.REATOOLED_RELAUNCH_HELPER then
+  local opt = _G.REATOOLED_RELAUNCH_HELPER
   _G.REATOOLED_RELAUNCH_HELPER = nil
-  if exists(PENDING .. "/copy.txt") or exists(PENDING .. "/merge.txt") then launch_helper() end
+  if exists(PENDING .. "/copy.txt") or exists(PENDING .. "/merge.txt") or exists(PENDING .. "/remove.txt") then
+    local started = launch_helper(type(opt) == "table" and opt.relaunch)
+    if type(opt) == "table" then opt.started = started end
+  end
   return
 end
 
@@ -736,6 +766,7 @@ for _, rel in ipairs(list_files(CONFIG .. "/files/ReaImGui")) do
 end
 
 -- Preferences (reaper.ini), merged key by key, plus the theme
+local prefs_patch
 local theme = (read_file(CONFIG .. "/theme.txt") or ""):match("^%s*(.-)%s*$")
 do
   local prefs = { "[REAPER]" }
@@ -759,13 +790,18 @@ do
       if not l:match("^;") then prefs[#prefs + 1] = l end
     end
   end
-  stage_merge("reaper.ini", table.concat(prefs, "\n") .. "\n")
+  prefs_patch = table.concat(prefs, "\n") .. "\n"
+  stage_merge("reaper.ini", prefs_patch)
 end
 
 -- Extension settings (SWS etc.), merged key by key
+local sws_patches = {}
 for _, rel in ipairs(list_files(CONFIG .. "/sws")) do
   local data = read_file(CONFIG .. "/sws/" .. rel)
-  if data then stage_merge(rel, data) end
+  if data then
+    stage_merge(rel, data)
+    sws_patches[rel] = data
+  end
 end
 
 write_file(PENDING .. "/copy.txt", table.concat(copies, "\n") .. "\n")
@@ -793,7 +829,7 @@ do
 end
 
 -- Cursors, menu sets, templates, FX chains
-local copied, kept_files = 0, 0
+local copied, kept_files, folder_copied = 0, 0, {}
 for _, f in ipairs(FOLDERS) do
   for _, rel in ipairs(list_files(CONFIG .. "/files/" .. f.name)) do
     local dst = RES .. "/" .. f.name .. "/" .. rel
@@ -801,6 +837,7 @@ for _, f in ipairs(FOLDERS) do
       kept_files = kept_files + 1
     elseif copy_file(CONFIG .. "/files/" .. f.name .. "/" .. rel, dst) then
       copied = copied + 1
+      folder_copied[#folder_copied + 1] = f.name .. "/" .. rel
     end
   end
 end
@@ -843,6 +880,49 @@ if repo_ok then reaper.ReaPack_ProcessQueue(true) end
 reaper.SetExtState("ReaTooled", "SetupVersion", SETUP_VER, true)
 reaper.SetExtState("ReaTooled", "LoadScreensetOnce", "1", true)
 if repo_ok then reaper.SetExtState("ReaTooled", "SyncOnce", "1", true) end
+
+------------------------------------------------------------
+-- 5b. The record of exactly what this setup changed, kept with the backup.
+-- "Restore settings from a backup" uses it to remove ReaTooled but keep
+-- what the user changed afterwards.
+------------------------------------------------------------
+
+do
+  local REC = backup_dir .. "/applied"
+  -- Settings merged one by one (key=value)
+  write_file(REC .. "/keys/reaper.ini", prefs_patch or "")
+  for rel, data in pairs(sws_patches) do write_file(REC .. "/keys/" .. rel, data) end
+  write_file(REC .. "/keys/reaper-extstate.ini", read_file(CONFIG .. "/extstate.ini") or "")
+  -- Whole sections replaced (menus/toolbars, screensets, theme settings);
+  -- mouse modifier contexts are restored one modifier at a time, so they
+  -- go with the key-by-key settings
+  for target, name in pairs({ ["reaper-menu.ini"] = "menus.ini", ["reaper-screensets.ini"] = "screensets.ini",
+                              ["reaper-themeconfig.ini"] = "themeconfig.ini" }) do
+    local data = read_file(CONFIG .. "/" .. name)
+    if data then write_file(REC .. "/sections/" .. target, data) end
+  end
+  local mouse = read_file(CONFIG .. "/mouse.ini")
+  if mouse then write_file(REC .. "/keys/reaper-mouse.ini", mouse) end
+  -- Shortcuts: "+ line" = added, "- old" then "= new" = replaced
+  local kb = {}
+  for _, l in ipairs(add_key) do kb[#kb + 1] = "+ " .. l end
+  for i, l in pairs(replace_line) do
+    kb[#kb + 1] = "- " .. user_lines[i]
+    kb[#kb + 1] = "= " .. l
+  end
+  write_file(REC .. "/kb.txt", table.concat(kb, "\n") .. "\n")
+  -- Whole files written (ReaImGui windows, cursors, templates ...)
+  local files = {}
+  for _, rel in ipairs(list_files(CONFIG .. "/files/ReaImGui")) do files[#files + 1] = "ReaImGui/" .. rel end
+  for _, rel in ipairs(folder_copied) do files[#files + 1] = rel end
+  for _, rel in ipairs(files) do
+    local src = (rel:match("^ReaImGui/") and (CONFIG .. "/files/" .. rel)) or (RES .. "/" .. rel)
+    copy_file(src, REC .. "/files/" .. rel)
+  end
+  write_file(REC .. "/files.txt", table.concat(files, "\n") .. "\n")
+  write_file(REC .. "/record.txt", "ReaTooled setup record 1\nSet up " .. SETUP_VER ..
+    "\nConfig " .. CONFIG_VER .. "\nDate: " .. os.date("%Y-%m-%d %H:%M:%S") .. "\n")
+end
 
 ------------------------------------------------------------
 -- 6. Start the helper, then tell the user what's left
