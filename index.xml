@@ -12,11 +12,152 @@
   </category>
   <category name="Config">
     <reapack name="ReaTooled Config" type="data" desc="ReaTooled configuration (applied by Set up ReaTooled)">
-      <version name="1.20261019.1921" author="Brendan Baker">
+      <version name="1.20261019.2309" author="Brendan Baker">
         <source file="ReaTooled/Config/keymap.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/keymap.ini</source>
         <source file="ReaTooled/Config/menus.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/menus.ini</source>
         <source file="ReaTooled/Config/mouse.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/mouse.ini</source>
         <source file="ReaTooled/Config/prefs.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/prefs.ini</source>
+        <source file="ReaTooled/Config/prefs_offline.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/prefs_offline.ini</source>
+        <source file="ReaTooled/Config/themeconfig.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/themeconfig.ini</source>
+        <source file="ReaTooled/Config/theme.txt">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/theme.txt</source>
+        <source file="ReaTooled/Config/extstate.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/extstate.ini</source>
+        <source file="ReaTooled/Config/screensets.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/screensets.ini</source>
+        <source file="ReaTooled/Config/sws/S&amp;M.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/sws/S%26M.ini</source>
+        <source file="ReaTooled/Config/sws/sws-autocoloricon.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/sws/sws-autocoloricon.ini</source>
+        <source file="ReaTooled/Config/sws/Xenakios_Commands.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/sws/Xenakios_Commands.ini</source>
+        <source file="ReaTooled/Config/sws/BR.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/sws/BR.ini</source>
+        <source file="ReaTooled/Config/files/Cursors/Crosshair.cur">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/files/Cursors/Crosshair.cur</source>
+        <source file="ReaTooled/Config/files/Cursors/SelectOutline.cur">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/files/Cursors/SelectOutline.cur</source>
+        <source file="ReaTooled/Config/files/Cursors/arrange_move.cur">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/files/Cursors/arrange_move.cur</source>
+        <source file="ReaTooled/Config/files/Cursors/arrange_pencil.cur">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/files/Cursors/arrange_pencil.cur</source>
+        <source file="ReaTooled/Config/files/Cursors/arrange_stretchmarker.cur">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/files/Cursors/arrange_stretchmarker.cur</source>
+        <source file="ReaTooled/Config/files/Cursors/arrange_timeitemsel.cur">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/files/Cursors/arrange_timeitemsel.cur</source>
+        <source file="ReaTooled/Config/files/Cursors/env_addpt.cur">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/files/Cursors/env_addpt.cur</source>
+        <source file="ReaTooled/Config/files/Cursors/env_pencil.cur">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/files/Cursors/env_pencil.cur</source>
+        <source file="ReaTooled/Config/files/Cursors/env_pt_move.cur">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/files/Cursors/env_pt_move.cur</source>
+        <source file="ReaTooled/Config/files/Cursors/hand.cur">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/files/Cursors/hand.cur</source>
+        <source file="ReaTooled/Config/files/Cursors/midi_noteedge_l.cur">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/files/Cursors/midi_noteedge_l.cur</source>
+        <source file="ReaTooled/Config/files/Cursors/midi_noteedge_r.cur">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/files/Cursors/midi_noteedge_r.cur</source>
+        <source file="ReaTooled/Config/files/Cursors/razor.cur">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/files/Cursors/razor.cur</source>
+        <source file="ReaTooled/Config/files/Cursors/razor_copy.cur">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/files/Cursors/razor_copy.cur</source>
+        <source file="ReaTooled/Config/files/Cursors/razor_move (select?).cur">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/files/Cursors/razor_move%20%28select%3F%29.cur</source>
+        <source file="ReaTooled/Config/files/Cursors/razor_move.cur!.cur">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/files/Cursors/razor_move.cur%21.cur</source>
+        <source file="ReaTooled/Config/files/FXChains/Actuality Chain.RfxChain">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/files/FXChains/Actuality%20Chain.RfxChain</source>
+        <source file="ReaTooled/Config/files/FXChains/VO Chain.RfxChain">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/files/FXChains/VO%20Chain.RfxChain</source>
+        <source file="ReaTooled/Config/files/MenuSets/Advanced Timeline 20240324.ReaperMenu">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/files/MenuSets/Advanced%20Timeline%2020240324.ReaperMenu</source>
+        <source file="ReaTooled/Config/files/MenuSets/ReaTooled 20250103.ReaperMenuSet">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/files/MenuSets/ReaTooled%2020250103.ReaperMenuSet</source>
+        <source file="ReaTooled/Config/files/MenuSets/ReaTooled_20250203.ReaperMenu">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/files/MenuSets/ReaTooled_20250203.ReaperMenu</source>
+        <source file="ReaTooled/Config/files/MenuSets/ReaTooled_20260319.ReaperMenuSet">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/files/MenuSets/ReaTooled_20260319.ReaperMenuSet</source>
+        <source file="ReaTooled/Config/files/ProjectTemplates/Audio Files/impulses/Large Warm Hall.wav">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/files/ProjectTemplates/Audio%20Files/impulses/Large%20Warm%20Hall.wav</source>
+        <source file="ReaTooled/Config/files/ProjectTemplates/Audio Files/impulses/Small Room Stereo.wav">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/files/ProjectTemplates/Audio%20Files/impulses/Small%20Room%20Stereo.wav</source>
+        <source file="ReaTooled/Config/files/ProjectTemplates/Brendan Baker's Radio and Podcast Template.RPP">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/files/ProjectTemplates/Brendan%20Baker%27s%20Radio%20and%20Podcast%20Template.RPP</source>
+        <source file="ReaTooled/Config/files/ProjectTemplates/Video Editing, 3840x2160, 23.976 FPS.RPP">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/files/ProjectTemplates/Video%20Editing%2C%203840x2160%2C%2023.976%20FPS.RPP</source>
+        <source file="ReaTooled/Config/files/ReaImGui/01781CCA.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/files/ReaImGui/01781CCA.ini</source>
+        <source file="ReaTooled/Config/files/ReaImGui/A1725641.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/files/ReaImGui/A1725641.ini</source>
+        <source file="ReaTooled/Config/files/ReaImGui/B648DF7E.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/files/ReaImGui/B648DF7E.ini</source>
+        <source file="ReaTooled/Config/files/TrackTemplates/ACTUALITY SUBMIX folder and tracks.RTrackTemplate">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/files/TrackTemplates/ACTUALITY%20SUBMIX%20folder%20and%20tracks.RTrackTemplate</source>
+        <source file="ReaTooled/Config/files/TrackTemplates/Actuality.RTrackTemplate">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/files/TrackTemplates/Actuality.RTrackTemplate</source>
+        <source file="ReaTooled/Config/files/TrackTemplates/Complete Actuality Chain.RTrackTemplate">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/files/TrackTemplates/Complete%20Actuality%20Chain.RTrackTemplate</source>
+        <source file="ReaTooled/Config/files/TrackTemplates/Complete VO Chain.RTrackTemplate">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/files/TrackTemplates/Complete%20VO%20Chain.RTrackTemplate</source>
+        <source file="ReaTooled/Config/files/TrackTemplates/MUSIC SUBMIX folder and tracks.RTrackTemplate">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/files/TrackTemplates/MUSIC%20SUBMIX%20folder%20and%20tracks.RTrackTemplate</source>
+        <source file="ReaTooled/Config/files/TrackTemplates/SFX SUBMIX folder and tracks.RTrackTemplate">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/files/TrackTemplates/SFX%20SUBMIX%20folder%20and%20tracks.RTrackTemplate</source>
+        <source file="ReaTooled/Config/files/TrackTemplates/STUDIO SUB MIX folder and tracks.RTrackTemplate">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/files/TrackTemplates/STUDIO%20SUB%20MIX%20folder%20and%20tracks.RTrackTemplate</source>
+        <source file="ReaTooled/Config/files/TrackTemplates/Studio Narration and VO.RTrackTemplate">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/files/TrackTemplates/Studio%20Narration%20and%20VO.RTrackTemplate</source>
+        <source file="toolbar_icons/150/ReaTooled_Tab_to_transients.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/150/ReaTooled_Tab_to_transients.png</source>
+        <source file="toolbar_icons/150/ReaTooled_toolbar_Ripple or Lock Markers.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/150/ReaTooled_toolbar_Ripple%20or%20Lock%20Markers.png</source>
+        <source file="toolbar_icons/150/ReaTooled_toolbar_audio_waveform_render_disk.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/150/ReaTooled_toolbar_audio_waveform_render_disk.png</source>
+        <source file="toolbar_icons/150/ReaTooled_toolbar_collect_files_in_folder.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/150/ReaTooled_toolbar_collect_files_in_folder.png</source>
+        <source file="toolbar_icons/150/ReaTooled_toolbar_edit_cursor_follows_playhead_on_stop_new.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/150/ReaTooled_toolbar_edit_cursor_follows_playhead_on_stop_new.png</source>
+        <source file="toolbar_icons/150/ReaTooled_toolbar_edit_cursor_follows_playhead_on_stop_off.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/150/ReaTooled_toolbar_edit_cursor_follows_playhead_on_stop_off.png</source>
+        <source file="toolbar_icons/150/ReaTooled_toolbar_edit_cursor_follows_playhead_on_stop_on.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/150/ReaTooled_toolbar_edit_cursor_follows_playhead_on_stop_on.png</source>
+        <source file="toolbar_icons/150/ReaTooled_toolbar_envelope_move.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/150/ReaTooled_toolbar_envelope_move.png</source>
+        <source file="toolbar_icons/150/ReaTooled_toolbar_link edit and play cursors.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/150/ReaTooled_toolbar_link%20edit%20and%20play%20cursors.png</source>
+        <source file="toolbar_icons/150/ReaTooled_toolbar_link_loop_and_razor_area.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/150/ReaTooled_toolbar_link_loop_and_razor_area.png</source>
+        <source file="toolbar_icons/150/ReaTooled_toolbar_link_razor_selection_and_track.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/150/ReaTooled_toolbar_link_razor_selection_and_track.png</source>
+        <source file="toolbar_icons/150/ReaTooled_toolbar_move_tool.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/150/ReaTooled_toolbar_move_tool.png</source>
+        <source file="toolbar_icons/150/ReaTooled_toolbar_separator.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/150/ReaTooled_toolbar_separator.png</source>
+        <source file="toolbar_icons/150/ReaTooled_toolbar_separator_dark.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/150/ReaTooled_toolbar_separator_dark.png</source>
+        <source file="toolbar_icons/150/ReaTooled_toolbar_separator_dark_thicker.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/150/ReaTooled_toolbar_separator_dark_thicker.png</source>
+        <source file="toolbar_icons/150/ReaTooled_toolbar_trim_edge.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/150/ReaTooled_toolbar_trim_edge.png</source>
+        <source file="toolbar_icons/150/ReaTooled_toolbar_zoom.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/150/ReaTooled_toolbar_zoom.png</source>
+        <source file="toolbar_icons/150/ReaTooled_toolbar_zoom_in.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/150/ReaTooled_toolbar_zoom_in.png</source>
+        <source file="toolbar_icons/150/ReaTooled_toolbar_zoom_in_arrow.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/150/ReaTooled_toolbar_zoom_in_arrow.png</source>
+        <source file="toolbar_icons/150/ReaTooled_toolbar_zoom_out.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/150/ReaTooled_toolbar_zoom_out.png</source>
+        <source file="toolbar_icons/150/ReaTooled_toolbar_zoom_out_arrow.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/150/ReaTooled_toolbar_zoom_out_arrow.png</source>
+        <source file="toolbar_icons/150/ReaTooled_toolbar_zoom_to_fit.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/150/ReaTooled_toolbar_zoom_to_fit.png</source>
+        <source file="toolbar_icons/150/normal peaks.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/150/normal%20peaks.png</source>
+        <source file="toolbar_icons/150/spectral peaks.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/150/spectral%20peaks.png</source>
+        <source file="toolbar_icons/150/spectrogram &amp; peaks.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/150/spectrogram%20%26%20peaks.png</source>
+        <source file="toolbar_icons/150/spectrogram.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/150/spectrogram.png</source>
+        <source file="toolbar_icons/150/toolbar_playtime.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/150/toolbar_playtime.png</source>
+        <source file="toolbar_icons/150/toolbar_plus.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/150/toolbar_plus.png</source>
+        <source file="toolbar_icons/200/ReaTooled_Tab_to_transients.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/200/ReaTooled_Tab_to_transients.png</source>
+        <source file="toolbar_icons/200/ReaTooled_toolbar_Ripple or Lock Markers.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/200/ReaTooled_toolbar_Ripple%20or%20Lock%20Markers.png</source>
+        <source file="toolbar_icons/200/ReaTooled_toolbar_audio_waveform_render_disk.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/200/ReaTooled_toolbar_audio_waveform_render_disk.png</source>
+        <source file="toolbar_icons/200/ReaTooled_toolbar_collect_files_in_folder.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/200/ReaTooled_toolbar_collect_files_in_folder.png</source>
+        <source file="toolbar_icons/200/ReaTooled_toolbar_edit_cursor_follows_playhead_on_stop_new.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/200/ReaTooled_toolbar_edit_cursor_follows_playhead_on_stop_new.png</source>
+        <source file="toolbar_icons/200/ReaTooled_toolbar_edit_cursor_follows_playhead_on_stop_off.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/200/ReaTooled_toolbar_edit_cursor_follows_playhead_on_stop_off.png</source>
+        <source file="toolbar_icons/200/ReaTooled_toolbar_edit_cursor_follows_playhead_on_stop_on.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/200/ReaTooled_toolbar_edit_cursor_follows_playhead_on_stop_on.png</source>
+        <source file="toolbar_icons/200/ReaTooled_toolbar_envelope_move.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/200/ReaTooled_toolbar_envelope_move.png</source>
+        <source file="toolbar_icons/200/ReaTooled_toolbar_link edit and play cursors.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/200/ReaTooled_toolbar_link%20edit%20and%20play%20cursors.png</source>
+        <source file="toolbar_icons/200/ReaTooled_toolbar_link_loop_and_razor_area.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/200/ReaTooled_toolbar_link_loop_and_razor_area.png</source>
+        <source file="toolbar_icons/200/ReaTooled_toolbar_link_razor_selection_and_track.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/200/ReaTooled_toolbar_link_razor_selection_and_track.png</source>
+        <source file="toolbar_icons/200/ReaTooled_toolbar_move_tool.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/200/ReaTooled_toolbar_move_tool.png</source>
+        <source file="toolbar_icons/200/ReaTooled_toolbar_separator.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/200/ReaTooled_toolbar_separator.png</source>
+        <source file="toolbar_icons/200/ReaTooled_toolbar_separator_dark.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/200/ReaTooled_toolbar_separator_dark.png</source>
+        <source file="toolbar_icons/200/ReaTooled_toolbar_separator_dark_thicker.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/200/ReaTooled_toolbar_separator_dark_thicker.png</source>
+        <source file="toolbar_icons/200/ReaTooled_toolbar_trim_edge.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/200/ReaTooled_toolbar_trim_edge.png</source>
+        <source file="toolbar_icons/200/ReaTooled_toolbar_zoom.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/200/ReaTooled_toolbar_zoom.png</source>
+        <source file="toolbar_icons/200/ReaTooled_toolbar_zoom_in.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/200/ReaTooled_toolbar_zoom_in.png</source>
+        <source file="toolbar_icons/200/ReaTooled_toolbar_zoom_in_arrow.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/200/ReaTooled_toolbar_zoom_in_arrow.png</source>
+        <source file="toolbar_icons/200/ReaTooled_toolbar_zoom_out.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/200/ReaTooled_toolbar_zoom_out.png</source>
+        <source file="toolbar_icons/200/ReaTooled_toolbar_zoom_out_arrow.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/200/ReaTooled_toolbar_zoom_out_arrow.png</source>
+        <source file="toolbar_icons/200/ReaTooled_toolbar_zoom_to_fit.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/200/ReaTooled_toolbar_zoom_to_fit.png</source>
+        <source file="toolbar_icons/200/normal peaks.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/200/normal%20peaks.png</source>
+        <source file="toolbar_icons/200/spectral peaks.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/200/spectral%20peaks.png</source>
+        <source file="toolbar_icons/200/spectrogram &amp; peaks.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/200/spectrogram%20%26%20peaks.png</source>
+        <source file="toolbar_icons/200/spectrogram.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/200/spectrogram.png</source>
+        <source file="toolbar_icons/200/toolbar_playtime.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/200/toolbar_playtime.png</source>
+        <source file="toolbar_icons/200/toolbar_plus.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/200/toolbar_plus.png</source>
+        <source file="toolbar_icons/ReaTooled_Tab_to_transients.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/ReaTooled_Tab_to_transients.png</source>
+        <source file="toolbar_icons/ReaTooled_toolbar_Ripple or Lock Markers.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/ReaTooled_toolbar_Ripple%20or%20Lock%20Markers.png</source>
+        <source file="toolbar_icons/ReaTooled_toolbar_audio_waveform_render_disk.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/ReaTooled_toolbar_audio_waveform_render_disk.png</source>
+        <source file="toolbar_icons/ReaTooled_toolbar_collect_files_in_folder.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/ReaTooled_toolbar_collect_files_in_folder.png</source>
+        <source file="toolbar_icons/ReaTooled_toolbar_edit_cursor_follows_playhead_on_stop_new.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/ReaTooled_toolbar_edit_cursor_follows_playhead_on_stop_new.png</source>
+        <source file="toolbar_icons/ReaTooled_toolbar_edit_cursor_follows_playhead_on_stop_off.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/ReaTooled_toolbar_edit_cursor_follows_playhead_on_stop_off.png</source>
+        <source file="toolbar_icons/ReaTooled_toolbar_edit_cursor_follows_playhead_on_stop_on.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/ReaTooled_toolbar_edit_cursor_follows_playhead_on_stop_on.png</source>
+        <source file="toolbar_icons/ReaTooled_toolbar_envelope_move.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/ReaTooled_toolbar_envelope_move.png</source>
+        <source file="toolbar_icons/ReaTooled_toolbar_link edit and play cursors.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/ReaTooled_toolbar_link%20edit%20and%20play%20cursors.png</source>
+        <source file="toolbar_icons/ReaTooled_toolbar_link_loop_and_razor_area.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/ReaTooled_toolbar_link_loop_and_razor_area.png</source>
+        <source file="toolbar_icons/ReaTooled_toolbar_link_razor_selection_and_track.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/ReaTooled_toolbar_link_razor_selection_and_track.png</source>
+        <source file="toolbar_icons/ReaTooled_toolbar_move_tool.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/ReaTooled_toolbar_move_tool.png</source>
+        <source file="toolbar_icons/ReaTooled_toolbar_separator.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/ReaTooled_toolbar_separator.png</source>
+        <source file="toolbar_icons/ReaTooled_toolbar_separator_dark.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/ReaTooled_toolbar_separator_dark.png</source>
+        <source file="toolbar_icons/ReaTooled_toolbar_separator_dark_thicker.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/ReaTooled_toolbar_separator_dark_thicker.png</source>
+        <source file="toolbar_icons/ReaTooled_toolbar_trim_edge.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/ReaTooled_toolbar_trim_edge.png</source>
+        <source file="toolbar_icons/ReaTooled_toolbar_zoom.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/ReaTooled_toolbar_zoom.png</source>
+        <source file="toolbar_icons/ReaTooled_toolbar_zoom_in.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/ReaTooled_toolbar_zoom_in.png</source>
+        <source file="toolbar_icons/ReaTooled_toolbar_zoom_in_arrow.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/ReaTooled_toolbar_zoom_in_arrow.png</source>
+        <source file="toolbar_icons/ReaTooled_toolbar_zoom_out.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/ReaTooled_toolbar_zoom_out.png</source>
+        <source file="toolbar_icons/ReaTooled_toolbar_zoom_out_arrow.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/ReaTooled_toolbar_zoom_out_arrow.png</source>
+        <source file="toolbar_icons/ReaTooled_toolbar_zoom_to_fit.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/ReaTooled_toolbar_zoom_to_fit.png</source>
+        <source file="toolbar_icons/normal peaks.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/normal%20peaks.png</source>
+        <source file="toolbar_icons/spectral peaks.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/spectral%20peaks.png</source>
+        <source file="toolbar_icons/spectrogram &amp; peaks.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/spectrogram%20%26%20peaks.png</source>
+        <source file="toolbar_icons/spectrogram.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/spectrogram.png</source>
+        <source file="toolbar_icons/toolbar_one_small_step.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/toolbar_one_small_step.png</source>
+        <source file="toolbar_icons/toolbar_one_small_step_cleanup.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/toolbar_one_small_step_cleanup.png</source>
+        <source file="toolbar_icons/toolbar_playtime.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/toolbar_playtime.png</source>
+        <source file="toolbar_icons/toolbar_plus.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/toolbar_plus.png</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled Themes" type="theme" desc="ReaTooled themes">
+      <version name="1.20261019.2309" author="Brendan Baker">
+        <source file="Assembled_ReaTooled v1.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Assembled_ReaTooled%20v1.ReaperThemeZip</source>
+        <source file="Default_7.0 ReaTooled v2 Light.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Default_7.0%20ReaTooled%20v2%20Light.ReaperThemeZip</source>
+        <source file="Default_7.0 ReaTooled v3 Dark.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Default_7.0%20ReaTooled%20v3%20Dark.ReaperThemeZip</source>
+        <source file="Default_7.0 ReaTooled v3 Light.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Default_7.0%20ReaTooled%20v3%20Light.ReaperThemeZip</source>
+        <source file="PT_ColorSet.SWSColor">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/PT_ColorSet.SWSColor</source>
       </version>
     </reapack>
   </category>
@@ -46,6 +187,16 @@
     <reapack name="ReaTooled_Clear take envelopes and Reset Volume to 0db.lua" type="script" desc="Clear Take Envelopes &amp; Reset Item/Take Volume to 0dB">
       <version name="1.0" author="Brendan Baker">
         <source file="ReaTooled_Clear take envelopes and Reset Volume to 0db.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Clear%20take%20envelopes%20and%20Reset%20Volume%20to%200db.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Coalesce Clip Gain to Track Volume.lua" type="script" desc="ReaTooled - Coalesce Clip Gain to Track Volume">
+      <version name="1.0" author="Brendan Baker">
+        <source file="ReaTooled_Coalesce Clip Gain to Track Volume.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Coalesce%20Clip%20Gain%20to%20Track%20Volume.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Coalesce Track Volume to Clip Gain.lua" type="script" desc="ReaTooled - Coalesce Track Volume to Clip Gain">
+      <version name="1.0" author="Brendan Baker">
+        <source file="ReaTooled_Coalesce Track Volume to Clip Gain.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Coalesce%20Track%20Volume%20to%20Clip%20Gain.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Copy razor area or time selection to all tracks.lua" type="script" desc="ReaTooled_Copy Razor (Union) or Time Selection to All Tracks + Set Time Selection">
@@ -133,6 +284,11 @@
         <source file="ReaTooled_Grid and Nudge Settings.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Grid%20and%20Nudge%20Settings.lua</source>
       </version>
     </reapack>
+    <reapack name="ReaTooled_Magic Zero Crossing Loop Copy Buffer Maker.lua" type="script" desc="ReaTooled - Magic Zero Crossing Loop Copy Buffer Maker (Good for Room Tone)">
+      <version name="1.0" author="Brendan Baker">
+        <source file="ReaTooled_Magic Zero Crossing Loop Copy Buffer Maker.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Magic%20Zero%20Crossing%20Loop%20Copy%20Buffer%20Maker.lua</source>
+      </version>
+    </reapack>
     <reapack name="ReaTooled_Move edit cursor to next (right) transient or item edge (Tab to Transient toggle dependent).lua" type="script" desc="ReaTooled - TAB honoring fades/crossfades (SelectionSet restore + only-if-offscreen centering)">
       <version name="1.17" author="Brendan Baker">
         <source file="ReaTooled_Move edit cursor to next (right) transient or item edge (Tab to Transient toggle dependent).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Move%20edit%20cursor%20to%20next%20%28right%29%20transient%20or%20item%20edge%20%28Tab%20to%20Transient%20toggle%20dependent%29.lua</source>
@@ -183,9 +339,19 @@
         <source file="ReaTooled_Render item(s) and store original in lane.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Render%20item%28s%29%20and%20store%20original%20in%20lane.lua</source>
       </version>
     </reapack>
+    <reapack name="ReaTooled_Restore ripple mode.lua" type="script" desc="ReaTooled - Restore ripple mode">
+      <version name="1.0" author="Brendan Baker">
+        <source file="ReaTooled_Restore ripple mode.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Restore%20ripple%20mode.lua</source>
+      </version>
+    </reapack>
     <reapack name="ReaTooled_Ripple left edge.lua" type="script" desc="ReaTooled_Ripple left edge">
       <version name="1.0" author="Brendan Baker">
         <source file="ReaTooled_Ripple left edge.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Ripple%20left%20edge.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Save ripple mode.lua" type="script" desc="ReaTooled - Save ripple mode">
+      <version name="1.0" author="Brendan Baker">
+        <source file="ReaTooled_Save ripple mode.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Save%20ripple%20mode.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Select Tool Double Click.lua" type="script" desc="ReaTooled - Select Tool Double Click">

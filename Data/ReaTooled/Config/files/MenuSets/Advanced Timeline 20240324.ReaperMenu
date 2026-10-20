@@ -1,0 +1,17 @@
+[Floating toolbar 3]
+icon_0=text
+icon_1=toolbar_time_selection_left.png
+icon_2=toolbar_time_selection_loop_lock.png
+icon_3=toolbar_time_selection_loop_play.png
+icon_4=toolbar_envelope_time_selection.png
+icon_5=toolbar_marker_delete_remove.png
+icon_6=text
+item_0=_RS7cb08a92f7a211ce66734644b4fbe99a91bd42f5 Hover Edit Mode
+item_1=40276 Options: Move edit cursor to start of time selection, when time selection changes
+item_2=40621 Options: Toggle loop points linked to time selection
+item_3=_SWS_TOGSEEKMODE2 SWS: Toggle seek playback on loop point change
+item_4=41576 Options: Envelope point selection follows time selection
+item_5=42328 Ruler: Display project regions/markers as gridlines in arrange view
+item_6=_RS7e9fb26fe2faa9088b9d1aadabdbdfc97d417337 Rea Tooled keymap (off = default REAPER keymap)
+tbf_6=20
+

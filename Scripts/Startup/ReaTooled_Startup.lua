@@ -1,6 +1,6 @@
 --[[
 -- @description ReaTooled - Startup
--- @version 2.0
+-- @version 2.1
 -- @author Brendan Baker
 -- @link http://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -9,6 +9,8 @@
     ReaTooled installer adds. Edit the SCRIPTS list below to change
     what runs at startup; ReaPack updates this file like any other.
     CHANGELOG
+    v 2.1 - Finishes "Set up ReaTooled": loads the ReaTooled screenset once,
+            and restarts the setup helper if it didn't get to run.
     v 2.0 - Moved out of __startup.lua into its own ReaPack-managed script.
             Scripts are found by path instead of hard-coded command IDs.
     v 1.7 - Removed ReaTooled_Link loop points and razor areas.lua (now part of
@@ -52,4 +54,35 @@ for _, rel in ipairs(SCRIPTS) do
   elseif DEBUG then
     reaper.ShowConsoleMsg("ReaTooled startup: missing " .. rel .. "\n")
   end
+end
+
+------------------------------------------------------------
+-- After "Set up ReaTooled"
+------------------------------------------------------------
+
+local RES = reaper.GetResourcePath():gsub("\\", "/")
+local PENDING = RES .. "/Data/ReaTooled/Pending"
+local SETUP = RES .. "/Scripts/ReaTooled/Startup/ReaTooled_Set up ReaTooled.lua"
+
+if reaper.file_exists(PENDING .. "/copy.txt") or reaper.file_exists(PENDING .. "/merge.txt") then
+  -- Set up prepared files, but the helper that writes them when REAPER quits
+  -- never ran (e.g. REAPER crashed or the computer restarted). Start it again.
+  if reaper.file_exists(SETUP) then
+    _G.REATOOLED_RELAUNCH_HELPER = true
+    pcall(dofile, SETUP)
+    _G.REATOOLED_RELAUNCH_HELPER = nil
+  end
+  reaper.ShowMessageBox("ReaTooled's setup isn't finished yet.\n\n" ..
+    "Quit REAPER (File > Quit) and open it again to finish.", "ReaTooled", 0)
+elseif reaper.GetExtState("ReaTooled", "LoadScreensetOnce") == "1" then
+  -- First start after setup: show the ReaTooled window layout (screenset 1)
+  reaper.DeleteExtState("ReaTooled", "LoadScreensetOnce", true)
+  local name = "Screenset: Load window set #01"
+  local id = (reaper.kbd_getTextFromCmd(40454, 0) == name) and 40454 or nil
+  if not id then
+    for i = 1, 65535 do
+      if reaper.kbd_getTextFromCmd(i, 0) == name then id = i; break end
+    end
+  end
+  if id then reaper.Main_OnCommand(id, 0) end
 end
