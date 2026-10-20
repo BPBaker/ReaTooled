@@ -20,7 +20,7 @@
     and the same copy of REAPER opens again by itself.
 -- CHANGELOG
 -- v2.2.1 Keeps the user's REAPER window size and position when the ReaTooled
---        screenset loads
+--        screenset loads (worked out in the background, nothing is saved)
 -- v2.2 Saves a record of exactly what it changed (with the backup), so
 --      Restore can remove ReaTooled but keep the user's later changes
 -- v2.1.2 The helper can also remove files (used by Restore settings from a backup)
@@ -760,25 +760,36 @@ staged_section_merge("reaper-menu.ini",        "menus.ini")
 staged_section_merge("reaper-mouse.ini",       "mouse.ini", { hasimported = true })
 -- Screensets. The ReaTooled screenset ships without a main window size and
 -- position (they'd be the developer's screen). REAPER needs one, so this
--- takes the user's own: it saves the current layout to slot #10 for a moment,
--- copies the main window lines from it, then puts slot #10 back.
+-- writes the user's own, from REAPER's own record of its window (wnd_x,
+-- wnd_y, wnd_w, wnd_h in reaper.ini), in the screenset's format: left, top,
+-- right, bottom as 4-byte numbers, then a check byte (the sum of the others).
 local screensets_patch = read_file(CONFIG .. "/screensets.ini")
 local mainwnd_note
 do
-  local path = RES .. "/reaper-screensets.ini"
-  local before = read_file(path)
-  local save10 = find_cmd("Screenset: Save window set #10")
-  local rect, status
-  if screensets_patch and save10 then
-    reaper.Main_OnCommand(save10, 0)
-    local after = read_file(path) or ""
-    -- (only if REAPER really just wrote it, so an old slot #10 isn't used)
-    for _, l in ipairs(after ~= (before or "") and ((ini_parse(after)).sec["sset9"] or {}) or {}) do
-      rect = l:match("^mainwnd_rect=(%x+)%s*$") or rect
-      status = l:match("^mainwnd_status=(.-)%s*$") or status
+  local function cfg(key)
+    local ok, v = reaper.get_config_var_string(key)
+    if ok and tonumber(v) then return math.floor(tonumber(v)) end
+    local ini = ini_parse(read_file(RES .. "/reaper.ini") or "")
+    for _, l in ipairs(ini.sec["REAPER"] or {}) do
+      local k, val = l:match("^([^=]+)=(.*)$")
+      if k == key and tonumber(val) then return math.floor(tonumber(val)) end
     end
-    -- slot #10 as it was (the file now, and REAPER's copy via the staged file below)
-    if before then write_file(path, before) else os.remove(path) end
+  end
+  local x, y, w, h = cfg("wnd_x"), cfg("wnd_y"), cfg("wnd_w"), cfg("wnd_h")
+  local rect, status
+  if x and y and w and h and w > 100 and h > 100 then
+    local bytes, sum = {}, 0
+    for _, n in ipairs({ x, y, x + w, y + h }) do
+      if n < 0 then n = n + 4294967296 end
+      for _ = 1, 4 do
+        local byte = n % 256
+        bytes[#bytes + 1] = string.format("%02X", byte)
+        sum = sum + byte
+        n = (n - byte) // 256
+      end
+    end
+    rect = table.concat(bytes) .. string.format("%02X", sum % 256)
+    status = tostring(cfg("wnd_state") or 0)
   end
   if screensets_patch and rect then
     local p = ini_parse(screensets_patch)
