@@ -1,6 +1,6 @@
 --[[
 -- @description ReaTooled - Set up ReaTooled
--- @version 2.2
+-- @version 2.2.1
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -19,6 +19,8 @@
     When you click OK at the end, REAPER quits, the helper writes those files,
     and the same copy of REAPER opens again by itself.
 -- CHANGELOG
+-- v2.2.1 Keeps the user's REAPER window size and position when the ReaTooled
+--        screenset loads
 -- v2.2 Saves a record of exactly what it changed (with the backup), so
 --      Restore can remove ReaTooled but keep the user's later changes
 -- v2.1.2 The helper can also remove files (used by Restore settings from a backup)
@@ -67,7 +69,7 @@ local FOLDERS = {
 ------------------------------------------------------------
 
 local TITLE        = "Set up ReaTooled"
-local SETUP_VER    = "2.2"
+local SETUP_VER    = "2.2.1"
 local RES          = reaper.GetResourcePath():gsub("\\", "/")
 local CONFIG       = RES .. "/Data/ReaTooled/Config"
 local PENDING      = RES .. "/Data/ReaTooled/Pending"
@@ -756,7 +758,52 @@ local function staged_section_merge(target, config_file, key_merge)
 end
 staged_section_merge("reaper-menu.ini",        "menus.ini")
 staged_section_merge("reaper-mouse.ini",       "mouse.ini", { hasimported = true })
-staged_section_merge("reaper-screensets.ini",  "screensets.ini")
+-- Screensets. The ReaTooled screenset ships without a main window size and
+-- position (they'd be the developer's screen). REAPER needs one, so this
+-- takes the user's own: it saves the current layout to slot #10 for a moment,
+-- copies the main window lines from it, then puts slot #10 back.
+local screensets_patch = read_file(CONFIG .. "/screensets.ini")
+local mainwnd_note
+do
+  local path = RES .. "/reaper-screensets.ini"
+  local before = read_file(path)
+  local save10 = find_cmd("Screenset: Save window set #10")
+  local rect, status
+  if screensets_patch and save10 then
+    reaper.Main_OnCommand(save10, 0)
+    local after = read_file(path) or ""
+    -- (only if REAPER really just wrote it, so an old slot #10 isn't used)
+    for _, l in ipairs(after ~= (before or "") and ((ini_parse(after)).sec["sset9"] or {}) or {}) do
+      rect = l:match("^mainwnd_rect=(%x+)%s*$") or rect
+      status = l:match("^mainwnd_status=(.-)%s*$") or status
+    end
+    -- slot #10 as it was (the file now, and REAPER's copy via the staged file below)
+    if before then write_file(path, before) else os.remove(path) end
+  end
+  if screensets_patch and rect then
+    local p = ini_parse(screensets_patch)
+    for _, name in ipairs(p.order) do
+      if name:match("^sset%d+$") then
+        local lines = {}
+        for _, l in ipairs(p.sec[name]) do
+          if not l:match("^mainwnd_rect=") and not l:match("^mainwnd_status=") then lines[#lines + 1] = l end
+        end
+        table.insert(lines, 1, "mainwnd_rect=" .. rect)
+        table.insert(lines, 2, "mainwnd_status=" .. (status or "0"))
+        p.sec[name] = lines
+      end
+    end
+    screensets_patch = ini_text(p)
+  elseif screensets_patch then
+    -- Without a main window size REAPER would shrink the window: don't
+    -- load the screenset by itself on the first start
+    mainwnd_note = "Screenset: not loaded automatically (couldn't read your window size). " ..
+      "Load it with \"Screenset: Load window set #01\" if you want the ReaTooled layout."
+  end
+end
+if screensets_patch then
+  stage_copy("reaper-screensets.ini", ini_merge(read_file(RES .. "/reaper-screensets.ini") or "", screensets_patch))
+end
 staged_section_merge("reaper-themeconfig.ini", "themeconfig.ini")
 
 -- ReaImGui window settings (docked script windows)
@@ -878,7 +925,7 @@ local repo_ok = reaper.ReaPack_AddSetRepository(REPO_NAME, REPO_URL, true, 1, ""
 if repo_ok then reaper.ReaPack_ProcessQueue(true) end
 
 reaper.SetExtState("ReaTooled", "SetupVersion", SETUP_VER, true)
-reaper.SetExtState("ReaTooled", "LoadScreensetOnce", "1", true)
+if screensets_patch and not mainwnd_note then reaper.SetExtState("ReaTooled", "LoadScreensetOnce", "1", true) end
 if repo_ok then reaper.SetExtState("ReaTooled", "SyncOnce", "1", true) end
 
 ------------------------------------------------------------
@@ -896,11 +943,11 @@ do
   -- Whole sections replaced (menus/toolbars, screensets, theme settings);
   -- mouse modifier contexts are restored one modifier at a time, so they
   -- go with the key-by-key settings
-  for target, name in pairs({ ["reaper-menu.ini"] = "menus.ini", ["reaper-screensets.ini"] = "screensets.ini",
-                              ["reaper-themeconfig.ini"] = "themeconfig.ini" }) do
+  for target, name in pairs({ ["reaper-menu.ini"] = "menus.ini", ["reaper-themeconfig.ini"] = "themeconfig.ini" }) do
     local data = read_file(CONFIG .. "/" .. name)
     if data then write_file(REC .. "/sections/" .. target, data) end
   end
+  if screensets_patch then write_file(REC .. "/sections/reaper-screensets.ini", screensets_patch) end
   local mouse = read_file(CONFIG .. "/mouse.ini")
   if mouse then write_file(REC .. "/keys/reaper-mouse.ini", mouse) end
   -- Shortcuts: "+ line" = added, "- old" then "= new" = replaced
@@ -938,6 +985,7 @@ local summary = {
   "Script settings: " .. ext_count .. ". Files: " .. copied .. " copied" ..
     (kept_files > 0 and (", " .. kept_files .. " of your own templates/FX chains kept") or "") .. ".",
   theme_note,
+  mainwnd_note or "Screenset: the ReaTooled layout opens on the first start (your REAPER window keeps its size and place).",
   hook_note,
   "",
 }
