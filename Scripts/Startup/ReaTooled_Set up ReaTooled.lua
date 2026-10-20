@@ -1,6 +1,6 @@
 --[[
 -- @description ReaTooled - Set up ReaTooled
--- @version 2.0.2
+-- @version 2.1
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -16,8 +16,11 @@
     Some files can only be changed while REAPER is closed (preferences, menus
     and toolbars, mouse modifiers, screensets, SWS settings). Those are
     prepared now, and a small helper writes them as soon as you quit REAPER.
-    The helper doesn't reopen REAPER: open it again yourself.
+    When you click OK at the end, REAPER quits, the helper writes those files,
+    and the same copy of REAPER opens again by itself.
 -- CHANGELOG
+-- v2.1 Quits REAPER and reopens the same copy when you click OK; the ReaPack
+--      download moves to the first start after setup
 -- v2.0.2 Selects the ReaTooled theme properly (lastthemefn5), and reports it
 -- v2.0.1 Checks for the configuration by its keymap file
 -- v2.0 Applies the whole ReaTooled configuration (no Import configuration needed)
@@ -60,7 +63,7 @@ local FOLDERS = {
 ------------------------------------------------------------
 
 local TITLE        = "Set up ReaTooled"
-local SETUP_VER    = "2.0.2"
+local SETUP_VER    = "2.1"
 local RES          = reaper.GetResourcePath():gsub("\\", "/")
 local CONFIG       = RES .. "/Data/ReaTooled/Config"
 local PENDING      = RES .. "/Data/ReaTooled/Pending"
@@ -215,8 +218,17 @@ local HELPER_SH = [=[
 # Waits for REAPER to quit, then copies and merges the prepared files.
 RES="$1"
 PID="$2"
+RELAUNCH="$3"
 P="$RES/Data/ReaTooled/Pending"
 LOG="$RES/Data/ReaTooled/setup_log.txt"
+
+# Which REAPER is this exactly? (so a portable copy reopens as itself)
+EXE=""
+if [ -r "/proc/$PID/exe" ]; then
+  EXE="$(readlink "/proc/$PID/exe")"
+else
+  EXE="$(ps -o comm= -p "$PID" 2>/dev/null)"
+fi
 
 while kill -0 "$PID" 2>/dev/null; do sleep 1; done
 sleep 2
@@ -302,13 +314,26 @@ END {
   else
     echo "Some files failed. They will be tried again the next time REAPER starts and quits."
   fi
+  if [ "$RELAUNCH" = 1 ]; then
+    case "$EXE" in
+      *.app/Contents/MacOS/*)
+        APP="${EXE%%.app/Contents/MacOS/*}.app"
+        echo "reopening $APP"
+        open -n "$APP" ;;
+      /*)
+        echo "reopening $EXE"
+        nohup "$EXE" >/dev/null 2>&1 & ;;
+      *)
+        echo "could not tell which REAPER to reopen ($EXE) - please open it yourself" ;;
+    esac
+  fi
 } >> "$LOG" 2>&1
 ]=]
 
 local HELPER_PS1 = [=[
 # ReaTooled setup helper (Windows). Written by "Set up ReaTooled".
 # Waits for REAPER to quit, then copies and merges the prepared files.
-param([string]$Res, [string]$Exe)
+param([string]$Res, [string]$Exe, [string]$Relaunch = "0")
 $P   = Join-Path $Res "Data\ReaTooled\Pending"
 $Log = Join-Path $Res "Data\ReaTooled\setup_log.txt"
 $Utf8 = New-Object System.Text.UTF8Encoding $false
@@ -403,23 +428,28 @@ if ($ok) {
 } else {
   [void]$log.Add("Some files failed. They will be tried again the next time REAPER starts and quits.")
 }
+if ($Relaunch -eq "1" -and (Test-Path -LiteralPath $Exe)) {
+  [void]$log.Add("reopening $Exe")
+  Start-Process -FilePath $Exe -WorkingDirectory (Split-Path $Exe)
+}
 [IO.File]::AppendAllLines($Log, [string[]]$log, $Utf8)
 ]=]
 
 -- Starts the helper in the background. It waits for THIS REAPER to quit.
-local function launch_helper()
+local function launch_helper(relaunch)
+  local r = relaunch and "1" or "0"
   if IS_WIN then
     local ps1 = PENDING .. "/helper.ps1"
     if not write_file(ps1, HELPER_PS1) then return false end
     local exe = reaper.GetExePath():gsub("/", "\\") .. "\\reaper.exe"
     local cmd = 'powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "' ..
-                ps1:gsub("/", "\\") .. '" -Res "' .. RES:gsub("/", "\\") .. '" -Exe "' .. exe .. '"'
+                ps1:gsub("/", "\\") .. '" -Res "' .. RES:gsub("/", "\\") .. '" -Exe "' .. exe .. '" -Relaunch ' .. r
     reaper.ExecProcess(cmd, -1)
   else
     local sh = PENDING .. "/helper.sh"
     if not write_file(sh, HELPER_SH) then return false end
     -- $PPID is REAPER itself (the shell os.execute starts is REAPER's child)
-    os.execute('nohup /bin/sh "' .. sh .. '" "' .. RES .. '" "$PPID" >/dev/null 2>&1 &')
+    os.execute('nohup /bin/sh "' .. sh .. '" "' .. RES .. '" "$PPID" ' .. r .. ' >/dev/null 2>&1 &')
   end
   return true
 end
@@ -804,12 +834,11 @@ if repo_ok then reaper.ReaPack_ProcessQueue(true) end
 
 reaper.SetExtState("ReaTooled", "SetupVersion", SETUP_VER, true)
 reaper.SetExtState("ReaTooled", "LoadScreensetOnce", "1", true)
+if repo_ok then reaper.SetExtState("ReaTooled", "SyncOnce", "1", true) end
 
 ------------------------------------------------------------
 -- 6. Start the helper, then tell the user what's left
 ------------------------------------------------------------
-
-local helper_ok = launch_helper()
 
 local summary = {
   "ReaTooled is almost ready.",
@@ -823,25 +852,25 @@ local summary = {
   theme_note,
   hook_note,
   "",
-  "WHAT TO DO NEXT",
 }
-if repo_ok then
-  summary[#summary + 1] = "1. When you click OK, ReaPack downloads the rest of ReaTooled. Wait until it's finished."
+
+local quit_cmd = find_cmd("File: Quit REAPER", 40004)
+local restart_now = false
+if quit_cmd then
+  summary[#summary + 1] = "To finish, REAPER has to restart. Click OK and REAPER quits (you'll be asked " ..
+    "to save anything unsaved), finishes setting up, and opens again by itself. " ..
+    "On that first start ReaPack downloads the rest of ReaTooled.\n\n" ..
+    "Cancel = I'll restart REAPER myself later (it finishes whenever you quit)."
+  restart_now = (msg(table.concat(summary, "\n"), 1) == 1)
 else
-  summary[#summary + 1] = "1. Install the rest of ReaTooled: Extensions > ReaPack > Manage repositories, " ..
-    "right-click ReaTooled > Install all packages in this repository."
-end
-if helper_ok then
-  summary[#summary + 1] = "2. Quit REAPER (File > Quit). ReaTooled finishes setting up as REAPER closes."
-  summary[#summary + 1] = "3. Open REAPER again."
-else
-  summary[#summary + 1] = "2. The finishing step couldn't be prepared (no permission to write in " ..
-    PENDING .. "). Please contact support."
+  summary[#summary + 1] = "To finish, quit REAPER and open it again."
+  msg(table.concat(summary, "\n"))
 end
 
-msg(table.concat(summary, "\n"))
-
-if repo_ok then
-  local sync = reaper.NamedCommandLookup("_REAPACK_SYNC")
-  if sync ~= 0 then reaper.Main_OnCommand(sync, 0) end
+if not launch_helper(restart_now) then
+  msg("The finishing step couldn't be prepared (no permission to write in\n" .. PENDING ..
+      ").\n\nPlease contact support.")
+  return
 end
+
+if restart_now then reaper.Main_OnCommand(quit_cmd, 0) end

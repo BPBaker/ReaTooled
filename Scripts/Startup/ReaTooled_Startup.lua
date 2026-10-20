@@ -1,6 +1,6 @@
 --[[
 -- @description ReaTooled - Startup
--- @version 2.1
+-- @version 2.2
 -- @author Brendan Baker
 -- @link http://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -9,6 +9,7 @@
     ReaTooled installer adds. Edit the SCRIPTS list below to change
     what runs at startup; ReaPack updates this file like any other.
     CHANGELOG
+    v 2.2 - On the first start after setup, also has ReaPack download the rest of ReaTooled.
     v 2.1 - Finishes "Set up ReaTooled": loads the ReaTooled screenset once,
             and restarts the setup helper if it didn't get to run.
     v 2.0 - Moved out of __startup.lua into its own ReaPack-managed script.
@@ -74,7 +75,16 @@ if reaper.file_exists(PENDING .. "/copy.txt") or reaper.file_exists(PENDING .. "
   end
   reaper.ShowMessageBox("ReaTooled's setup isn't finished yet.\n\n" ..
     "Quit REAPER (File > Quit) and open it again to finish.", "ReaTooled", 0)
-elseif reaper.GetExtState("ReaTooled", "LoadScreensetOnce") == "1" then
+else
+  -- First start after setup: download the rest of ReaTooled
+  if reaper.GetExtState("ReaTooled", "SyncOnce") == "1" then
+    reaper.DeleteExtState("ReaTooled", "SyncOnce", true)
+    local sync = reaper.NamedCommandLookup("_REAPACK_SYNC")
+    if sync ~= 0 then reaper.Main_OnCommand(sync, 0) end
+  end
+end
+if not (reaper.file_exists(PENDING .. "/copy.txt") or reaper.file_exists(PENDING .. "/merge.txt"))
+   and reaper.GetExtState("ReaTooled", "LoadScreensetOnce") == "1" then
   -- First start after setup: show the ReaTooled window layout (screenset 1)
   reaper.DeleteExtState("ReaTooled", "LoadScreensetOnce", true)
   local name = "Screenset: Load window set #01"
