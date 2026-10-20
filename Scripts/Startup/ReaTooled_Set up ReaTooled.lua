@@ -1,6 +1,6 @@
 --[[
 -- @description ReaTooled - Set up ReaTooled
--- @version 2.1
+-- @version 2.1.1
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -19,6 +19,7 @@
     When you click OK at the end, REAPER quits, the helper writes those files,
     and the same copy of REAPER opens again by itself.
 -- CHANGELOG
+-- v2.1.1 Also applies the floating toolbar window settings
 -- v2.1 Quits REAPER and reopens the same copy when you click OK; the ReaPack
 --      download moves to the first start after setup
 -- v2.0.2 Selects the ReaTooled theme properly (lastthemefn5), and reports it
@@ -63,7 +64,7 @@ local FOLDERS = {
 ------------------------------------------------------------
 
 local TITLE        = "Set up ReaTooled"
-local SETUP_VER    = "2.1"
+local SETUP_VER    = "2.1.1"
 local RES          = reaper.GetResourcePath():gsub("\\", "/")
 local CONFIG       = RES .. "/Data/ReaTooled/Config"
 local PENDING      = RES .. "/Data/ReaTooled/Pending"
@@ -750,6 +751,13 @@ do
     if IS_WIN then full = full:gsub("/", "\\") end
     prefs[#prefs + 1] = "lastthemefn5=" .. full
     prefs[#prefs + 1] = "ui_img=" .. theme
+  end
+  -- Whole reaper.ini sections (floating toolbar windows), merged key by key too
+  local extra = read_file(CONFIG .. "/reaper_sections.ini")
+  if extra then
+    for _, l in ipairs(lines_of(extra)) do
+      if not l:match("^;") then prefs[#prefs + 1] = l end
+    end
   end
   stage_merge("reaper.ini", table.concat(prefs, "\n") .. "\n")
 end
