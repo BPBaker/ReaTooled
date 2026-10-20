@@ -1,6 +1,6 @@
 --[[
 -- @description ReaTooled - Set up ReaTooled
--- @version 2.0.1
+-- @version 2.0.2
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -18,6 +18,7 @@
     prepared now, and a small helper writes them as soon as you quit REAPER.
     The helper doesn't reopen REAPER: open it again yourself.
 -- CHANGELOG
+-- v2.0.2 Selects the ReaTooled theme properly (lastthemefn5), and reports it
 -- v2.0.1 Checks for the configuration by its keymap file
 -- v2.0 Applies the whole ReaTooled configuration (no Import configuration needed)
 -- v1.0.4 TJF's Coalesce scripts replaced by ReaTooled's own
@@ -59,7 +60,7 @@ local FOLDERS = {
 ------------------------------------------------------------
 
 local TITLE        = "Set up ReaTooled"
-local SETUP_VER    = "2.0.1"
+local SETUP_VER    = "2.0.2"
 local RES          = reaper.GetResourcePath():gsub("\\", "/")
 local CONFIG       = RES .. "/Data/ReaTooled/Config"
 local PENDING      = RES .. "/Data/ReaTooled/Pending"
@@ -712,7 +713,14 @@ do
       if l:match("^[^;].*=") then prefs[#prefs + 1] = l end
     end
   end
-  if theme ~= "" and exists(RES .. "/ColorThemes/" .. theme) then prefs[#prefs + 1] = "ui_img=" .. theme end
+  if theme ~= "" and exists(RES .. "/ColorThemes/" .. theme) then
+    -- lastthemefn5 is the theme REAPER loads at startup (full path);
+    -- ui_img is the image set that goes with it
+    local full = RES .. "/ColorThemes/" .. theme
+    if IS_WIN then full = full:gsub("/", "\\") end
+    prefs[#prefs + 1] = "lastthemefn5=" .. full
+    prefs[#prefs + 1] = "ui_img=" .. theme
+  end
   stage_merge("reaper.ini", table.concat(prefs, "\n") .. "\n")
 end
 
@@ -760,8 +768,16 @@ for _, f in ipairs(FOLDERS) do
 end
 
 -- Theme (so it shows right away; reaper.ini gets it after the restart too)
-if theme ~= "" and exists(RES .. "/ColorThemes/" .. theme) and reaper.OpenColorThemeFile then
-  reaper.OpenColorThemeFile(RES .. "/ColorThemes/" .. theme)
+local theme_note
+if theme == "" then
+  theme_note = "Theme: none in the configuration."
+elseif not exists(RES .. "/ColorThemes/" .. theme) then
+  theme_note = "Theme NOT applied: " .. theme .. " isn't in ColorThemes/. Install the " ..
+    "\"ReaTooled Themes\" package in ReaPack, then run Set up again."
+else
+  local switched = reaper.OpenColorThemeFile and reaper.OpenColorThemeFile(RES .. "/ColorThemes/" .. theme)
+  theme_note = "Theme: " .. theme:gsub("%.ReaperThemeZip$", ""):gsub("%.ReaperTheme$", "") ..
+    (switched and "" or " (selected when REAPER restarts)")
 end
 
 -- Startup block in Scripts/__startup.lua
@@ -804,6 +820,7 @@ local summary = {
     (#conflicts > 0 and (", " .. use_ours .. " clash(es) set to ReaTooled's, " .. kept .. " kept as yours") or "") .. ".",
   "Script settings: " .. ext_count .. ". Files: " .. copied .. " copied" ..
     (kept_files > 0 and (", " .. kept_files .. " of your own templates/FX chains kept") or "") .. ".",
+  theme_note,
   hook_note,
   "",
   "WHAT TO DO NEXT",
