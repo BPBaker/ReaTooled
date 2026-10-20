@@ -1,6 +1,6 @@
 --[[
 -- @description ReaTooled - Set up ReaTooled
--- @version 2.0
+-- @version 2.0.1
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -18,6 +18,7 @@
     prepared now, and a small helper writes them as soon as you quit REAPER.
     The helper doesn't reopen REAPER: open it again yourself.
 -- CHANGELOG
+-- v2.0.1 Checks for the configuration by its keymap file
 -- v2.0 Applies the whole ReaTooled configuration (no Import configuration needed)
 -- v1.0.4 TJF's Coalesce scripts replaced by ReaTooled's own
 -- v1.0.3 Checks for TJF's two Coalesce volume scripts too
@@ -58,7 +59,7 @@ local FOLDERS = {
 ------------------------------------------------------------
 
 local TITLE        = "Set up ReaTooled"
-local SETUP_VER    = "2.0"
+local SETUP_VER    = "2.0.1"
 local RES          = reaper.GetResourcePath():gsub("\\", "/")
 local CONFIG       = RES .. "/Data/ReaTooled/Config"
 local PENDING      = RES .. "/Data/ReaTooled/Pending"
@@ -443,14 +444,14 @@ if not reaper.APIExists("ReaPack_AddSetRepository") then
   return
 end
 
-if not exists(CONFIG .. "/version.txt") then
+if not exists(CONFIG .. "/keymap.ini") then
   msg("The ReaTooled configuration isn't installed yet.\n\n" ..
       "Install ReaTooled with the ReaBoot link from the guide, or in ReaPack " ..
       "(Extensions > ReaPack > Browse packages) install \"ReaTooled Config\" and " ..
       "\"ReaTooled Themes\". Then run this again.")
   return
 end
-local CONFIG_VER = (read_file(CONFIG .. "/version.txt") or ""):match("[%d%.]+") or "?"
+local CONFIG_VER = (read_file(CONFIG .. "/version.txt") or ""):match("[%d%.]+") or ""
 
 local keymap_text = read_file(CONFIG .. "/keymap.ini") or ""
 
@@ -470,7 +471,7 @@ end
 
 local first_run = not exists(FIRST_BACKUP .. "/backup_info.txt")
 
-local intro = "This sets up ReaTooled " .. CONFIG_VER .. ".\n\n" ..
+local intro = "This sets up ReaTooled" .. (CONFIG_VER ~= "" and (" " .. CONFIG_VER) or "") .. ".\n\n" ..
   "1. Backs up your REAPER settings" ..
   (first_run and " (to Data/ReaTooled/Backups/Before ReaTooled)\n" or " (a new dated backup)\n") ..
   "2. Adds the ReaTooled shortcuts to yours (you choose if any clash)\n" ..
