@@ -1,6 +1,6 @@
 --[[
 -- @description ReaTooled - Set up ReaTooled
--- @version 2.2.1
+-- @version 2.2.2
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -19,6 +19,8 @@
     When you click OK at the end, REAPER quits, the helper writes those files,
     and the same copy of REAPER opens again by itself.
 -- CHANGELOG
+-- v2.2.2 Shorter final message (details in Data/ReaTooled/setup_report.txt); shows
+--        "ReaTooled v3..."; preferences merge into [reaper] whatever its case
 -- v2.2.1 Keeps the user's REAPER window size and position when the ReaTooled
 --        screenset loads (worked out in the background, nothing is saved)
 -- v2.2 Saves a record of exactly what it changed (with the backup), so
@@ -69,7 +71,7 @@ local FOLDERS = {
 ------------------------------------------------------------
 
 local TITLE        = "Set up ReaTooled"
-local SETUP_VER    = "2.2.1"
+local SETUP_VER    = "2.2.2"
 local RES          = reaper.GetResourcePath():gsub("\\", "/")
 local CONFIG       = RES .. "/Data/ReaTooled/Config"
 local PENDING      = RES .. "/Data/ReaTooled/Pending"
@@ -252,8 +254,9 @@ BEGIN {
     sub(/\r$/, "", line)
     if (line ~ /^;/ || line == "") continue
     if (line ~ /^\[.*\]$/) {
-      sec = substr(line, 2, length(line) - 2)
-      if (!(sec in seen)) { seen[sec] = 1; order[++n] = sec }
+      name = substr(line, 2, length(line) - 2)
+      sec = tolower(name)   # REAPER ignores case in section names ([reaper] = [REAPER])
+      if (!(sec in seen)) { seen[sec] = 1; order[++n] = sec; shown[sec] = name }
       continue
     }
     if (substr(line, 1, 8) == "!delete ") { del[sec SUBSEP substr(line, 9)] = 1; continue }
@@ -270,7 +273,7 @@ BEGIN {
   sub(/\r$/, "")
   if ($0 ~ /^\[.*\]$/) {
     if (cur != "" && (cur in seen)) addkeys(cur)
-    cur = substr($0, 2, length($0) - 2)
+    cur = tolower(substr($0, 2, length($0) - 2))
     present[cur] = 1
     print
     next
@@ -290,7 +293,7 @@ END {
   if (cur != "" && (cur in seen)) addkeys(cur)
   for (i = 1; i <= n; i++) {
     s = order[i]
-    if (!(s in present)) { print ""; print "[" s "]"; addkeys(s) }
+    if (!(s in present)) { print ""; print "[" shown[s] "]"; addkeys(s) }
   }
 }'
 
@@ -535,7 +538,7 @@ end
 
 local first_run = not exists(FIRST_BACKUP .. "/backup_info.txt")
 
-local intro = "This sets up ReaTooled" .. (CONFIG_VER ~= "" and (" " .. CONFIG_VER) or "") .. ".\n\n" ..
+local intro = "This sets up ReaTooled" .. (CONFIG_VER ~= "" and (" v" .. CONFIG_VER) or "") .. ".\n\n" ..
   "1. Backs up your REAPER settings" ..
   (first_run and " (to Data/ReaTooled/Backups/Before ReaTooled)\n" or " (a new dated backup)\n") ..
   "2. Adds the ReaTooled shortcuts to yours (you choose if any clash)\n" ..
@@ -986,11 +989,10 @@ end
 -- 6. Start the helper, then tell the user what's left
 ------------------------------------------------------------
 
-local summary = {
-  "ReaTooled is almost ready.",
-  "",
-  "Your settings were backed up to:\n" .. backup_dir,
-  "",
+-- The details go in a report file; the message only says what matters
+local details = {
+  "ReaTooled setup, " .. os.date("%Y-%m-%d %H:%M:%S") .. " (Set up " .. SETUP_VER .. ", config " .. CONFIG_VER .. ")",
+  "Backup of your settings: " .. backup_dir,
   "Shortcuts: " .. #add_key .. " added" ..
     (#conflicts > 0 and (", " .. use_ours .. " clash(es) set to ReaTooled's, " .. kept .. " kept as yours") or "") .. ".",
   "Script settings: " .. ext_count .. ". Files: " .. copied .. " copied" ..
@@ -998,20 +1000,26 @@ local summary = {
   theme_note,
   mainwnd_note or "Screenset: the ReaTooled layout opens on the first start (your REAPER window keeps its size and place).",
   hook_note,
-  "",
 }
+write_file(RES .. "/Data/ReaTooled/setup_report.txt", table.concat(details, "\n") .. "\n")
+
+-- Only problems are shown
+local problems = {}
+if theme_note:find("NOT", 1, true) then problems[#problems + 1] = theme_note end
+if hook_note:find("NOT", 1, true) then problems[#problems + 1] = hook_note end
+if mainwnd_note then problems[#problems + 1] = mainwnd_note end
+local problem_text = #problems > 0 and ("\n\nPlease note:\n" .. table.concat(problems, "\n")) or ""
 
 local quit_cmd = find_cmd("File: Quit REAPER", 40004)
 local restart_now = false
 if quit_cmd then
-  summary[#summary + 1] = "To finish, REAPER has to restart. Click OK and REAPER quits (you'll be asked " ..
-    "to save anything unsaved), finishes setting up, and opens again by itself. " ..
-    "On that first start ReaPack downloads the rest of ReaTooled.\n\n" ..
-    "Cancel = I'll restart REAPER myself later (it finishes whenever you quit)."
-  restart_now = (msg(table.concat(summary, "\n"), 1) == 1)
+  restart_now = (msg("ReaTooled is set up. Click OK to restart REAPER and finish." ..
+    problem_text ..
+    "\n\nYour old settings were backed up to:\n" .. backup_dir ..
+    "\n\nTo undo, run \"Restore settings from a backup\".", 1) == 1)
 else
-  summary[#summary + 1] = "To finish, quit REAPER and open it again."
-  msg(table.concat(summary, "\n"))
+  msg("ReaTooled is set up. Quit REAPER and open it again to finish." .. problem_text ..
+    "\n\nYour old settings were backed up to:\n" .. backup_dir)
 end
 
 if not launch_helper(restart_now) then

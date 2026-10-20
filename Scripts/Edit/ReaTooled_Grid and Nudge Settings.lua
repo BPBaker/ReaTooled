@@ -1,6 +1,6 @@
 -- @description ReaTooled - Grid & Nudge Settings (Dockable GUI)
--- @version 2.1.6
--- @date 2026.09.28
+-- @version 2.1.7
+-- @date 2026.10.20
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -21,8 +21,19 @@
 --       nudge_val   (number)   – current nudge value
 --       nudge_unit  (integer)  – current unit index
 --       nudge_modifier ("none"|"dotted"|"triplet") – swing modifier for measures/beats presets
+--   • The grid selector never imposes a grid on the project. DEFAULT_GRID_INDEX is only
+--     the label shown when the project's grid can't be matched to a menu entry.
 --
 -- @changelog
+--   v2.1.7  (2026-10-20)
+--     • Fixed: Grid button showed "1/16" for the first ~10 frames regardless of the
+--       project's actual grid, because the first sync waited on the poll throttle.
+--       The grid is now read once at startup, so the label is correct immediately.
+--     • Fixed: If the project grid matched no menu entry (e.g. a custom division),
+--       the button kept showing whatever was selected before. It now falls back to
+--       the default label.
+--     • Default grid label (1/16) is now a named constant, DEFAULT_GRID_INDEX.
+--
 --   v2.1.6  (2026-09-28)
 --     • Fixed (root cause): "ImGui_End: Calling End() too many times!" recurring after
 --       sleep/wake and display changes. Previous fixes relied on pcall to contain the
@@ -140,6 +151,11 @@ local REAPER_MAIN_EDIT_HWND_ID = 1000
 -- Consecutive failed frames tolerated before giving up.
 local MAX_FRAME_FAILURES = 5
 
+-- Grid label shown when the project grid matches no menu entry.
+-- Index into grid_options below: 8 = '1/16'. Display only; never
+-- written to the project.
+local DEFAULT_GRID_INDEX = 8
+
 -- ===================================================================
 --  POST-FRAME ACTION QUEUE
 --  Anything that changes REAPER state is queued here and run after
@@ -189,7 +205,7 @@ local grid_div_values = {
   [11] = 0.1666667, [12] = 0.25, [13] = 0.5, [14] = 1.0, [15] = 2.0, [16] = 4.0
 }
 
-local grid_index      = 8
+local grid_index      = DEFAULT_GRID_INDEX
 local grid_mode       = "division"
 local grid_poll_frame = 0
 
@@ -213,12 +229,18 @@ local function update_grid_index_from_reaper()
   grid_mode = "division"
   local _, current_val = reaper.GetSetProjectGrid(0, false)
   for i, v in pairs(grid_div_values) do
-    if math.abs(v - current_val) < 0.00001 then
+    if current_val and math.abs(v - current_val) < 0.00001 then
       grid_index = i
-      break
+      return
     end
   end
+  -- No matching menu entry (custom division): show the default label
+  -- rather than a stale selection.
+  grid_index = DEFAULT_GRID_INDEX
 end
+
+-- Sync with the project immediately so the first frame is correct.
+update_grid_index_from_reaper()
 
 local function ConvertNudgeValue(old_unit, new_unit, val)
   if old_unit == new_unit then return val end
@@ -724,4 +746,3 @@ local function Main()
 end
 
 reaper.defer(Main)
-
