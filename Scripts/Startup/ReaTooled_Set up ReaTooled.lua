@@ -1,6 +1,6 @@
 --[[
 -- @description ReaTooled - Set up ReaTooled
--- @version 2.2.2
+-- @version 2.2.4
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -19,6 +19,9 @@
     When you click OK at the end, REAPER quits, the helper writes those files,
     and the same copy of REAPER opens again by itself.
 -- CHANGELOG
+-- v2.2.4 On a brand-new REAPER the window size is added to the ReaTooled screenset
+--        after REAPER quits, so the layout always loads (no more screenset note)
+-- v2.2.3 Shorter first message
 -- v2.2.2 Shorter final message (details in Data/ReaTooled/setup_report.txt); shows
 --        "ReaTooled v3..."; preferences merge into [reaper] whatever its case
 -- v2.2.1 Keeps the user's REAPER window size and position when the ReaTooled
@@ -71,7 +74,7 @@ local FOLDERS = {
 ------------------------------------------------------------
 
 local TITLE        = "Set up ReaTooled"
-local SETUP_VER    = "2.2.2"
+local SETUP_VER    = "2.2.4"
 local RES          = reaper.GetResourcePath():gsub("\\", "/")
 local CONFIG       = RES .. "/Data/ReaTooled/Config"
 local PENDING      = RES .. "/Data/ReaTooled/Pending"
@@ -297,6 +300,35 @@ END {
   }
 }'
 
+WINDOW_AWK='
+BEGIN {
+  insec = 0
+  while ((getline l < INI) > 0) {
+    sub(/\r$/, "", l)
+    if (l ~ /^\[/) { insec = (tolower(l) ~ /^\[reaper\]/) }
+    else if (insec) { eq = index(l, "="); if (eq > 0) v[substr(l, 1, eq - 1)] = substr(l, eq + 1) }
+  }
+  close(INI)
+  ok = (v["wnd_w"] + 0 > 100 && v["wnd_h"] + 0 > 100)
+  if (ok) {
+    x = v["wnd_x"] + 0; y = v["wnd_y"] + 0
+    n[1] = x; n[2] = y; n[3] = x + v["wnd_w"]; n[4] = y + v["wnd_h"]
+    hex = ""; sum = 0
+    for (i = 1; i <= 4; i++) {
+      q = n[i]; if (q < 0) q += 4294967296
+      for (j = 0; j < 4; j++) { b = q % 256; hex = hex sprintf("%02X", b); sum += b; q = int(q / 256) }
+    }
+    hex = hex sprintf("%02X", sum % 256)
+    st = (v["wnd_state"] == "" ? 0 : v["wnd_state"])
+  }
+}
+function add() { if (cur == "sset0" && ok && !has) { print "mainwnd_rect=" hex; print "mainwnd_status=" st; has = 1 } }
+{ sub(/\r$/, "") }
+/^\[/ { add(); cur = substr($0, 2, length($0) - 2); has = 0; print; next }
+cur == "sset0" && /^mainwnd_rect=/ { has = 1 }
+{ print }
+END { add() }'
+
 {
   echo "=== ReaTooled setup helper: $(date)"
   ok=1
@@ -324,6 +356,16 @@ END {
         echo "FAILED  merge $rel"; ok=0; rm -f "$RES/$rel.rt_tmp"
       fi
     done < "$P/merge.txt"
+  fi
+  if [ -f "$P/screenset_window.txt" ]; then
+    # REAPER has just saved its window size (wnd_x/y/w/h in reaper.ini): put
+    # it into screenset #1, as left/top/right/bottom 4-byte numbers + check byte
+    S="$RES/reaper-screensets.ini"
+    if [ -f "$S" ] && awk -v INI="$RES/reaper.ini" "$WINDOW_AWK" "$S" > "$S.rt_tmp" && mv -f "$S.rt_tmp" "$S"; then
+      echo "window size added to screenset #1"
+    else
+      rm -f "$S.rt_tmp"; echo "could not add the window size to screenset #1"
+    fi
   fi
   if [ "$ok" = 1 ]; then
     mv "$P" "$RES/Data/ReaTooled/Applied $(date +%Y-%m-%d_%H%M%S)"
@@ -452,6 +494,37 @@ if (Test-Path -LiteralPath $mergeList) {
     } catch { [void]$log.Add("FAILED  merge $rel : $_"); $ok = $false }
   }
 }
+$winFlag = Join-Path $P "screenset_window.txt"
+$ss = Join-Path $Res "reaper-screensets.ini"
+if ((Test-Path -LiteralPath $winFlag) -and (Test-Path -LiteralPath $ss)) {
+  # REAPER has just saved its window size: put it into screenset #1
+  try {
+    $v = @{}; $inSec = $false
+    foreach ($l in [IO.File]::ReadAllLines((Join-Path $Res "reaper.ini"), $Utf8)) {
+      if ($l -match '^\[(.*)\]') { $inSec = ($Matches[1] -eq "reaper") }
+      elseif ($inSec -and $l.IndexOf("=") -gt 0) { $v[$l.Substring(0, $l.IndexOf("="))] = $l.Substring($l.IndexOf("=") + 1) }
+    }
+    if ([int]$v["wnd_w"] -gt 100 -and [int]$v["wnd_h"] -gt 100) {
+      $x = [int]$v["wnd_x"]; $y = [int]$v["wnd_y"]
+      $bytes = @()
+      foreach ($n in @($x, $y, ($x + [int]$v["wnd_w"]), ($y + [int]$v["wnd_h"]))) { $bytes += [BitConverter]::GetBytes([int32]$n) }
+      $sum = 0; foreach ($b in $bytes) { $sum += $b }
+      $hex = (($bytes | ForEach-Object { $_.ToString("X2") }) -join "") + ($sum % 256).ToString("X2")
+      $state = if ($v["wnd_state"]) { $v["wnd_state"] } else { "0" }
+      $out = New-Object System.Collections.ArrayList
+      $cur = ""; $has = $false
+      $addRect = { if ($cur -eq "sset0" -and -not $has) { [void]$out.Add("mainwnd_rect=$hex"); [void]$out.Add("mainwnd_status=$state"); $script:has = $true } }
+      foreach ($l in [IO.File]::ReadAllLines($ss, $Utf8)) {
+        if ($l -match '^\[(.*)\]') { & $addRect; $cur = $Matches[1]; $has = $false; [void]$out.Add($l); continue }
+        if ($cur -eq "sset0" -and $l.StartsWith("mainwnd_rect=")) { $has = $true }
+        [void]$out.Add($l)
+      }
+      & $addRect
+      [IO.File]::WriteAllLines($ss, [string[]]$out, $Utf8)
+      [void]$log.Add("window size added to screenset #1")
+    }
+  } catch { [void]$log.Add("could not add the window size to screenset #1: $_") }
+}
 if ($ok) {
   Rename-Item -LiteralPath $P -NewName ("Applied " + (Get-Date -Format "yyyy-MM-dd_HHmmss"))
   [void]$log.Add("done")
@@ -538,21 +611,15 @@ end
 
 local first_run = not exists(FIRST_BACKUP .. "/backup_info.txt")
 
-local intro = "This sets up ReaTooled" .. (CONFIG_VER ~= "" and (" v" .. CONFIG_VER) or "") .. ".\n\n" ..
-  "1. Backs up your REAPER settings" ..
-  (first_run and " (to Data/ReaTooled/Backups/Before ReaTooled)\n" or " (a new dated backup)\n") ..
-  "2. Adds the ReaTooled shortcuts to yours (you choose if any clash)\n" ..
-  "3. Applies the ReaTooled menus, toolbars, mouse modifiers, preferences,\n" ..
-  "    theme, screensets and settings\n" ..
-  "4. Adds ReaTooled to REAPER's startup and installs every ReaTooled script\n\n" ..
-  "At the end you'll quit REAPER and open it again. Continue?"
+local intro = "Set up ReaTooled" .. (CONFIG_VER ~= "" and (" v" .. CONFIG_VER) or "") .. " now?\n\n" ..
+  "Your current settings are backed up first. You'll be asked about any shortcuts " ..
+  "that clash with yours, then REAPER restarts."
 
 if #missing > 0 then
   intro = "Some things ReaTooled uses are not installed:\n\n" ..
     table.concat(missing, "\n") ..
-    "\n\nThe ReaTooled tools that use them won't work until they are. " ..
-    "Installing with the ReaBoot link from the guide adds all of them.\n\n" ..
-    "You can set up ReaTooled anyway and add these later.\n\n" .. intro
+    "\n\nThe tools that use them won't work until they're installed " ..
+    "(the ReaBoot link from the guide adds them all).\n\n" .. intro
 end
 
 if msg(intro, 1) ~= 1 then return end   -- OK / Cancel
@@ -767,7 +834,7 @@ staged_section_merge("reaper-mouse.ini",       "mouse.ini", { hasimported = true
 -- wnd_y, wnd_w, wnd_h in reaper.ini), in the screenset's format: left, top,
 -- right, bottom as 4-byte numbers, then a check byte (the sum of the others).
 local screensets_patch = read_file(CONFIG .. "/screensets.ini")
-local mainwnd_note
+local screenset_needs_window = false
 do
   local function cfg(key)
     local ok, v = reaper.get_config_var_string(key)
@@ -809,10 +876,9 @@ do
     end
     screensets_patch = ini_text(p)
   elseif screensets_patch then
-    -- Without a main window size REAPER would shrink the window: don't
-    -- load the screenset by itself on the first start
-    mainwnd_note = "Screenset: not loaded automatically (couldn't read your window size). " ..
-      "Load it with \"Screenset: Load window set #01\" if you want the ReaTooled layout."
+    -- A brand-new REAPER hasn't saved its window size yet (it does that when
+    -- it quits). The helper adds it to the screenset right after REAPER quits.
+    screenset_needs_window = true
   end
 end
 if screensets_patch then
@@ -867,6 +933,9 @@ end
 
 write_file(PENDING .. "/copy.txt", table.concat(copies, "\n") .. "\n")
 write_file(PENDING .. "/merge.txt", table.concat(merges, "\n") .. "\n")
+if screenset_needs_window then
+  write_file(PENDING .. "/screenset_window.txt", "Add the REAPER window size to screenset #1 after REAPER quits\n")
+end
 write_file(PENDING .. "/info.txt", "Prepared by Set up ReaTooled " .. SETUP_VER .. " on " ..
   os.date("%Y-%m-%d %H:%M:%S") .. " (config " .. CONFIG_VER .. ")\n")
 
@@ -939,7 +1008,8 @@ local repo_ok = reaper.ReaPack_AddSetRepository(REPO_NAME, REPO_URL, true, 1, ""
 if repo_ok then reaper.ReaPack_ProcessQueue(true) end
 
 reaper.SetExtState("ReaTooled", "SetupVersion", SETUP_VER, true)
-if screensets_patch and not mainwnd_note then reaper.SetExtState("ReaTooled", "LoadScreensetOnce", "1", true) end
+os.remove(RES .. "/Data/ReaTooled/starter_off.txt")   -- the ReaTooled Starter may start Set up again after a restore
+if screensets_patch then reaper.SetExtState("ReaTooled", "LoadScreensetOnce", "1", true) end
 if repo_ok then reaper.SetExtState("ReaTooled", "SyncOnce", "1", true) end
 
 ------------------------------------------------------------
@@ -998,7 +1068,8 @@ local details = {
   "Script settings: " .. ext_count .. ". Files: " .. copied .. " copied" ..
     (kept_files > 0 and (", " .. kept_files .. " of your own templates/FX chains kept") or "") .. ".",
   theme_note,
-  mainwnd_note or "Screenset: the ReaTooled layout opens on the first start (your REAPER window keeps its size and place).",
+  "Screenset: the ReaTooled layout opens on the first start (your REAPER window keeps its size and place)" ..
+    (screenset_needs_window and "; the window size is added when REAPER quits." or "."),
   hook_note,
 }
 write_file(RES .. "/Data/ReaTooled/setup_report.txt", table.concat(details, "\n") .. "\n")
@@ -1007,7 +1078,6 @@ write_file(RES .. "/Data/ReaTooled/setup_report.txt", table.concat(details, "\n"
 local problems = {}
 if theme_note:find("NOT", 1, true) then problems[#problems + 1] = theme_note end
 if hook_note:find("NOT", 1, true) then problems[#problems + 1] = hook_note end
-if mainwnd_note then problems[#problems + 1] = mainwnd_note end
 local problem_text = #problems > 0 and ("\n\nPlease note:\n" .. table.concat(problems, "\n")) or ""
 
 local quit_cmd = find_cmd("File: Quit REAPER", 40004)

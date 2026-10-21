@@ -1,6 +1,6 @@
 --[[
 -- @description ReaTooled - Restore settings from a backup
--- @version 1.1
+-- @version 1.1.2
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -19,6 +19,8 @@
     restoring that backup. REAPER quits, the files are put back, and the same
     copy of REAPER opens again.
 -- CHANGELOG
+-- v1.1.2 Ignores the REAPER window size when checking whether you changed the screenset
+-- v1.1.1 Stops the ReaTooled Starter extension from starting Set up again after a restore
 -- v1.1 New choice: remove ReaTooled but keep the changes you made after setup
 -- v1.0 Initial version
 --]]
@@ -455,7 +457,15 @@ local function plan_keep()
     table.sort(names)
     for _, sec in ipairs(names) do
       local it = sec_items[rel][sec]
-      if same_lines(cur.sec[sec], it.rt) then
+      -- The REAPER window size in a screenset is added after setup (and changes
+      -- with the window), so it doesn't count as a change
+      local function plain(lines)
+        if not lines or rel ~= "reaper-screensets.ini" then return lines end
+        local out = {}
+        for _, l in ipairs(lines) do if not l:match("^mainwnd_") then out[#out + 1] = l end end
+        return out
+      end
+      if same_lines(plain(cur.sec[sec]), plain(it.rt)) then
         if not same_lines(it.rt, it.base) then
           if it.base then
             if not cur.sec[sec] then cur.order[#cur.order + 1] = sec end
@@ -681,7 +691,7 @@ write_file(PENDING .. "/copy.txt", table.concat(copies, "\n") .. "\n")
 if #merges > 0 then write_file(PENDING .. "/merge.txt", table.concat(merges, "\n") .. "\n") end
 if #plan.remove > 0 then write_file(PENDING .. "/remove.txt", table.concat(plan.remove, "\n") .. "\n") end
 write_file(PENDING .. "/restore.txt", chosen.name .. "\n")
-write_file(PENDING .. "/info.txt", "Prepared by Restore settings from a backup 1.1 on " ..
+write_file(PENDING .. "/info.txt", "Prepared by Restore settings from a backup 1.1.2 on " ..
   os.date("%Y-%m-%d %H:%M:%S") .. ": restoring \"" .. chosen.name .. "\"" ..
   (keep_mode and " (keeping later changes)" or "") .. "\n")
 
@@ -697,6 +707,11 @@ if not (ran and opt.started) then
       ".\n\nNothing was changed. Please contact support.")
   return
 end
+
+-- Keep the ReaTooled Starter extension from starting Set up again by itself
+-- (running Set up yourself turns it back on)
+write_file(RES .. "/Data/ReaTooled/starter_off.txt",
+  "Written by Restore settings from a backup: the ReaTooled Starter won't start Set up by itself.\n")
 
 -- Script settings are changed now (REAPER saves them when it quits)
 for _, e in ipairs(plan.ext) do

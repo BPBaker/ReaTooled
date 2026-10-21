@@ -1,6 +1,6 @@
 --[[
 -- @description ReaTooled - Startup
--- @version 2.2
+-- @version 2.2.2
 -- @author Brendan Baker
 -- @link http://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -9,6 +9,9 @@
     ReaTooled installer adds. Edit the SCRIPTS list below to change
     what runs at startup; ReaPack updates this file like any other.
     CHANGELOG
+    v 2.2.2 - Loads the ReaTooled screenset only once it has a window size.
+    v 2.2.1 - Also finishes an unfinished restore from a backup, and keeps
+              "Restore settings from a backup" in the Actions list.
     v 2.2 - On the first start after setup, also has ReaPack download the rest of ReaTooled.
     v 2.1 - Finishes "Set up ReaTooled": loads the ReaTooled screenset once,
             and restarts the setup helper if it didn't get to run.
@@ -65,7 +68,17 @@ local RES = reaper.GetResourcePath():gsub("\\", "/")
 local PENDING = RES .. "/Data/ReaTooled/Pending"
 local SETUP = RES .. "/Scripts/ReaTooled/Startup/ReaTooled_Set up ReaTooled.lua"
 
-if reaper.file_exists(PENDING .. "/copy.txt") or reaper.file_exists(PENDING .. "/merge.txt") then
+-- Keep "Restore settings from a backup" in the Actions list
+-- (ReaBoot installs scripts without adding them there)
+local RESTORE = RES .. "/Scripts/ReaTooled/Startup/ReaTooled_Restore settings from a backup.lua"
+if reaper.file_exists(RESTORE) then reaper.AddRemoveReaScript(true, 0, RESTORE, true) end
+
+local function pending()
+  return reaper.file_exists(PENDING .. "/copy.txt") or reaper.file_exists(PENDING .. "/merge.txt")
+      or reaper.file_exists(PENDING .. "/remove.txt")
+end
+
+if pending() then
   -- Set up prepared files, but the helper that writes them when REAPER quits
   -- never ran (e.g. REAPER crashed or the computer restarted). Start it again.
   if reaper.file_exists(SETUP) then
@@ -73,7 +86,8 @@ if reaper.file_exists(PENDING .. "/copy.txt") or reaper.file_exists(PENDING .. "
     pcall(dofile, SETUP)
     _G.REATOOLED_RELAUNCH_HELPER = nil
   end
-  reaper.ShowMessageBox("ReaTooled's setup isn't finished yet.\n\n" ..
+  local what = (reaper.file_exists(PENDING .. "/restore.txt") and "restore from a backup" or "setup")
+  reaper.ShowMessageBox("ReaTooled's " .. what .. " isn't finished yet.\n\n" ..
     "Quit REAPER (File > Quit) and open it again to finish.", "ReaTooled", 0)
 else
   -- First start after setup: download the rest of ReaTooled
@@ -83,10 +97,16 @@ else
     if sync ~= 0 then reaper.Main_OnCommand(sync, 0) end
   end
 end
-if not (reaper.file_exists(PENDING .. "/copy.txt") or reaper.file_exists(PENDING .. "/merge.txt"))
-   and reaper.GetExtState("ReaTooled", "LoadScreensetOnce") == "1" then
+if not pending() and reaper.GetExtState("ReaTooled", "LoadScreensetOnce") == "1" then
   -- First start after setup: show the ReaTooled window layout (screenset 1)
   reaper.DeleteExtState("ReaTooled", "LoadScreensetOnce", true)
+  -- Only if screenset #1 has a REAPER window size (otherwise REAPER would
+  -- shrink its window)
+  local f = io.open(RES .. "/reaper-screensets.ini", "rb")
+  local text = f and f:read("*all") or ""
+  if f then f:close() end
+  local sset0 = text:match("%[sset0%]%s*\n(.-)\n%[") or text:match("%[sset0%]%s*\n(.*)$") or ""
+  if not sset0:find("mainwnd_rect=%x%x%x%x") then return end
   local name = "Screenset: Load window set #01"
   local id = (reaper.kbd_getTextFromCmd(40454, 0) == name) and 40454 or nil
   if not id then
