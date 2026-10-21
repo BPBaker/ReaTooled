@@ -1,0 +1,77 @@
+# Builds the ReaTooled Starter extension (Extension/) for Mac, Windows and
+# Linux whenever it changes, and commits the files to UserPlugins/.
+# Then pull in GitHub Desktop and run ReaTooled_Build_release.lua to publish it.
+name: Build ReaTooled Starter
+
+on:
+  push:
+    branches: [main]
+    paths: ["Extension/**", ".github/workflows/build-starter.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  mac:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build (Apple Silicon + Intel in one file)
+        run: |
+          mkdir -p out
+          clang++ -std=c++17 -O2 -dynamiclib -fvisibility=hidden \
+            -arch arm64 -arch x86_64 -mmacosx-version-min=10.13 \
+            -o out/reaper_reatooled.dylib Extension/reatooled_starter.cpp
+          codesign --force --sign - out/reaper_reatooled.dylib
+          lipo -info out/reaper_reatooled.dylib
+      - uses: actions/upload-artifact@v4
+        with: { name: mac, path: out/ }
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ilammy/msvc-dev-cmd@v1
+        with: { arch: x64 }
+      - name: Build
+        shell: cmd
+        run: |
+          mkdir out
+          cl /nologo /O2 /EHsc /MT /LD Extension\reatooled_starter.cpp /Fe:out\reaper_reatooled-x64.dll
+          del out\*.lib out\*.exp 2>nul
+      - uses: actions/upload-artifact@v4
+        with: { name: windows, path: out/ }
+
+  linux:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build (x86_64 and aarch64)
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq g++-aarch64-linux-gnu
+          mkdir -p out
+          g++ -std=c++17 -O2 -shared -fPIC -fvisibility=hidden -static-libstdc++ -static-libgcc \
+            -o out/reaper_reatooled-x86_64.so Extension/reatooled_starter.cpp
+          aarch64-linux-gnu-g++ -std=c++17 -O2 -shared -fPIC -fvisibility=hidden -static-libstdc++ -static-libgcc \
+            -o out/reaper_reatooled-aarch64.so Extension/reatooled_starter.cpp
+      - uses: actions/upload-artifact@v4
+        with: { name: linux, path: out/ }
+
+  commit:
+    needs: [mac, windows, linux]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { path: built }
+      - name: Commit the built files to UserPlugins/
+        run: |
+          mkdir -p UserPlugins
+          cp built/mac/* built/windows/* built/linux/* UserPlugins/
+          ls -l UserPlugins
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add UserPlugins
+          git diff --cached --quiet || git commit -m "Build ReaTooled Starter $(cat Extension/VERSION) [skip ci]"
+          git pull --rebase origin main && git push
