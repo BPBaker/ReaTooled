@@ -482,6 +482,14 @@
     </reapack>
   </category>
   <category name="Startup">
+    <reapack name="reaper_reatooled.ext" type="extension" desc="ReaTooled Starter (starts Set up ReaTooled on the first launch)">
+      <version name="1.0" author="Brendan Baker">
+        <source platform="darwin" file="reaper_reatooled.dylib">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/UserPlugins/reaper_reatooled.dylib</source>
+        <source platform="win64" file="reaper_reatooled-x64.dll">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/UserPlugins/reaper_reatooled-x64.dll</source>
+        <source platform="linux64" file="reaper_reatooled-x86_64.so">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/UserPlugins/reaper_reatooled-x86_64.so</source>
+        <source platform="linux-aarch64" file="reaper_reatooled-aarch64.so">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/UserPlugins/reaper_reatooled-aarch64.so</source>
+      </version>
+    </reapack>
     <reapack name="ReaTooled Startup" type="script" desc="ReaTooled Startup">
       <version name="2.4.5" author="Brendan Baker">
         <source file="ReaTooled_Enable Link Edit Cursor and Play Cursor.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Enable%20Link%20Edit%20Cursor%20and%20Play%20Cursor.lua</source>
