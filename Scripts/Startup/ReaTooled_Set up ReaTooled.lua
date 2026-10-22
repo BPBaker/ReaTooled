@@ -1,6 +1,6 @@
 --[[
 -- @description ReaTooled - Set up ReaTooled
--- @version 2.2.4
+-- @version 2.2.5
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -19,6 +19,12 @@
     When you click OK at the end, REAPER quits, the helper writes those files,
     and the same copy of REAPER opens again by itself.
 -- CHANGELOG
+-- v2.2.5 Adds ReaTooled's MIDI editor shortcuts (clashes are asked about like the others,
+--        with the real action names); clears anything left over from an unfinished
+--        setup or restore before preparing its own files
+--        Asks which mousewheel direction ReaTooled's wheel scripts should use (on a Mac
+--        it checks whether natural scrolling is on and suggests that); keeps the
+--        user's choice when Set up runs again
 -- v2.2.4 On a brand-new REAPER the window size is added to the ReaTooled screenset
 --        after REAPER quits, so the layout always loads (no more screenset note)
 -- v2.2.3 Shorter first message
@@ -74,7 +80,7 @@ local FOLDERS = {
 ------------------------------------------------------------
 
 local TITLE        = "Set up ReaTooled"
-local SETUP_VER    = "2.2.4"
+local SETUP_VER    = "2.2.5"
 local RES          = reaper.GetResourcePath():gsub("\\", "/")
 local CONFIG       = RES .. "/Data/ReaTooled/Config"
 local PENDING      = RES .. "/Data/ReaTooled/Pending"
@@ -625,6 +631,43 @@ end
 if msg(intro, 1) ~= 1 then return end   -- OK / Cancel
 
 ------------------------------------------------------------
+-- 1b. Mousewheel direction for ReaTooled's wheel scripts (zoom, pitch,
+-- take volume, peaks gain). REAPER's own scroll settings are not changed.
+-- Already chosen (Set up run before, or toggled) -> kept as it is.
+------------------------------------------------------------
+
+local wheel_invert = reaper.GetExtState("ReaTooled", "WheelInvert")
+local wheel_note
+if wheel_invert == "0" or wheel_invert == "1" then
+  wheel_note = "kept as you had it"
+else
+  -- macOS: natural scrolling is the global setting com.apple.swipescrolldirection
+  -- (missing = macOS default, which is natural scrolling on)
+  local mac_natural
+  if reaper.GetOS():match("^OSX") or reaper.GetOS():match("^macOS") then
+    local out = reaper.ExecProcess('/usr/bin/defaults read -g com.apple.swipescrolldirection', 3000) or ""
+    local code, value = out:match("^(%-?%d+)\n(.*)$")
+    if code == "0" then
+      local v = (value or ""):match("%d")
+      if v == "1" then mac_natural = true elseif v == "0" then mac_natural = false end
+    elseif code then
+      mac_natural = true   -- key not set: macOS default (natural)
+    end
+  end
+  local tail = "\n\nYou can change this later with \"ReaTooled_Invert mousewheel direction\"."
+  if mac_natural == true then
+    wheel_invert = msg("Your Mac uses natural scrolling. Match ReaTooled's mousewheel zoom to it?" .. tail, 4) == 6 and "1" or "0"
+    wheel_note = "natural scrolling detected"
+  elseif mac_natural == false then
+    wheel_invert = msg("Your Mac uses standard scrolling (natural scrolling is off). Keep ReaTooled's mousewheel zoom standard?" .. tail, 4) == 6 and "0" or "1"
+    wheel_note = "standard scrolling detected"
+  else
+    wheel_invert = msg("Do you use natural scrolling (content moves with your fingers, like a phone)?" .. tail, 4) == 6 and "1" or "0"
+    wheel_note = "asked"
+  end
+end
+
+------------------------------------------------------------
 -- 2. Backup
 ------------------------------------------------------------
 
@@ -701,10 +744,11 @@ end
 
 -- What the user sees for a shortcut ("Cmd+Opt+K"), taken from REAPER's own comment
 local function key_label(line)
-  local keys = line:match("#%s*[^:]+:%s*(.-)%s*:")
-  if keys and keys ~= "" then return keys end
   local f = kb_fields(line)
-  return "key " .. tostring(f[3]) .. " (modifiers " .. tostring(f[2]) .. ")"
+  local midi = tonumber(f[5]) ~= KEY_SECTION and "MIDI editor: " or ""
+  local keys = line:match("#%s*[^:]+:%s*(.-)%s*:")
+  if keys and keys ~= "" then return midi .. keys end
+  return midi .. "key " .. tostring(f[3]) .. " (modifiers " .. tostring(f[2]) .. ")"
 end
 
 local user_kb_text = read_file(RES .. "/reaper-kb.ini") or ""
@@ -735,10 +779,26 @@ for i, line in ipairs(user_lines) do
   elseif f[1] == "KEY" then user_key[f[2] .. "|" .. f[3] .. "|" .. f[5]] = { i = i, cmd = f[4] } end
 end
 
-local function command_name(cmd)
+local function command_name(cmd, line)
   if our_names[norm_id(cmd)] then return our_names[norm_id(cmd)] end
+  -- REAPER writes the action's name at the end of each shortcut line
+  -- ("# Section : Keys : [OVERRIDE DEFAULT : ]Name"; names use ": " without a space before)
+  local comment = line and line:match("#%s*(.*)$")
+  if comment then
+    local parts = {}
+    for part in (comment .. " : "):gmatch("(.-) : ") do parts[#parts + 1] = part end
+    local i = 3
+    if parts[i] == "OVERRIDE DEFAULT" then i = i + 1 end
+    local named = parts[i] and table.concat(parts, " : ", i):match("^%s*(.-)%s*$")
+    if named and named ~= "" and named ~= "DISABLED DEFAULT" then return named end
+  end
+  local f = line and kb_fields(line) or {}
+  local section = 0
+  if tonumber(f[5]) and tonumber(f[5]) ~= KEY_SECTION and reaper.SectionFromUniqueID then
+    section = reaper.SectionFromUniqueID(tonumber(f[5])) or 0
+  end
   local id = tonumber(cmd) or reaper.NamedCommandLookup(cmd)
-  local name = (id and id ~= 0) and reaper.kbd_getTextFromCmd(id, 0) or ""
+  local name = (id and id ~= 0) and reaper.kbd_getTextFromCmd(id, section) or ""
   return name ~= "" and name or cmd
 end
 
@@ -749,19 +809,24 @@ end
 for _, a in ipairs(our_act) do
   if user_act[a.id] then replace_line[user_act[a.id]] = a.line else add_act[#add_act + 1] = a.line end
 end
+local midi_conflicts = 0
 for _, k in ipairs(our_key) do
   local u = user_key[k.k]
   if not u then
     add_key[#add_key + 1] = k.line
   elseif u.cmd ~= k.cmd then
     conflicts[#conflicts + 1] = { k = k, u = u }
+    if tonumber(k.k:match("([^|]+)$")) ~= KEY_SECTION then midi_conflicts = midi_conflicts + 1 end
   end
 end
 
 local use_ours, kept = 0, 0
 if #conflicts > 0 then
+  local where = midi_conflicts == 0 and "(in the ReaTooled keymap section only)"
+    or (#conflicts == midi_conflicts and "(in the MIDI editor)")
+    or ("(" .. (#conflicts - midi_conflicts) .. " in the ReaTooled keymap section, " .. midi_conflicts .. " in the MIDI editor)")
   local how = msg(#conflicts .. " ReaTooled shortcut(s) use keys you already use for something else " ..
-    "(in the ReaTooled keymap section only).\n\n" ..
+    where .. ".\n\n" ..
     "YES = choose one by one\nNO = use ReaTooled's for all of them\nCANCEL = keep yours for all of them",
     3)
   local all = nil
@@ -771,7 +836,7 @@ if #conflicts > 0 then
     if ours == nil then
       local r = msg(string.format("Clash %d of %d\n\nShortcut: %s\n\nYours:      %s\nReaTooled: %s\n\n" ..
         "YES = use ReaTooled's\nNO = keep yours\nCANCEL = decide all the rest at once",
-        n, #conflicts, key_label(c.k.line), command_name(c.u.cmd), command_name(c.k.cmd)), 3)
+        n, #conflicts, key_label(c.k.line), command_name(c.u.cmd, user_lines[c.u.i]), command_name(c.k.cmd, c.k.line)), 3)
       if r == 6 then
         ours = true
       elseif r == 7 then
@@ -809,6 +874,11 @@ for _, l in ipairs(add_key) do kb_out[#kb_out + 1] = l end
 ------------------------------------------------------------
 -- 4. Prepare the files that are written after REAPER quits
 ------------------------------------------------------------
+
+-- Anything left over from an earlier setup or restore that didn't finish
+for _, f in ipairs({ "copy.txt", "merge.txt", "remove.txt", "restore.txt", "info.txt", "screenset_window.txt" }) do
+  os.remove(PENDING .. "/" .. f)
+end
 
 local copies, merges = {}, {}
 local function stage_copy(rel, data)
@@ -951,11 +1021,13 @@ do
     for _, l in ipairs(ext.sec[section]) do
       local k, v = l:match("^([^=]+)=(.*)$")
       if k then
+        if section == "ReaTooled" and k == "WheelInvert" then v = wheel_invert end
         reaper.SetExtState(section, k, v, true)
         ext_count = ext_count + 1
       end
     end
   end
+  reaper.SetExtState("ReaTooled", "WheelInvert", wheel_invert, true)   -- even if the config has none
 end
 
 -- Cursors, menu sets, templates, FX chains
@@ -1023,7 +1095,19 @@ do
   -- Settings merged one by one (key=value)
   write_file(REC .. "/keys/reaper.ini", prefs_patch or "")
   for rel, data in pairs(sws_patches) do write_file(REC .. "/keys/" .. rel, data) end
-  write_file(REC .. "/keys/reaper-extstate.ini", read_file(CONFIG .. "/extstate.ini") or "")
+  do  -- what was really applied: the config's script settings with the mousewheel choice
+    local ext_text = read_file(CONFIG .. "/extstate.ini") or ""
+    local found
+    ext_text = ext_text:gsub("\nWheelInvert=[^\n]*", function() found = true; return "\nWheelInvert=" .. wheel_invert end)
+    if not found then
+      if ext_text:find("%[ReaTooled%]") then
+        ext_text = ext_text:gsub("%[ReaTooled%]\n", "[ReaTooled]\nWheelInvert=" .. wheel_invert .. "\n", 1)
+      else
+        ext_text = ext_text .. "\n[ReaTooled]\nWheelInvert=" .. wheel_invert .. "\n"
+      end
+    end
+    write_file(REC .. "/keys/reaper-extstate.ini", ext_text)
+  end
   -- Whole sections replaced (menus/toolbars, screensets, theme settings);
   -- mouse modifier contexts are restored one modifier at a time, so they
   -- go with the key-by-key settings
@@ -1064,13 +1148,15 @@ local details = {
   "ReaTooled setup, " .. os.date("%Y-%m-%d %H:%M:%S") .. " (Set up " .. SETUP_VER .. ", config " .. CONFIG_VER .. ")",
   "Backup of your settings: " .. backup_dir,
   "Shortcuts: " .. #add_key .. " added" ..
-    (#conflicts > 0 and (", " .. use_ours .. " clash(es) set to ReaTooled's, " .. kept .. " kept as yours") or "") .. ".",
+    (#conflicts > 0 and (", " .. use_ours .. " clash(es) set to ReaTooled's, " .. kept .. " kept as yours") or "") ..
+    (midi_conflicts > 0 and (" (" .. midi_conflicts .. " of the clashes in the MIDI editor)") or "") .. ".",
   "Script settings: " .. ext_count .. ". Files: " .. copied .. " copied" ..
     (kept_files > 0 and (", " .. kept_files .. " of your own templates/FX chains kept") or "") .. ".",
   theme_note,
   "Screenset: the ReaTooled layout opens on the first start (your REAPER window keeps its size and place)" ..
     (screenset_needs_window and "; the window size is added when REAPER quits." or "."),
   hook_note,
+  "Mousewheel: " .. (wheel_invert == "1" and "natural" or "standard") .. " direction for ReaTooled's wheel scripts (" .. wheel_note .. ").",
 }
 write_file(RES .. "/Data/ReaTooled/setup_report.txt", table.concat(details, "\n") .. "\n")
 

@@ -1,6 +1,6 @@
 --[[
 -- @description ReaTooled - Restore settings from a backup
--- @version 1.1.2
+-- @version 1.1.3
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -19,6 +19,10 @@
     restoring that backup. REAPER quits, the files are put back, and the same
     copy of REAPER opens again.
 -- CHANGELOG
+-- v1.1.3 "Keep my later changes" now also puts back your window layout (docked
+--        windows, dockers, toolbars) and your screensets as they were before ReaTooled;
+--        fixed settings in [reaper] (lowercase, as on macOS) counting as "you changed it";
+--        also restores reaper-wndpos.ini
 -- v1.1.2 Ignores the REAPER window size when checking whether you changed the screenset
 -- v1.1.1 Stops the ReaTooled Starter extension from starting Set up again after a restore
 -- v1.1 New choice: remove ReaTooled but keep the changes you made after setup
@@ -33,7 +37,7 @@
 -- restored (plugin lists, reapack.ini and everything else are left alone).
 local RESTORE_FILES = {
   "reaper.ini", "reaper-kb.ini", "reaper-menu.ini", "reaper-mouse.ini",
-  "reaper-screensets.ini", "reaper-themeconfig.ini", "reaper-extstate.ini",
+  "reaper-screensets.ini", "reaper-themeconfig.ini", "reaper-extstate.ini", "reaper-wndpos.ini",
   "S&M.ini", "sws-autocoloricon.ini", "Xenakios_Commands.ini", "BR.ini",
   "S&M_Cyclactions.ini",
   "Scripts/__startup.lua",
@@ -344,6 +348,61 @@ for _, b in ipairs(backups) do
 end
 table.sort(records, function(a, b) return a.date < b.date end)
 
+-- The window layout (which windows are open, docked and where, the dockers,
+-- toolbars) lives in reaper.ini. Loading the ReaTooled screenset changes it, and
+-- REAPER rewrites it all the time, so it is never "your change": removing
+-- ReaTooled always puts back the layout from before that setup.
+local LAYOUT_MAIN = { "^dock", "_dock$", "_dock_pos$", "_vis$", "^toppane", "^leftpanewid", "^fsautohidedock$", "^wnd_state$" }
+local LAYOUT_WINDOW_KEYS = { dock = true, wnd_vis = true, docked = true, visible = true }
+local function layout_section(sec)
+  local l = sec:lower()
+  return l == "reaperdockpref" or l:match("^toolbar:%d+$") ~= nil
+end
+local function is_layout(sec, key)
+  if sec:lower() == "reaper" then
+    for _, p in ipairs(LAYOUT_MAIN) do if key:match(p) then return true end end
+    return false
+  end
+  return layout_section(sec) or LAYOUT_WINDOW_KEYS[key] == true
+end
+
+-- Patch lines that make reaper.ini's layout exactly the backup's
+local function layout_patch(backup_ini_path)
+  local base = values_of(backup_ini_path)
+  local cur = values_of(RES .. "/reaper.ini")
+  local function lower_map(t) local m = {} for name, kv in pairs(t) do m[name:lower()] = { name = name, kv = kv } end return m end
+  local b, c = lower_map(base), lower_map(cur)
+  local names = {}
+  for l in pairs(b) do names[l] = true end
+  for l in pairs(c) do names[l] = true end
+  local sorted = {}
+  for l in pairs(names) do sorted[#sorted + 1] = l end
+  table.sort(sorted)
+  local out, n = {}, 0
+  for _, l in ipairs(sorted) do
+    local bk = b[l] and b[l].kv or {}
+    local ck = c[l] and c[l].kv or {}
+    local name = (c[l] or b[l]).name
+    local lines, keys = {}, {}
+    for k in pairs(bk) do keys[k] = true end
+    for k in pairs(ck) do keys[k] = true end
+    local klist = {}
+    for k in pairs(keys) do klist[#klist + 1] = k end
+    table.sort(klist)
+    for _, k in ipairs(klist) do
+      if is_layout(name, k) and not same_value(ck[k], bk[k]) then
+        lines[#lines + 1] = bk[k] and (k .. "=" .. bk[k]) or ("!delete " .. k)
+      end
+    end
+    if #lines > 0 then
+      out[#out + 1] = "[" .. name .. "]"
+      for _, x in ipairs(lines) do out[#out + 1] = x end
+      n = n + #lines
+    end
+  end
+  return table.concat(out, "\n"), n
+end
+
 local function plan_keep()
   local kept, reverted = 0, 0
   local kept_names = {}
@@ -388,8 +447,16 @@ local function plan_keep()
       local ok, v = reaper.get_config_var_string(key)
       if ok then return v end
     end
-    current_file[rel] = current_file[rel] or values_of(RES .. "/" .. rel)
-    return (current_file[rel][sec] or {})[key]
+    if not current_file[rel] then
+      -- section names in any case ([reaper] on macOS = [REAPER])
+      current_file[rel] = {}
+      for name, kv in pairs(values_of(RES .. "/" .. rel)) do
+        local t = current_file[rel][name:lower()] or {}
+        for k, v in pairs(kv) do t[k] = v end
+        current_file[rel][name:lower()] = t
+      end
+    end
+    return (current_file[rel][sec:lower()] or {})[key]
   end
 
   for _, rel in ipairs(order) do
@@ -404,7 +471,9 @@ local function plan_keep()
       table.sort(keys)
       for _, k in ipairs(keys) do
         local it = items[rel][sec][k]
-        if same_value(current(rel, sec, k), it.rt) then
+        if rel == "reaper.ini" and is_layout(sec, k) then
+          -- the window layout is put back below
+        elseif same_value(current(rel, sec, k), it.rt) then
           if not same_value(it.rt, it.base) then
             reverted = reverted + 1
             if rel == "reaper-extstate.ini" then
@@ -428,6 +497,20 @@ local function plan_keep()
     if #patch > 0 and rel ~= "reaper-extstate.ini" then
       plan.merges[rel] = table.concat(patch, "\n") .. "\n"
       touch(rel)
+    end
+  end
+
+  -- 1b. The window layout from before ReaTooled (see LAYOUT_MAIN)
+  do
+    local backup_ini = BACKUP_ROOT .. "/" .. records[1].name .. "/reaper.ini"
+    if exists(backup_ini) then
+      local patch, n = layout_patch(backup_ini)
+      if n > 0 then
+        plan.merges["reaper.ini"] = (plan.merges["reaper.ini"] or "") .. patch .. "\n"
+        touch("reaper.ini")
+        reverted = reverted + 1
+        report("put back   your window layout (" .. n .. " setting(s) in reaper.ini)")
+      end
     end
   end
   if exists(RES .. "/reaper-extstate.ini") then touch("reaper-extstate.ini") end
@@ -465,7 +548,9 @@ local function plan_keep()
         for _, l in ipairs(lines) do if not l:match("^mainwnd_") then out[#out + 1] = l end end
         return out
       end
-      if same_lines(plain(cur.sec[sec]), plain(it.rt)) then
+      -- ReaTooled's screenset slots always go back to yours: the layout they
+      -- hold is ReaTooled's, and REAPER rewrites them when they're loaded
+      if rel == "reaper-screensets.ini" or same_lines(plain(cur.sec[sec]), plain(it.rt)) then
         if not same_lines(it.rt, it.base) then
           if it.base then
             if not cur.sec[sec] then cur.order[#cur.order + 1] = sec end
@@ -666,11 +751,12 @@ end
 ------------------------------------------------------------
 
 local function unstage()
-  for _, f in ipairs({ "copy.txt", "merge.txt", "remove.txt", "restore.txt", "info.txt" }) do
+  for _, f in ipairs({ "copy.txt", "merge.txt", "remove.txt", "restore.txt", "info.txt", "screenset_window.txt" }) do
     os.remove(PENDING .. "/" .. f)
   end
 end
 
+unstage()   -- anything left over from a setup or restore that didn't finish
 local copies, merges = {}, {}
 for _, c in ipairs(plan.copies) do
   if c[2] and write_file(PENDING .. "/files/" .. c[1], c[2]) then
@@ -691,7 +777,7 @@ write_file(PENDING .. "/copy.txt", table.concat(copies, "\n") .. "\n")
 if #merges > 0 then write_file(PENDING .. "/merge.txt", table.concat(merges, "\n") .. "\n") end
 if #plan.remove > 0 then write_file(PENDING .. "/remove.txt", table.concat(plan.remove, "\n") .. "\n") end
 write_file(PENDING .. "/restore.txt", chosen.name .. "\n")
-write_file(PENDING .. "/info.txt", "Prepared by Restore settings from a backup 1.1.2 on " ..
+write_file(PENDING .. "/info.txt", "Prepared by Restore settings from a backup 1.1.3 on " ..
   os.date("%Y-%m-%d %H:%M:%S") .. ": restoring \"" .. chosen.name .. "\"" ..
   (keep_mode and " (keeping later changes)" or "") .. "\n")
 
