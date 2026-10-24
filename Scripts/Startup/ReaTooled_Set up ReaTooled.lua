@@ -20,7 +20,8 @@
     and the same copy of REAPER opens again by itself.
 -- CHANGELOG
 -- v2.2.5 Adds ReaTooled's MIDI editor shortcuts (clashes are asked about like the others,
---        with the real action names); clears anything left over from an unfinished
+--        with the real action names); reads the REAPER window size from [reaper] in any
+--        case; clears anything left over from an unfinished
 --        setup or restore before preparing its own files
 --        Asks which mousewheel direction ReaTooled's wheel scripts should use (on a Mac
 --        it checks whether natural scrolling is on and suggests that); keeps the
@@ -910,9 +911,13 @@ do
     local ok, v = reaper.get_config_var_string(key)
     if ok and tonumber(v) then return math.floor(tonumber(v)) end
     local ini = ini_parse(read_file(RES .. "/reaper.ini") or "")
-    for _, l in ipairs(ini.sec["REAPER"] or {}) do
-      local k, val = l:match("^([^=]+)=(.*)$")
-      if k == key and tonumber(val) then return math.floor(tonumber(val)) end
+    for name, lines in pairs(ini.sec) do
+      if name:lower() == "reaper" then   -- [REAPER] or [reaper] (macOS)
+        for _, l in ipairs(lines) do
+          local k, val = l:match("^([^=]+)=(.*)$")
+          if k == key and tonumber(val) then return math.floor(tonumber(val)) end
+        end
+      end
     end
   end
   local x, y, w, h = cfg("wnd_x"), cfg("wnd_y"), cfg("wnd_w"), cfg("wnd_h")

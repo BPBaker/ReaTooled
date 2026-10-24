@@ -22,7 +22,8 @@
 -- v1.1.3 "Keep my later changes" now also puts back your window layout (docked
 --        windows, dockers, toolbars) and your screensets as they were before ReaTooled;
 --        fixed settings in [reaper] (lowercase, as on macOS) counting as "you changed it";
---        also restores reaper-wndpos.ini
+--        also restores reaper-wndpos.ini; puts your own theme back whenever a ReaTooled
+--        theme is still selected (even if REAPER wrote its path differently)
 -- v1.1.2 Ignores the REAPER window size when checking whether you changed the screenset
 -- v1.1.1 Stops the ReaTooled Starter extension from starting Set up again after a restore
 -- v1.1 New choice: remove ReaTooled but keep the changes you made after setup
@@ -443,7 +444,7 @@ local function plan_keep()
       if reaper.HasExtState(sec, key) then return reaper.GetExtState(sec, key) end
       return nil
     end
-    if rel == "reaper.ini" and sec == "REAPER" then
+    if rel == "reaper.ini" and sec:lower() == "reaper" then
       local ok, v = reaper.get_config_var_string(key)
       if ok then return v end
     end
@@ -471,9 +472,19 @@ local function plan_keep()
       table.sort(keys)
       for _, k in ipairs(keys) do
         local it = items[rel][sec][k]
+        local cur_v = current(rel, sec, k)
+        -- The theme: still ReaTooled's whenever a ReaTooled theme is selected
+        -- (REAPER may write the path differently from Set up)
+        local theme_key = rel == "reaper.ini" and sec:lower() == "reaper" and (k == "lastthemefn5" or k == "ui_img")
+        if theme_key then
+          if k == "lastthemefn5" and reaper.GetLastColorThemeFile then
+            cur_v = reaper.GetLastColorThemeFile() or cur_v
+          end
+          if cur_v and cur_v:find("ReaTooled", 1, true) then cur_v = it.rt end
+        end
         if rel == "reaper.ini" and is_layout(sec, k) then
           -- the window layout is put back below
-        elseif same_value(current(rel, sec, k), it.rt) then
+        elseif same_value(cur_v, it.rt) then
           if not same_value(it.rt, it.base) then
             reverted = reverted + 1
             if rel == "reaper-extstate.ini" then
