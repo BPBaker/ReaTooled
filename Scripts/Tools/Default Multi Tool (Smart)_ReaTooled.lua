@@ -1,11 +1,13 @@
 -- @description ReaTooled - Default Multi Tool (Smart)
--- @version 1.6.3
--- @date 2025.11.18
+-- @version 1.6.4
+-- @date 2026.10.24
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
 --   # This script loads ReaTooled's default set of mouse modifiers, which gives similar functionality to ProTools' "Smart Tool." 
 -- CHANGELOG
+-- # v1.6.4 Shift+Ctrl double-click on an item (top and bottom half) runs ReaTooled_Clear take envelopes and Reset Volume to 0db.lua
+--        (the old custom action no longer exists); clears the Cmd+Opt+Ctrl item edge double-click
 -- # v1.6.3 Add/update edge mouse modifiers for new ripple options
 -- # v1.6.2 Revert 1.6.1 changes, set SHIFT and CMD to "5 m" and "4 m," respectively
 -- # v1.6.1 Changes item lower shift+click to "Add razor edit area to selection, including space between items" and command+click to "Add razor edit area to selection"
@@ -122,15 +124,19 @@ local mouseMods = {
   },
   MM_CTX_ITEM_DBLCLK = {
     [0]='42630 c', [1]='42409 c', [2]='42577 c', [3]='-1', [4]='41848 c', [5]='40653 c',
-    [6]='-1', [7]='-1', [8]='7 m', [9]='_6ca6a69cb0a3488f8bc4ceee437307b7',
+    [6]='-1', [7]='-1', [8]='7 m', [9]='_RS327ff00f699011e13052101611800ca4663627b2',
     [10]='-1', [11]='-1', [12]='-1', [13]='_468b46ab8e3d4145b3af6c337ef2ac96',
     [14]='-1', [15]='_047b1ae44c6a4c398916caefec363247'
   },
   MM_CTX_ITEMLOWER_DBLCLK = {
     [0]='6 m', [1]='5 m', [2]='-1', [3]='-1', [4]='41848 c', [5]='-1',
-    [6]='-1', [7]='-1', [8]='7 m', [9]='-1', [10]='-1', [11]='-1',
+    [6]='-1', [7]='-1', [8]='7 m', [9]='_RS327ff00f699011e13052101611800ca4663627b2', [10]='-1', [11]='-1',
     [12]='-1', [13]='-1', [14]='_RSc420542ec64750db62f5b15acd998feac1ec6d1d',
     [15]='_2a3da20698f4486896f47d9c6f093caf'
+  },
+  -- Cmd+Opt+Ctrl double-click on an item edge pointed at a script that no longer exists
+  MM_CTX_ITEMEDGE_DBLCLK = {
+    [14]='-1'
   }
 }
 

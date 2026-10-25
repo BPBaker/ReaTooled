@@ -1,7 +1,7 @@
 {
   "name": "ReaTooled",
-  "sub_title": "Pro Tools-style editing for REAPER",
-  "description": "Installs REAPER, ReaPack, the extensions ReaTooled needs, the ReaTooled core, configuration and themes, and the scripts by other developers that ReaTooled uses. Then open REAPER and run Set up ReaTooled.lua from your download.",
+  "sub_title": "The Pro Tools Alternative",
+  "description": "Installs REAPER, ReaPack, the extensions ReaTooled needs, the ReaTooled core, configuration and themes, and the scripts by other developers that ReaTooled uses. When it's done, open REAPER and ReaTooled sets itself up.",
   "website": "https://brendanpatrickbaker.com/reatooled/",
   "required_packages": [
     "https://raw.githubusercontent.com/BPBaker/ReaTooled/main/index.xml#p=Startup/reaper_reatooled.ext",

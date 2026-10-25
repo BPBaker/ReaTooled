@@ -1,11 +1,14 @@
--- @description ReaTooled - Loop END stop+cursor handler (pref-aware, INI-read on startup)
+-- @description ReaTooled - Loop END stop+cursor handler (pref-aware)
 --                [LOOP POINTS ONLY, LP+EC-aware, ▶ forced to ID 0]
--- @version 2.6
--- @date 2025.08.21
+-- @version 2.7
+-- @date 2026.10.24
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
---   • Reads REAPER's stop-at-loop-end pref once at startup.
+--   • Follows REAPER's "Stop playback at end of loop if repeat is disabled" (stopendofloop):
+--       – ON : REAPER stops at the loop end itself; this script only does the cleanup below,
+--              and only when playback really ended at the loop end (not when you press stop).
+--       – OFF: this script stops playback at the loop end, then does the cleanup.
 --   • ▶ Play Marker is a singleton and is always forced to **ID 0**:
 --       – If ID 0 is occupied (marker or region), it is faithfully recreated at a new auto ID, then removed.
 --       – ▶ is then created/moved at ID 0 and any other ▶ by **name** are deleted (no color matching).
@@ -14,38 +17,37 @@
 --       – Follow ON  + LP+EC OFF: ▶ := loop end; clear LP; keep Razor; EDIT stays.
 --       – Follow ON  + LP+EC ON : EDIT := loop end; clear LP & Razor.
 --   • When LP+EC is OFF and loop points change, ▶ mirrors Loop Start (queued while playing).
+-- @changelog
+--   v2.7 - Reads the real preference (stopendofloop, live) instead of a name that doesn't
+--          exist (stoploopnomode), which made the script always stop playback itself,
+--          slightly before the loop end. With the preference on, REAPER now stops exactly
+--          at the loop end, and the cleanup runs only when playback ended there.
 
 local debug = false
 local STOP_THRESHOLD = 0.05
 local OVERRUN_MARGIN = 0.10
 local EPS = 1e-6
 
+local END_WINDOW = 0.15   -- a stop within this many seconds of the loop end counts as "at the loop end"
+
 local triggered_rt_loopstop = false
 local triggered_edit_cursor_cleanup = false
+
+-- While playing: where playback was and which loop end applied (to recognise
+-- REAPER's own stop at the loop end once playback has stopped)
+local was_playing = false
+local last_play_pos, last_play_lp_end, last_play_lp_ok = nil, nil, false
 
 -- Persist last-seen loop state across defers (for change detection)
 local last_lp_active, last_lp_start, last_lp_end = nil, nil, nil
 
 -- =========================
--- Read REAPER pref once at startup
+-- REAPER's "Stop playback at end of loop if repeat is disabled" (read live,
+-- so changing it in Preferences takes effect right away)
 -- =========================
-local function readStopLoopIfRepeatOffSetting()
-  local ini = reaper.get_ini_file()
-  local f = io.open(ini, "r")
-  if not f then return false end
-  for line in f:lines() do
-    if line:match("^stoploopnomode=") then
-      local v = tonumber(line:match("=(%d+)"))
-      f:close(); return v == 1
-    end
-  end
-  f:close()
-  return false
-end
-
-local stopPrefEnabled = readStopLoopIfRepeatOffSetting()
-if debug then
-  reaper.ShowConsoleMsg("Stop-if-repeat-off pref = " .. (stopPrefEnabled and "ON" or "OFF") .. "\n")
+local function stopAtLoopEndPref()
+  local ok, v = reaper.get_config_var_string("stopendofloop")
+  return ok and tonumber(v) ~= nil and (tonumber(v) & 1) == 1
 end
 
 -- =========================
@@ -180,6 +182,8 @@ local function main()
     end
   end
 
+  local stopPrefEnabled = stopAtLoopEndPref()
+
   -- Loop-end stop logic only when LP active and repeat OFF
   if lpActive and not repeatOn then
     local playPos = reaper.GetPlayPosition2()
@@ -195,8 +199,19 @@ local function main()
     end
   end
 
-  -- Cleanup once after stop (loop-end behaviors)
-  if not isPlaying and (triggered_rt_loopstop or stopPrefEnabled) and not triggered_edit_cursor_cleanup then
+  -- REAPER stopped by itself at the loop end (preference ON): playback was
+  -- within END_WINDOW of the loop end when it stopped
+  local native_loopstop = false
+  if was_playing and not isPlaying and stopPrefEnabled and last_play_lp_ok and last_play_pos then
+    native_loopstop = (last_play_pos >= last_play_lp_end - END_WINDOW)
+    if debug then
+      reaper.ShowConsoleMsg(string.format("Stopped at %.3f (loop end %.3f): %s\n", last_play_pos,
+        last_play_lp_end, native_loopstop and "loop-end stop" or "stopped by you"))
+    end
+  end
+
+  -- Cleanup once after a stop at the loop end (loop-end behaviors)
+  if not isPlaying and (triggered_rt_loopstop or native_loopstop) and not triggered_edit_cursor_cleanup then
     if lp_ec_state == 0 then
       -- LP+EC OFF
       if follow_state == 0 then
@@ -240,6 +255,15 @@ local function main()
     triggered_rt_loopstop = false
     triggered_edit_cursor_cleanup = false
   end
+
+  -- Remember where playback is (for recognising REAPER's own loop-end stop)
+  if isPlaying then
+    local p1, p2 = reaper.GetPlayPosition(), reaper.GetPlayPosition2()
+    last_play_pos = math.max(p1, p2)
+    last_play_lp_end = lpEnd
+    last_play_lp_ok = lpActive and not repeatOn
+  end
+  was_playing = isPlaying
 
   -- Update last-seen loop state
   last_lp_active = lpActive

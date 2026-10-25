@@ -1,11 +1,13 @@
 -- @description ReaTooled - Razor Select Tool (Selector Tool)
--- @version 1.4
--- @date 2025.04.17
+-- @version 1.5
+-- @date 2026.10.24
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
 --   # This script loads a set of mouse modifiers focusing on creating razor edit selection, similar to ProTools' "Selector Tool."
 -- CHANGELOG
+-- # v1.5 Shift+Ctrl double-click on an item (top and bottom half) runs ReaTooled_Clear take
+--        envelopes and Reset Volume to 0db.lua (the old custom action no longer exists)
 -- # v1.4 Cleaned structure for maintainability, kept all original mouse modifier behaviors
 -- # v1.3 Kills Trim Tool Properly, shift+drag on track adds razor area to selection, switch to razor selection only
 -- # v1.2 Many revisions to mouse modifiers for more features control
@@ -111,13 +113,13 @@ local mouseMods = {
   },
   MM_CTX_ITEM_DBLCLK = {
     [0]='42630 c', [1]='42409 c', [2]='42577 c', [3]='-1', [4]='41848 c', [5]='40653 c',
-    [6]='-1', [7]='-1', [8]='7 m', [9]='_6ca6a69cb0a3488f8bc4ceee437307b7',
+    [6]='-1', [7]='-1', [8]='7 m', [9]='_RS327ff00f699011e13052101611800ca4663627b2',
     [10]='-1', [11]='-1', [12]='-1', [13]='_468b46ab8e3d4145b3af6c337ef2ac96',
     [14]='-1', [15]='_047b1ae44c6a4c398916caefec363247'
   },
   MM_CTX_ITEMLOWER_DBLCLK = {
     [0]='42630 c', [1]='42409 c', [2]='42577 c', [3]='-1', [4]='41848 c', [5]='40653 c',
-    [6]='-1', [7]='-1', [8]='7 m', [9]='_6ca6a69cb0a3488f8bc4ceee437307b7',
+    [6]='-1', [7]='-1', [8]='7 m', [9]='_RS327ff00f699011e13052101611800ca4663627b2',
     [10]='-1', [11]='-1', [12]='-1', [13]='_468b46ab8e3d4145b3af6c337ef2ac96',
     [14]='-1', [15]='_047b1ae44c6a4c398916caefec363247'
   }
