@@ -25,7 +25,7 @@ Edit/ReaTooled_Glide Envelope Points.lua	3.0	5a04e65f
 Edit/ReaTooled_Glue items with handles.lua	1.1	12b11d72
 Edit/ReaTooled_Grid and Nudge Settings.lua	2.1.7	0dcad2bb
 Edit/ReaTooled_Magic Zero Crossing Loop Copy Buffer Maker.lua	1.0	12cca528
-Edit/ReaTooled_Move Tool Left Click (Select item under mouse cursor, move cursor to start of items).lua	5.8	1aec0443
+Edit/ReaTooled_Move Tool Left Click (Select item under mouse cursor, move cursor to start of items).lua	5.9	1343320e
 Edit/ReaTooled_Move Tool Left Shift-Click (Select item and extend razor edit).lua	6.3	f06929f3
 Edit/ReaTooled_Move edit cursor to next (right) transient or item edge (Tab to Transient toggle dependent).lua	1.17	3ff181d8
 Edit/ReaTooled_Move edit cursor to previous (left) transient or item edge (Tab to Transient toggle dependent).lua	1.17	5daa363b
@@ -62,13 +62,13 @@ Helpers/ReaTooled_Show Spectrogram on Selected Track(s).lua	1.4	d02c6905
 Mouse Actions/ReaTooled_Mousewheel adjust pitch of item under cursor.lua	1.1	7c4881e5
 Mouse Actions/ReaTooled_Mousewheel to change take volume for selected items.lua	1.1	b7729828
 Mouse Actions/ReaTooled_Mousewheel to zoom items peaks view gain.lua	1.1	e6939720
-Startup/ReaTooled Startup	2.4.6	53f4f85e
+Startup/ReaTooled Startup	2.4.7	3bffbebe
 Toggles/ReaTooled - Ripple Off (Slip).lua	1.2	55e703da
 Toggles/ReaTooled MULTI Icon toggle.lua	1.0	e80a68cc
 Toggles/ReaTooled_At loop end, move cursor to loop end and clear selection (only when loop button is off).lua	2.7	c0d31850
 Toggles/ReaTooled_Cycle Peaks Display Mode.lua	1.0	395c748d
 Toggles/ReaTooled_Hover Edit Mode.lua	1.0	8525efb2
-Toggles/ReaTooled_Invert mousewheel direction (for natural scrolling).lua	1.0	bd4c4790
+Toggles/ReaTooled_Invert mousewheel direction (for natural scrolling).lua	1.1	ea2bc6b6
 Toggles/ReaTooled_Link Track and Item and Razor Selection.lua	2.22	5433a8b1
 Toggles/ReaTooled_Loudness normalize new items.lua	1.0	4f7959cd
 Toggles/ReaTooled_Recall ReaTooled Button States.lua	1.4	1e77591b
@@ -90,6 +90,7 @@ Transport/ReaTooled_Go to marker by number (keypad . number .).lua	1.1	c4a952d2
 Transport/ReaTooled_Play-Stop (with memory, edit-play toggles, and no undo).lua	2.7.6	ada81617
 Utilities/ReaTooled_Create backup key map.lua	1.0	a9f9f8b9
 Utilities/ReaTooled_Merge backup key map with current key map.lua	1.0	b181a2b8
+Utilities/ReaTooled_Scrolling settings.lua	1.2	713819d4
 Utilities/ReaTooled_Update key map from .ReaperConfigZip file.lua	1.0	7de8a313
 Zoom/ReaTooled Zoom Presets	1.0	0ae78f80
 Zoom/ReaTooled_Zoom Horizontally (Mousewheel).lua	1.2	a319e68a

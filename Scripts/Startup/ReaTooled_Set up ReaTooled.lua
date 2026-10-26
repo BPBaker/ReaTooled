@@ -1,6 +1,6 @@
 --[[
 -- @description ReaTooled - Set up ReaTooled
--- @version 2.2.5
+-- @version 2.2.6
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -19,6 +19,12 @@
     When you click OK at the end, REAPER quits, the helper writes those files,
     and the same copy of REAPER opens again by itself.
 -- CHANGELOG
+-- v2.2.6 No mousewheel question during setup: the suggested direction for ReaTooled's
+--        wheel scripts is saved (from natural scrolling and REAPER's vertical scroll
+--        direction), and "Scrolling and zooming" opens once after REAPER restarts so
+--        it can be tried and changed there. The theme is no longer switched while REAPER is
+--        running (it's selected for the restart), so ReaSmoothPlayhead doesn't report
+--        "unsaved changes" during setup
 -- v2.2.5 Adds ReaTooled's MIDI editor shortcuts (clashes are asked about like the others,
 --        with the real action names); reads the REAPER window size from [reaper] in any
 --        case; clears anything left over from an unfinished
@@ -81,7 +87,7 @@ local FOLDERS = {
 ------------------------------------------------------------
 
 local TITLE        = "Set up ReaTooled"
-local SETUP_VER    = "2.2.5"
+local SETUP_VER    = "2.2.6"
 local RES          = reaper.GetResourcePath():gsub("\\", "/")
 local CONFIG       = RES .. "/Data/ReaTooled/Config"
 local PENDING      = RES .. "/Data/ReaTooled/Pending"
@@ -633,7 +639,9 @@ if msg(intro, 1) ~= 1 then return end   -- OK / Cancel
 
 ------------------------------------------------------------
 -- 1b. Mousewheel direction for ReaTooled's wheel scripts (zoom, pitch,
--- take volume, peaks gain). REAPER's own scroll settings are not changed.
+-- take volume, peaks gain). Nothing is asked here: the suggested direction is
+-- saved, and "Scrolling and zooming" opens once after REAPER restarts so the
+-- user can try it and change it. REAPER's own scroll settings are not changed.
 -- Already chosen (Set up run before, or toggled) -> kept as it is.
 ------------------------------------------------------------
 
@@ -642,30 +650,20 @@ local wheel_note
 if wheel_invert == "0" or wheel_invert == "1" then
   wheel_note = "kept as you had it"
 else
-  -- macOS: natural scrolling is the global setting com.apple.swipescrolldirection
+  -- macOS natural scrolling is the global setting com.apple.swipescrolldirection
   -- (missing = macOS default, which is natural scrolling on)
-  local mac_natural
+  local natural = false
   if reaper.GetOS():match("^OSX") or reaper.GetOS():match("^macOS") then
     local out = reaper.ExecProcess('/usr/bin/defaults read -g com.apple.swipescrolldirection', 3000) or ""
     local code, value = out:match("^(%-?%d+)\n(.*)$")
-    if code == "0" then
-      local v = (value or ""):match("%d")
-      if v == "1" then mac_natural = true elseif v == "0" then mac_natural = false end
-    elseif code then
-      mac_natural = true   -- key not set: macOS default (natural)
-    end
+    if code == "0" then natural = (value or ""):match("%d") ~= "0" else natural = true end
   end
-  local tail = "\n\nYou can change this later with \"ReaTooled_Invert mousewheel direction\"."
-  if mac_natural == true then
-    wheel_invert = msg("Your Mac uses natural scrolling. Match ReaTooled's mousewheel zoom to it?" .. tail, 4) == 6 and "1" or "0"
-    wheel_note = "natural scrolling detected"
-  elseif mac_natural == false then
-    wheel_invert = msg("Your Mac uses standard scrolling (natural scrolling is off). Keep ReaTooled's mousewheel zoom standard?" .. tail, 4) == 6 and "0" or "1"
-    wheel_note = "standard scrolling detected"
-  else
-    wheel_invert = msg("Do you use natural scrolling (content moves with your fingers, like a phone)?" .. tail, 4) == 6 and "1" or "0"
-    wheel_note = "asked"
-  end
+  -- REAPER's "Reverse vertical scroll" (multitouch & 512) flips the wheel too
+  local ok, mt = reaper.get_config_var_string("multitouch")
+  local vrev = (math.floor(tonumber(ok and mt or "") or 0) & 512) ~= 0
+  wheel_invert = (natural ~= vrev) and "1" or "0"
+  wheel_note = "suggested from " .. (natural and "natural" or "standard") .. " scrolling" ..
+    (vrev and " and REAPER's reversed vertical scroll" or "")
 end
 
 ------------------------------------------------------------
@@ -1049,7 +1047,9 @@ for _, f in ipairs(FOLDERS) do
   end
 end
 
--- Theme (so it shows right away; reaper.ini gets it after the restart too)
+-- Theme: selected through reaper.ini (lastthemefn5 above), so it appears when REAPER
+-- restarts. Not switched while REAPER is running: ReaSmoothPlayhead would see a theme
+-- change in the middle of setup and turn itself off ("your theme has unsaved changes").
 local theme_note
 if theme == "" then
   theme_note = "Theme: none in the configuration."
@@ -1057,9 +1057,8 @@ elseif not exists(RES .. "/ColorThemes/" .. theme) then
   theme_note = "Theme NOT applied: " .. theme .. " isn't in ColorThemes/. Install the " ..
     "\"ReaTooled Themes\" package in ReaPack, then run Set up again."
 else
-  local switched = reaper.OpenColorThemeFile and reaper.OpenColorThemeFile(RES .. "/ColorThemes/" .. theme)
   theme_note = "Theme: " .. theme:gsub("%.ReaperThemeZip$", ""):gsub("%.ReaperTheme$", "") ..
-    (switched and "" or " (selected when REAPER restarts)")
+    " (selected when REAPER restarts)"
 end
 
 -- Startup block in Scripts/__startup.lua
@@ -1088,6 +1087,7 @@ reaper.SetExtState("ReaTooled", "SetupVersion", SETUP_VER, true)
 os.remove(RES .. "/Data/ReaTooled/starter_off.txt")   -- the ReaTooled Starter may start Set up again after a restore
 if screensets_patch then reaper.SetExtState("ReaTooled", "LoadScreensetOnce", "1", true) end
 if repo_ok then reaper.SetExtState("ReaTooled", "SyncOnce", "1", true) end
+reaper.SetExtState("ReaTooled", "ScrollingWindowOnce", "1", true)   -- "Scrolling and zooming" on the first start
 
 ------------------------------------------------------------
 -- 5b. The record of exactly what this setup changed, kept with the backup.
@@ -1161,7 +1161,7 @@ local details = {
   "Screenset: the ReaTooled layout opens on the first start (your REAPER window keeps its size and place)" ..
     (screenset_needs_window and "; the window size is added when REAPER quits." or "."),
   hook_note,
-  "Mousewheel: " .. (wheel_invert == "1" and "natural" or "standard") .. " direction for ReaTooled's wheel scripts (" .. wheel_note .. ").",
+  "Mousewheel: ReaTooled's wheel scripts set to " .. (wheel_invert == "1" and "Reversed" or "Standard") .. " (" .. wheel_note .. "); \"Scrolling and zooming\" opens on the first start.",
 }
 write_file(RES .. "/Data/ReaTooled/setup_report.txt", table.concat(details, "\n") .. "\n")
 
@@ -1175,11 +1175,13 @@ local quit_cmd = find_cmd("File: Quit REAPER", 40004)
 local restart_now = false
 if quit_cmd then
   restart_now = (msg("ReaTooled is set up. Click OK to restart REAPER and finish." ..
+    "\n\nWhen REAPER reopens, a small window lets you try scrolling and zooming, and adjust them if you like." ..
     problem_text ..
     "\n\nYour old settings were backed up to:\n" .. backup_dir ..
     "\n\nTo undo, run \"Restore settings from a backup\".", 1) == 1)
 else
-  msg("ReaTooled is set up. Quit REAPER and open it again to finish." .. problem_text ..
+  msg("ReaTooled is set up. Quit REAPER and open it again to finish." ..
+    "\n\nWhen REAPER reopens, a small window lets you try scrolling and zooming, and adjust them if you like." .. problem_text ..
     "\n\nYour old settings were backed up to:\n" .. backup_dir)
 end
 

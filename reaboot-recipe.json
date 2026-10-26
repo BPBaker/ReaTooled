@@ -99,6 +99,7 @@
     "https://raw.githubusercontent.com/BPBaker/ReaTooled/main/index.xml#p=Transport/ReaTooled_Play-Stop%20(with%20memory,%20edit-play%20toggles,%20and%20no%20undo).lua",
     "https://raw.githubusercontent.com/BPBaker/ReaTooled/main/index.xml#p=Utilities/ReaTooled_Create%20backup%20key%20map.lua",
     "https://raw.githubusercontent.com/BPBaker/ReaTooled/main/index.xml#p=Utilities/ReaTooled_Merge%20backup%20key%20map%20with%20current%20key%20map.lua",
+    "https://raw.githubusercontent.com/BPBaker/ReaTooled/main/index.xml#p=Utilities/ReaTooled_Scrolling%20settings.lua",
     "https://raw.githubusercontent.com/BPBaker/ReaTooled/main/index.xml#p=Utilities/ReaTooled_Update%20key%20map%20from%20.ReaperConfigZip%20file.lua",
     "https://raw.githubusercontent.com/BPBaker/ReaTooled/main/index.xml#p=Zoom/ReaTooled%20Zoom%20Presets",
     "https://raw.githubusercontent.com/BPBaker/ReaTooled/main/index.xml#p=Zoom/ReaTooled_Zoom%20Horizontally%20(Mousewheel).lua",

@@ -1,6 +1,6 @@
 --[[
 -- @description ReaTooled - Startup
--- @version 2.2.2
+-- @version 2.2.3
 -- @author Brendan Baker
 -- @link http://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -9,6 +9,7 @@
     ReaTooled installer adds. Edit the SCRIPTS list below to change
     what runs at startup; ReaPack updates this file like any other.
     CHANGELOG
+    v 2.2.3 - On the first start after setup, also opens "Scrolling and zooming".
     v 2.2.2 - Loads the ReaTooled screenset only once it has a window size.
     v 2.2.1 - Also finishes an unfinished restore from a backup, and keeps
               "Restore settings from a backup" in the Actions list.
@@ -95,6 +96,15 @@ else
     reaper.DeleteExtState("ReaTooled", "SyncOnce", true)
     local sync = reaper.NamedCommandLookup("_REAPACK_SYNC")
     if sync ~= 0 then reaper.Main_OnCommand(sync, 0) end
+  end
+end
+if not pending() and reaper.GetExtState("ReaTooled", "ScrollingWindowOnce") == "1" then
+  -- First start after setup: let the user try and choose the scroll directions
+  -- (the window clears the flag itself, so it opens again if it couldn't start)
+  local path = RES .. "/Scripts/ReaTooled/Utilities/ReaTooled_Scrolling settings.lua"
+  if reaper.file_exists(path) then
+    local id = reaper.AddRemoveReaScript(true, 0, path, true)
+    if id and id ~= 0 then reaper.Main_OnCommand(id, 0) end
   end
 end
 if not pending() and reaper.GetExtState("ReaTooled", "LoadScreensetOnce") == "1" then
