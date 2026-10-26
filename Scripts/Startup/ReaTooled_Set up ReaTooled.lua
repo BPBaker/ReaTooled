@@ -959,11 +959,17 @@ local function clash_window()
   local ok, ImGui = pcall(function() return require "imgui" "0.9" end)
   if not ok or not ImGui then return false end
 
+  -- ReaImGui raises an error for a name it doesn't have, so optional names are looked up safely
+  local function const(name)
+    local ok, v = pcall(function() return ImGui[name] end)
+    if ok then return v end
+  end
+
   local IS_MAC = not IS_WIN and (reaper.GetOS():match("^OSX") or reaper.GetOS():match("^macOS")) ~= nil
 
   -- Keys that can be chosen, with REAPER's own codes (as in reaper-kb.ini)
   local KEYS = {}
-  local function add(name, code, label) if ImGui["Key_" .. name] then KEYS[#KEYS + 1] = { ImGui["Key_" .. name], code, label } end end
+  local function add(name, code, label) local k = const("Key_" .. name); if k then KEYS[#KEYS + 1] = { k, code, label } end end
   for i = 0, 25 do local ch = string.char(65 + i); add(ch, 65 + i, ch) end
   for i = 0, 9 do add(tostring(i), 48 + i, tostring(i)) end
   for i = 1, 24 do add("F" .. i, 111 + i, "F" .. i) end
@@ -982,7 +988,7 @@ local function clash_window()
   local CHAR_KEYS = {}
   for _, n in ipairs({ "Apostrophe", "Comma", "Minus", "Period", "Slash", "Semicolon", "Equal",
                        "LeftBracket", "Backslash", "RightBracket", "GraveAccent" }) do
-    if ImGui["Key_" .. n] then CHAR_KEYS[#CHAR_KEYS + 1] = ImGui["Key_" .. n] end
+    local k = const("Key_" .. n); if k then CHAR_KEYS[#CHAR_KEYS + 1] = k end
   end
 
   -- REAPER's modifier bits: 4 Shift, 8 Cmd (Ctrl on Windows), 16 Opt (Alt), 32 Control (Win)
@@ -1027,7 +1033,7 @@ local function clash_window()
   local C_RESULT, C_NOTE, C_WARN = 0x8FC3FFFF, 0x8A8A8AFF, 0xE8A33AFF
   local W = 600
   local LABEL_X = 110
-  local CHILD_BORDER = ImGui.ChildFlags_Borders or ImGui.ChildFlags_Border or 1
+  local CHILD_BORDER = const("ChildFlags_Border") or const("ChildFlags_Borders") or 1
 
   local capture        -- { row = c, side = "alt_ours"/"alt_yours", start = time }
   local capture_msg    -- text under the row being recorded
