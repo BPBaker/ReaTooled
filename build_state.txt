@@ -48,7 +48,6 @@ Edit/ReaTooled_Special Paste + Trim Edges to Adjacent Items (Expand to fill, Loo
 Edit/ReaTooled_Special Paste + Trim Item Edges to Next and Previous Items (Expand to fill between neighboring items).lua	3.13	768c2fdd
 Edit/ReaTooled_Split Item (Hover Mode Dependent).lua	1.6	8dbb8ff7
 Edit/ReaTooled_Toggle mute items, ignoring grouping.lua	1.2	3ed9715f
-Edit/ReaTooled_Toggle selected tracks inactive.lua	1.0	b66eb0c9
 Edit/ReaTooled_Trim Item Edges to Next and Previous Items (Expand to fill between neighboring items).lua	1.2	78f55572
 Edit/ReaTooled_Trim Item Edges to Next and Previous Items (Expand to fill between neighboring items, Loop Source On).lua	1.4	4d3b073a
 Edit/ReaTooled_Trim Item Left Edge to Previous Item (with Loop Item Source Off).lua	1.2	46108163
