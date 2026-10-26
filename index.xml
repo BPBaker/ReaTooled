@@ -12,7 +12,7 @@
   </category>
   <category name="Config">
     <reapack name="ReaTooled Config" type="data" desc="ReaTooled configuration (applied by Set up ReaTooled)">
-      <version name="3.2026.1024.2323" author="Brendan Baker">
+      <version name="3.2026.1025.2351" author="Brendan Baker">
         <source file="ReaTooled/Config/keymap.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/keymap.ini</source>
         <source file="ReaTooled/Config/menus.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/menus.ini</source>
         <source file="ReaTooled/Config/mouse.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/mouse.ini</source>
@@ -154,7 +154,7 @@
       </version>
     </reapack>
     <reapack name="ReaTooled Themes" type="theme" desc="ReaTooled themes">
-      <version name="3.2026.1024.2323" author="Brendan Baker">
+      <version name="3.2026.1025.2351" author="Brendan Baker">
         <source file="Assembled_ReaTooled v1.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Assembled_ReaTooled%20v1.ReaperThemeZip</source>
         <source file="Default_7.0 ReaTooled v2 Light.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Default_7.0%20ReaTooled%20v2%20Light.ReaperThemeZip</source>
         <source file="Default_7.0 ReaTooled v3 Dark.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Default_7.0%20ReaTooled%20v3%20Dark.ReaperThemeZip</source>
@@ -279,6 +279,11 @@
     <reapack name="ReaTooled_Glide Envelope Points.lua" type="script" desc="GLIDE envelopes to selection/items (ReaTooled, inspired by TJF)">
       <version name="3.0" author="Brendan Baker">
         <source file="ReaTooled_Glide Envelope Points.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Glide%20Envelope%20Points.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Glue items with handles.lua" type="script" desc="ReaTooled - Glue items with handles (AudioSuite-style)">
+      <version name="1.1" author="Brendan Baker">
+        <source file="ReaTooled_Glue items with handles.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Glue%20items%20with%20handles.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Grid and Nudge Settings.lua" type="script" desc="ReaTooled - Grid &amp; Nudge Settings (Dockable GUI)">
@@ -491,7 +496,7 @@
       </version>
     </reapack>
     <reapack name="ReaTooled Startup" type="script" desc="ReaTooled Startup">
-      <version name="2.4.5" author="Brendan Baker">
+      <version name="2.4.6" author="Brendan Baker">
         <source file="ReaTooled_Enable Link Edit Cursor and Play Cursor.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Enable%20Link%20Edit%20Cursor%20and%20Play%20Cursor.lua</source>
         <source file="ReaTooled_Install startup hook.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Install%20startup%20hook.lua</source>
         <source file="ReaTooled_Recall Hover Mode State.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Recall%20Hover%20Mode%20State.lua</source>
@@ -610,7 +615,7 @@
   </category>
   <category name="Tools">
     <reapack name="ReaTooled Tools" type="script" desc="ReaTooled Tools">
-      <version name="7.2.0" author="Brendan Baker">
+      <version name="7.2.1" author="Brendan Baker">
         <source file="Default Multi Tool (Smart)_ReaTooled.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/Default%20Multi%20Tool%20%28Smart%29_ReaTooled.lua</source>
         <source file="Move Tool (Grabber)_ReaTooled.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/Move%20Tool%20%28Grabber%29_ReaTooled.lua</source>
         <source file="Razor Select Tool (Selector)_ReaTooled.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/Razor%20Select%20Tool%20%28Selector%29_ReaTooled.lua</source>
@@ -624,6 +629,11 @@
     </reapack>
   </category>
   <category name="Transport">
+    <reapack name="ReaTooled_Go to marker by number (keypad . number .).lua" type="script" desc="ReaTooled - Go to marker by number (keypad . number .)">
+      <version name="1.1" author="Brendan Baker">
+        <source file="ReaTooled_Go to marker by number (keypad . number .).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Transport/ReaTooled_Go%20to%20marker%20by%20number%20%28keypad%20.%20number%20.%29.lua</source>
+      </version>
+    </reapack>
     <reapack name="ReaTooled_Play-Stop (with memory, edit-play toggles, and no undo).lua" type="script" desc="ReaTooled - Transport (LP-first start, v2.4 stop-cursor behavior, Loop Points only) + v1.2-style Play Marker (LP+EC OFF) [ID 0 forced]">
       <version name="2.7.6" author="Brendan Baker">
         <source file="ReaTooled_Play-Stop (with memory, edit-play toggles, and no undo).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Transport/ReaTooled_Play-Stop%20%28with%20memory%2C%20edit-play%20toggles%2C%20and%20no%20undo%29.lua</source>
