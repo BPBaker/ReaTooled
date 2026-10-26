@@ -1,6 +1,6 @@
 --[[
 -- @description ReaTooled - Restore settings from a backup
--- @version 1.1.3
+-- @version 1.1.4
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -19,6 +19,8 @@
     restoring that backup. REAPER quits, the files are put back, and the same
     copy of REAPER opens again.
 -- CHANGELOG
+-- v1.1.4 "Keep my later changes" also puts back earlier ReaTooled shortcuts that Set up
+--        removed when upgrading (if their key is still free)
 -- v1.1.3 "Keep my later changes" now also puts back your window layout (docked
 --        windows, dockers, toolbars) and your screensets as they were before ReaTooled;
 --        fixed settings in [reaper] (lowercase, as on macOS) counting as "you changed it";
@@ -599,6 +601,25 @@ local function plan_keep()
           local at = find(l:sub(3))
           if at then table.remove(kb, at); changed = true; reverted = reverted + 1
           else kept = kept + 1; report("kept (you changed it)   shortcut " .. l:sub(3)) end
+          i = i + 1
+        elseif l:sub(1, 2) == "x " then
+          -- an earlier ReaTooled shortcut Set up removed: back, unless that key is taken now
+          local old = l:sub(3)
+          local f = {}
+          for w in old:gmatch("%S+") do f[#f + 1] = w; if #f == 5 then break end end
+          local taken = false
+          if f[1] == "KEY" then
+            for _, x in ipairs(kb) do
+              local g = {}
+              for w in x:gmatch("%S+") do g[#g + 1] = w; if #g == 5 then break end end
+              if g[1] == "KEY" and g[2] == f[2] and g[3] == f[3] and g[5] == f[5] then taken = true; break end
+            end
+          end
+          if not taken and not find(old) then
+            kb[#kb + 1] = old; changed = true; reverted = reverted + 1
+          elseif taken then
+            kept = kept + 1; report("kept (key now used)     shortcut " .. old)
+          end
           i = i + 1
         elseif l:sub(1, 2) == "- " and lines[i + 1] and lines[i + 1]:sub(1, 2) == "= " then
           local at = find(lines[i + 1]:sub(3))

@@ -24,7 +24,10 @@
 --        direction), and "Scrolling and zooming" opens once after REAPER restarts so
 --        it can be tried and changed there. The theme is no longer switched while REAPER is
 --        running (it's selected for the restart), so ReaSmoothPlayhead doesn't report
---        "unsaved changes" during setup
+--        "unsaved changes" during setup. Upgrading from an earlier ReaTooled: shortcuts that
+--        still match what that release installed are updated without asking, and old
+--        ReaTooled-section shortcuts the current release doesn't use are removed (only if
+--        unchanged); only clashes with the user's own shortcuts are asked about
 -- v2.2.5 Adds ReaTooled's MIDI editor shortcuts (clashes are asked about like the others,
 --        with the real action names); reads the REAPER window size from [reaper] in any
 --        case; clears anything left over from an unfinished
@@ -801,7 +804,22 @@ local function command_name(cmd, line)
   return name ~= "" and name or cmd
 end
 
+-- Shortcuts earlier ReaTooled releases installed ("modifiers|key|section" -> command IDs).
+-- A user shortcut that still matches one of them wasn't the user's choice.
+local LEGACY = {}
+do
+  local path = RES .. "/Scripts/ReaTooled/Startup/ReaTooled_Earlier shortcuts.lua"
+  if exists(path) then
+    local ok, t = pcall(dofile, path)
+    if ok and type(t) == "table" then LEGACY = t end
+  end
+end
+local function from_earlier_release(key, cmd)
+  return LEGACY[key] ~= nil and LEGACY[key][norm_id(cmd)] == true
+end
+
 local replace_line, add_scr, add_act, add_key, conflicts = {}, {}, {}, {}, {}
+local remove_line, legacy_updated, legacy_removed = {}, 0, 0
 for _, s in ipairs(our_scr) do
   if not user_scr[s.id] then add_scr[#add_scr + 1] = s.line end
 end
@@ -813,9 +831,30 @@ for _, k in ipairs(our_key) do
   local u = user_key[k.k]
   if not u then
     add_key[#add_key + 1] = k.line
-  elseif u.cmd ~= k.cmd then
-    conflicts[#conflicts + 1] = { k = k, u = u }
-    if tonumber(k.k:match("([^|]+)$")) ~= KEY_SECTION then midi_conflicts = midi_conflicts + 1 end
+  elseif norm_id(u.cmd) ~= norm_id(k.cmd) then
+    if from_earlier_release(k.k, u.cmd) then
+      -- an earlier ReaTooled's shortcut, unchanged by the user: update it
+      replace_line[u.i] = k.line
+      legacy_updated = legacy_updated + 1
+    else
+      conflicts[#conflicts + 1] = { k = k, u = u }
+      if tonumber(k.k:match("([^|]+)$")) ~= KEY_SECTION then midi_conflicts = midi_conflicts + 1 end
+    end
+  end
+end
+
+-- Old ReaTooled-section shortcuts the current release doesn't use (scripts it
+-- replaced, keys it unmapped): removed, but only if the user hasn't changed them.
+-- REAPER's main section and global hotkeys are left alone.
+do
+  local ours_keys = {}
+  for _, k in ipairs(our_key) do ours_keys[k.k] = true end
+  for key, u in pairs(user_key) do
+    if not ours_keys[key] and tonumber(key:match("([^|]+)$")) == KEY_SECTION
+       and from_earlier_release(key, u.cmd) then
+      remove_line[u.i] = true
+      legacy_removed = legacy_removed + 1
+    end
   end
 end
 
@@ -824,7 +863,9 @@ if #conflicts > 0 then
   local where = midi_conflicts == 0 and "(in the ReaTooled keymap section only)"
     or (#conflicts == midi_conflicts and "(in the MIDI editor)")
     or ("(" .. (#conflicts - midi_conflicts) .. " in the ReaTooled keymap section, " .. midi_conflicts .. " in the MIDI editor)")
-  local how = msg(#conflicts .. " ReaTooled shortcut(s) use keys you already use for something else " ..
+  local earlier = (legacy_updated > 0) and
+    ("Shortcuts from your earlier ReaTooled (" .. legacy_updated .. ") were updated automatically. ") or ""
+  local how = msg(earlier .. #conflicts .. " ReaTooled shortcut(s) use keys you already use for something else " ..
     where .. ".\n\n" ..
     "YES = choose one by one\nNO = use ReaTooled's for all of them\nCANCEL = keep yours for all of them",
     3)
@@ -865,7 +906,7 @@ local function insert_defs()
 end
 for i, line in ipairs(user_lines) do
   if not inserted and line:match("^KEY ") then insert_defs() end
-  kb_out[#kb_out + 1] = replace_line[i] or line
+  if not remove_line[i] then kb_out[#kb_out + 1] = replace_line[i] or line end
 end
 if not inserted then insert_defs() end
 for _, l in ipairs(add_key) do kb_out[#kb_out + 1] = l end
@@ -1130,6 +1171,8 @@ do
     kb[#kb + 1] = "- " .. user_lines[i]
     kb[#kb + 1] = "= " .. l
   end
+  -- "x line" = an earlier ReaTooled shortcut that was removed
+  for i in pairs(remove_line) do kb[#kb + 1] = "x " .. user_lines[i] end
   write_file(REC .. "/kb.txt", table.concat(kb, "\n") .. "\n")
   -- Whole files written (ReaImGui windows, cursors, templates ...)
   local files = {}
@@ -1153,6 +1196,8 @@ local details = {
   "ReaTooled setup, " .. os.date("%Y-%m-%d %H:%M:%S") .. " (Set up " .. SETUP_VER .. ", config " .. CONFIG_VER .. ")",
   "Backup of your settings: " .. backup_dir,
   "Shortcuts: " .. #add_key .. " added" ..
+    (legacy_updated > 0 and (", " .. legacy_updated .. " from an earlier ReaTooled updated") or "") ..
+    (legacy_removed > 0 and (", " .. legacy_removed .. " old ReaTooled shortcut(s) removed") or "") ..
     (#conflicts > 0 and (", " .. use_ours .. " clash(es) set to ReaTooled's, " .. kept .. " kept as yours") or "") ..
     (midi_conflicts > 0 and (" (" .. midi_conflicts .. " of the clashes in the MIDI editor)") or "") .. ".",
   "Script settings: " .. ext_count .. ". Files: " .. copied .. " copied" ..
