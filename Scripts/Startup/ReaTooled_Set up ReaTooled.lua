@@ -1,6 +1,6 @@
 --[[
 -- @description ReaTooled - Set up ReaTooled
--- @version 2.2.6
+-- @version 2.2.7
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -8,7 +8,7 @@
     Run it once. Everything is backed up first, to Data/ReaTooled/Backups.
     While REAPER is open it:
       - checks the extensions and scripts ReaTooled needs
-      - merges the ReaTooled shortcuts into yours (asks about any conflicts)
+      - merges the ReaTooled shortcuts into yours (a window shows any clashes)
       - applies saved script settings, cursors, menu sets, templates and FX chains
       - switches to the ReaTooled theme
       - adds ReaTooled to Scripts/__startup.lua and tells ReaPack to install
@@ -19,6 +19,16 @@
     When you click OK at the end, REAPER quits, the helper writes those files,
     and the same copy of REAPER opens again by itself.
 -- CHANGELOG
+-- v2.2.7 Shortcut clashes are shown together in one window instead of Yes/No/Cancel
+--        boxes: each row says "Keep yours" or "Update to ReaTooled's" (Keep yours is
+--        the default), any row can be changed until Continue, and the shortcut that loses
+--        its key can be given another one there. The final message lists ReaTooled actions
+--        left without a shortcut. Without ReaImGui every clashing key is kept as yours.
+--        ReaSmoothPlayhead is no longer installed by ReaBoot: Set up adds its ReaPack
+--        repository, so it's installed with the rest after the restart, once the ReaTooled
+--        theme is in place (an earlier unsaved theme made it report "unsaved changes").
+--        Font settings left in reaper.ini by an earlier theme are removed, so the ReaTooled
+--        theme's own fonts apply (they're in the backup, and Restore puts them back)
 -- v2.2.6 No mousewheel question during setup: the suggested direction for ReaTooled's
 --        wheel scripts is saved (from natural scrolling and REAPER's vertical scroll
 --        direction), and "Scrolling and zooming" opens once after REAPER restarts so
@@ -28,11 +38,6 @@
 --        still match what that release installed are updated without asking, and old
 --        ReaTooled-section shortcuts the current release doesn't use are removed (only if
 --        unchanged); only clashes with the user's own shortcuts are asked about.
---        ReaSmoothPlayhead is no longer installed by ReaBoot: Set up adds its ReaPack
---        repository, so it's installed with the rest after the restart, once the ReaTooled
---        theme is in place (an earlier unsaved theme made it report "unsaved changes").
---        Font settings left in reaper.ini by an earlier theme are removed, so the ReaTooled
---        theme's own fonts apply (they're in the backup, and Restore puts them back)
 -- v2.2.5 Adds ReaTooled's MIDI editor shortcuts (clashes are asked about like the others,
 --        with the real action names); reads the REAPER window size from [reaper] in any
 --        case; clears anything left over from an unfinished
@@ -104,7 +109,7 @@ local FOLDERS = {
 ------------------------------------------------------------
 
 local TITLE        = "Set up ReaTooled"
-local SETUP_VER    = "2.2.6"
+local SETUP_VER    = "2.2.7"
 local RES          = reaper.GetResourcePath():gsub("\\", "/")
 local CONFIG       = RES .. "/Data/ReaTooled/Config"
 local PENDING      = RES .. "/Data/ReaTooled/Pending"
@@ -642,8 +647,8 @@ end
 local first_run = not exists(FIRST_BACKUP .. "/backup_info.txt")
 
 local intro = "Set up ReaTooled" .. (CONFIG_VER ~= "" and (" v" .. CONFIG_VER) or "") .. " now?\n\n" ..
-  "Your current settings are backed up first. You'll be asked about any shortcuts " ..
-  "that clash with yours, then REAPER restarts."
+  "Your current settings are backed up first. If any ReaTooled shortcuts clash with " ..
+  "yours, you choose which to keep, then REAPER restarts."
 
 if #missing > 0 then
   intro = "Some things ReaTooled uses are not installed:\n\n" ..
@@ -872,389 +877,727 @@ do
   end
 end
 
-local use_ours, kept = 0, 0
-if #conflicts > 0 then
-  local where = midi_conflicts == 0 and "(in the ReaTooled keymap section only)"
-    or (#conflicts == midi_conflicts and "(in the MIDI editor)")
-    or ("(" .. (#conflicts - midi_conflicts) .. " in the ReaTooled keymap section, " .. midi_conflicts .. " in the MIDI editor)")
-  local earlier = (legacy_updated > 0) and
-    ("Shortcuts from your earlier ReaTooled (" .. legacy_updated .. ") were updated automatically. ") or ""
-  local how = msg(earlier .. #conflicts .. " ReaTooled shortcut(s) use keys you already use for something else " ..
-    where .. ".\n\n" ..
-    "YES = choose one by one\nNO = use ReaTooled's for all of them\nCANCEL = keep yours for all of them",
-    3)
-  local all = nil
-  if how == 7 then all = true elseif how ~= 6 then all = false end
-  for n, c in ipairs(conflicts) do
-    local ours = all
-    if ours == nil then
-      local r = msg(string.format("Clash %d of %d\n\nShortcut: %s\n\nYours:      %s\nReaTooled: %s\n\n" ..
-        "YES = use ReaTooled's\nNO = keep yours\nCANCEL = decide all the rest at once",
-        n, #conflicts, key_label(c.k.line), command_name(c.u.cmd, user_lines[c.u.i]), command_name(c.k.cmd, c.k.line)), 3)
-      if r == 6 then
-        ours = true
-      elseif r == 7 then
-        ours = false
-      else
-        all = (msg("For the remaining " .. (#conflicts - n + 1) .. " clash(es):\n\n" ..
-                   "YES = use ReaTooled's\nNO = keep yours", 4) == 6)
-        ours = all
+------------------------------------------------------------
+-- 3b. Clashes: one window lists them all. Each starts on "Keep yours";
+-- any row can be changed until Continue, and the shortcut that loses its key
+-- can be given another one.
+------------------------------------------------------------
+
+local use_ours, kept, rekeyed = 0, 0, 0
+local left_without = {}    -- ReaTooled actions left without a shortcut (names)
+local gave_away = {}       -- the user's actions whose key went to ReaTooled (names)
+
+local function short_name(name)
+  return ((name or ""):gsub("^Script: ", ""):gsub("%.lua$", ""))
+end
+
+for _, c in ipairs(conflicts) do
+  c.key_text   = key_label(c.k.line)
+  c.yours_name = short_name(command_name(c.u.cmd, user_lines[c.u.i]))
+  c.ours_name  = short_name(command_name(c.k.cmd, c.k.line))
+  c.update     = false   -- default: keep yours
+  c.section    = c.k.k:match("([^|]+)$")
+  -- Another key can only be given to keyboard shortcuts (not mousewheel or MIDI)
+  c.keyboard   = (tonumber(c.k.k:match("^([^|]+)")) or 255) < 128
+end
+
+-- Keys a new shortcut can't use: everything in the merged shortcut list
+local function owner_of(kstr, except_row, except_side)
+  for _, c in ipairs(conflicts) do
+    if c.k.k == kstr then return c.update and c.ours_name or c.yours_name end
+  end
+  for _, k in ipairs(our_key) do
+    if k.k == kstr then return short_name(command_name(k.cmd, k.line)) end
+  end
+  local u = user_key[kstr]
+  if u and not remove_line[u.i] then return short_name(command_name(u.cmd, user_lines[u.i])) end
+  for _, c in ipairs(conflicts) do
+    for _, side in ipairs({ "alt_ours", "alt_yours" }) do
+      local a = c[side]
+      if a and a.k == kstr and not (c == except_row and side == except_side) then
+        -- only the side that is in use counts
+        if (side == "alt_ours" and not c.update) or (side == "alt_yours" and c.update) then
+          return side == "alt_ours" and c.ours_name or c.yours_name
+        end
       end
     end
-    if ours then
+  end
+end
+
+local function apply_choices()
+  for _, c in ipairs(conflicts) do
+    local alt
+    if c.update then
       replace_line[c.u.i] = c.k.line
       use_ours = use_ours + 1
+      alt = c.alt_yours
+      if alt then
+        add_key[#add_key + 1] = string.format("KEY %d %d %s %s", alt.flags, alt.key, c.u.cmd, c.section)
+      else
+        gave_away[#gave_away + 1] = c.yours_name
+      end
     else
       kept = kept + 1
-    end
-  end
-end
-
--- Build the new reaper-kb.ini: user's lines (with replacements), then new
--- script and custom action lines before the first shortcut, then new shortcuts
-local kb_out, inserted = {}, false
-local function insert_defs()
-  for _, l in ipairs(add_scr) do kb_out[#kb_out + 1] = l end
-  for _, l in ipairs(add_act) do kb_out[#kb_out + 1] = l end
-  inserted = true
-end
-for i, line in ipairs(user_lines) do
-  if not inserted and line:match("^KEY ") then insert_defs() end
-  if not remove_line[i] then kb_out[#kb_out + 1] = replace_line[i] or line end
-end
-if not inserted then insert_defs() end
-for _, l in ipairs(add_key) do kb_out[#kb_out + 1] = l end
-
-------------------------------------------------------------
--- 4. Prepare the files that are written after REAPER quits
-------------------------------------------------------------
-
--- Anything left over from an earlier setup or restore that didn't finish
-for _, f in ipairs({ "copy.txt", "merge.txt", "remove.txt", "restore.txt", "info.txt", "screenset_window.txt" }) do
-  os.remove(PENDING .. "/" .. f)
-end
-
-local copies, merges = {}, {}
-local function stage_copy(rel, data)
-  if write_file(PENDING .. "/files/" .. rel, data) then copies[#copies + 1] = rel end
-end
-local function stage_merge(rel, data)
-  if write_file(PENDING .. "/merge/" .. rel, data) then merges[#merges + 1] = rel end
-end
-
-stage_copy("reaper-kb.ini", table.concat(kb_out, "\n") .. "\n")
-
-local function staged_section_merge(target, config_file, key_merge)
-  local patch = read_file(CONFIG .. "/" .. config_file)
-  if patch then
-    stage_copy(target, ini_merge(read_file(RES .. "/" .. target) or "", patch, key_merge))
-  end
-end
-staged_section_merge("reaper-menu.ini",        "menus.ini")
-staged_section_merge("reaper-mouse.ini",       "mouse.ini", { hasimported = true })
--- Screensets. The ReaTooled screenset ships without a main window size and
--- position (they'd be the developer's screen). REAPER needs one, so this
--- writes the user's own, from REAPER's own record of its window (wnd_x,
--- wnd_y, wnd_w, wnd_h in reaper.ini), in the screenset's format: left, top,
--- right, bottom as 4-byte numbers, then a check byte (the sum of the others).
-local screensets_patch = read_file(CONFIG .. "/screensets.ini")
-local screenset_needs_window = false
-do
-  local function cfg(key)
-    local ok, v = reaper.get_config_var_string(key)
-    if ok and tonumber(v) then return math.floor(tonumber(v)) end
-    local ini = ini_parse(read_file(RES .. "/reaper.ini") or "")
-    for name, lines in pairs(ini.sec) do
-      if name:lower() == "reaper" then   -- [REAPER] or [reaper] (macOS)
-        for _, l in ipairs(lines) do
-          local k, val = l:match("^([^=]+)=(.*)$")
-          if k == key and tonumber(val) then return math.floor(tonumber(val)) end
-        end
-      end
-    end
-  end
-  local x, y, w, h = cfg("wnd_x"), cfg("wnd_y"), cfg("wnd_w"), cfg("wnd_h")
-  local rect, status
-  if x and y and w and h and w > 100 and h > 100 then
-    local bytes, sum = {}, 0
-    for _, n in ipairs({ x, y, x + w, y + h }) do
-      if n < 0 then n = n + 4294967296 end
-      for _ = 1, 4 do
-        local byte = n % 256
-        bytes[#bytes + 1] = string.format("%02X", byte)
-        sum = sum + byte
-        n = (n - byte) // 256
-      end
-    end
-    rect = table.concat(bytes) .. string.format("%02X", sum % 256)
-    status = tostring(cfg("wnd_state") or 0)
-  end
-  if screensets_patch and rect then
-    local p = ini_parse(screensets_patch)
-    for _, name in ipairs(p.order) do
-      if name:match("^sset%d+$") then
-        local lines = {}
-        for _, l in ipairs(p.sec[name]) do
-          if not l:match("^mainwnd_rect=") and not l:match("^mainwnd_status=") then lines[#lines + 1] = l end
-        end
-        table.insert(lines, 1, "mainwnd_rect=" .. rect)
-        table.insert(lines, 2, "mainwnd_status=" .. (status or "0"))
-        p.sec[name] = lines
-      end
-    end
-    screensets_patch = ini_text(p)
-  elseif screensets_patch then
-    -- A brand-new REAPER hasn't saved its window size yet (it does that when
-    -- it quits). The helper adds it to the screenset right after REAPER quits.
-    screenset_needs_window = true
-  end
-end
-if screensets_patch then
-  stage_copy("reaper-screensets.ini", ini_merge(read_file(RES .. "/reaper-screensets.ini") or "", screensets_patch))
-end
-staged_section_merge("reaper-themeconfig.ini", "themeconfig.ini")
-
--- ReaImGui window settings (docked script windows)
-for _, rel in ipairs(list_files(CONFIG .. "/files/ReaImGui")) do
-  local data = read_file(CONFIG .. "/files/ReaImGui/" .. rel)
-  if data then stage_copy("ReaImGui/" .. rel, data) end
-end
-
--- Preferences (reaper.ini), merged key by key, plus the theme
-local prefs_patch
-local theme = (read_file(CONFIG .. "/theme.txt") or ""):match("^%s*(.-)%s*$")
-do
-  local prefs = { "[REAPER]" }
-  for _, name in ipairs({ "prefs.ini", "prefs_offline.ini" }) do
-    for _, l in ipairs(lines_of(read_file(CONFIG .. "/" .. name))) do
-      if l:match("^[^;].*=") then prefs[#prefs + 1] = l end
-    end
-  end
-  if theme ~= "" and exists(RES .. "/ColorThemes/" .. theme) then
-    -- lastthemefn5 is the theme REAPER loads at startup (full path);
-    -- ui_img is the image set that goes with it
-    local full = RES .. "/ColorThemes/" .. theme
-    if IS_WIN then full = full:gsub("/", "\\") end
-    prefs[#prefs + 1] = "lastthemefn5=" .. full
-    prefs[#prefs + 1] = "ui_img=" .. theme
-    -- Fonts belong to the theme. Font lines left in reaper.ini by an earlier theme
-    -- (e.g. ReaTooled v2.6.1's, which was never saved as a theme file) would override
-    -- the new theme's fonts, so they go (the backup keeps them for Restore).
-    for _, k in ipairs(THEME_FONT_KEYS) do prefs[#prefs + 1] = "!delete " .. k end
-  end
-  -- Whole reaper.ini sections (floating toolbar windows), merged key by key too
-  local extra = read_file(CONFIG .. "/reaper_sections.ini")
-  if extra then
-    for _, l in ipairs(lines_of(extra)) do
-      if not l:match("^;") then prefs[#prefs + 1] = l end
-    end
-  end
-  prefs_patch = table.concat(prefs, "\n") .. "\n"
-  stage_merge("reaper.ini", prefs_patch)
-end
-
--- Extension settings (SWS etc.), merged key by key
-local sws_patches = {}
-for _, rel in ipairs(list_files(CONFIG .. "/sws")) do
-  local data = read_file(CONFIG .. "/sws/" .. rel)
-  if data then
-    stage_merge(rel, data)
-    sws_patches[rel] = data
-  end
-end
-
-write_file(PENDING .. "/copy.txt", table.concat(copies, "\n") .. "\n")
-write_file(PENDING .. "/merge.txt", table.concat(merges, "\n") .. "\n")
-if screenset_needs_window then
-  write_file(PENDING .. "/screenset_window.txt", "Add the REAPER window size to screenset #1 after REAPER quits\n")
-end
-write_file(PENDING .. "/info.txt", "Prepared by Set up ReaTooled " .. SETUP_VER .. " on " ..
-  os.date("%Y-%m-%d %H:%M:%S") .. " (config " .. CONFIG_VER .. ")\n")
-
-------------------------------------------------------------
--- 5. Applied now, while REAPER runs
-------------------------------------------------------------
-
--- Saved script settings
-local ext_count = 0
-do
-  local ext = ini_parse(read_file(CONFIG .. "/extstate.ini") or "")
-  for _, section in ipairs(ext.order) do
-    for _, l in ipairs(ext.sec[section]) do
-      local k, v = l:match("^([^=]+)=(.*)$")
-      if k then
-        if section == "ReaTooled" and k == "WheelInvert" then v = wheel_invert end
-        reaper.SetExtState(section, k, v, true)
-        ext_count = ext_count + 1
-      end
-    end
-  end
-  reaper.SetExtState("ReaTooled", "WheelInvert", wheel_invert, true)   -- even if the config has none
-end
-
--- Cursors, menu sets, templates, FX chains
-local copied, kept_files, folder_copied = 0, 0, {}
-for _, f in ipairs(FOLDERS) do
-  for _, rel in ipairs(list_files(CONFIG .. "/files/" .. f.name)) do
-    local dst = RES .. "/" .. f.name .. "/" .. rel
-    if exists(dst) and not f.overwrite then
-      kept_files = kept_files + 1
-    elseif copy_file(CONFIG .. "/files/" .. f.name .. "/" .. rel, dst) then
-      copied = copied + 1
-      folder_copied[#folder_copied + 1] = f.name .. "/" .. rel
-    end
-  end
-end
-
--- Theme: selected through reaper.ini (lastthemefn5 above), so it appears when REAPER
--- restarts. Not switched while REAPER is running: ReaSmoothPlayhead would see a theme
--- change in the middle of setup and turn itself off ("your theme has unsaved changes").
-local theme_note
-if theme == "" then
-  theme_note = "Theme: none in the configuration."
-elseif not exists(RES .. "/ColorThemes/" .. theme) then
-  theme_note = "Theme NOT applied: " .. theme .. " isn't in ColorThemes/. Install the " ..
-    "\"ReaTooled Themes\" package in ReaPack, then run Set up again."
-else
-  theme_note = "Theme: " .. theme:gsub("%.ReaperThemeZip$", ""):gsub("%.ReaperTheme$", "") ..
-    " (selected when REAPER restarts)"
-end
-
--- Startup block in Scripts/__startup.lua
-local hook_note
-if exists(HOOK_SCRIPT) then
-  _G.REATOOLED_SETUP = {}
-  local ran, err = pcall(dofile, HOOK_SCRIPT)
-  local result = _G.REATOOLED_SETUP
-  _G.REATOOLED_SETUP = nil
-  if ran and result.ok then
-    hook_note = "ReaTooled was added to REAPER's startup."
-  else
-    hook_note = "ReaTooled could NOT be added to REAPER's startup: " ..
-      tostring(ran and result.result or err) ..
-      "\nRun 'Script: ReaTooled_Install startup hook.lua' from the Actions list to try again."
-  end
-else
-  hook_note = "ReaTooled could NOT be added to REAPER's startup (missing " .. HOOK_SCRIPT .. ")."
-end
-
--- ReaPack: install every ReaTooled package, now and when new ones are added
-local repo_ok = reaper.ReaPack_AddSetRepository(REPO_NAME, REPO_URL, true, 1, "")
--- ReaSmoothPlayhead too (installed on the next ReaPack sync, after the restart).
--- Already installed some other way: adding its repository again changes nothing.
-reaper.ReaPack_AddSetRepository(SMOOTH_REPO_NAME, SMOOTH_REPO_URL, true, 1, "")
-if repo_ok then reaper.ReaPack_ProcessQueue(true) end
-
-reaper.SetExtState("ReaTooled", "SetupVersion", SETUP_VER, true)
-os.remove(RES .. "/Data/ReaTooled/starter_off.txt")   -- the ReaTooled Starter may start Set up again after a restore
-if screensets_patch then reaper.SetExtState("ReaTooled", "LoadScreensetOnce", "1", true) end
-if repo_ok then reaper.SetExtState("ReaTooled", "SyncOnce", "1", true) end
-reaper.SetExtState("ReaTooled", "ScrollingWindowOnce", "1", true)   -- "Scrolling and zooming" on the first start
-
-------------------------------------------------------------
--- 5b. The record of exactly what this setup changed, kept with the backup.
--- "Restore settings from a backup" uses it to remove ReaTooled but keep
--- what the user changed afterwards.
-------------------------------------------------------------
-
-do
-  local REC = backup_dir .. "/applied"
-  -- Settings merged one by one (key=value)
-  write_file(REC .. "/keys/reaper.ini", prefs_patch or "")
-  for rel, data in pairs(sws_patches) do write_file(REC .. "/keys/" .. rel, data) end
-  do  -- what was really applied: the config's script settings with the mousewheel choice
-    local ext_text = read_file(CONFIG .. "/extstate.ini") or ""
-    local found
-    ext_text = ext_text:gsub("\nWheelInvert=[^\n]*", function() found = true; return "\nWheelInvert=" .. wheel_invert end)
-    if not found then
-      if ext_text:find("%[ReaTooled%]") then
-        ext_text = ext_text:gsub("%[ReaTooled%]\n", "[ReaTooled]\nWheelInvert=" .. wheel_invert .. "\n", 1)
+      alt = c.alt_ours
+      if alt then
+        add_key[#add_key + 1] = string.format("KEY %d %d %s %s", alt.flags, alt.key, c.k.cmd, c.section)
       else
-        ext_text = ext_text .. "\n[ReaTooled]\nWheelInvert=" .. wheel_invert .. "\n"
+        left_without[#left_without + 1] = c.ours_name
       end
     end
-    write_file(REC .. "/keys/reaper-extstate.ini", ext_text)
+    if alt then rekeyed = rekeyed + 1 end
   end
-  -- Whole sections replaced (menus/toolbars, screensets, theme settings);
-  -- mouse modifier contexts are restored one modifier at a time, so they
-  -- go with the key-by-key settings
-  for target, name in pairs({ ["reaper-menu.ini"] = "menus.ini", ["reaper-themeconfig.ini"] = "themeconfig.ini" }) do
-    local data = read_file(CONFIG .. "/" .. name)
-    if data then write_file(REC .. "/sections/" .. target, data) end
-  end
-  if screensets_patch then write_file(REC .. "/sections/reaper-screensets.ini", screensets_patch) end
-  local mouse = read_file(CONFIG .. "/mouse.ini")
-  if mouse then write_file(REC .. "/keys/reaper-mouse.ini", mouse) end
-  -- Shortcuts: "+ line" = added, "- old" then "= new" = replaced
-  local kb = {}
-  for _, l in ipairs(add_key) do kb[#kb + 1] = "+ " .. l end
-  for i, l in pairs(replace_line) do
-    kb[#kb + 1] = "- " .. user_lines[i]
-    kb[#kb + 1] = "= " .. l
-  end
-  -- "x line" = an earlier ReaTooled shortcut that was removed
-  for i in pairs(remove_line) do kb[#kb + 1] = "x " .. user_lines[i] end
-  write_file(REC .. "/kb.txt", table.concat(kb, "\n") .. "\n")
-  -- Whole files written (ReaImGui windows, cursors, templates ...)
-  local files = {}
-  for _, rel in ipairs(list_files(CONFIG .. "/files/ReaImGui")) do files[#files + 1] = "ReaImGui/" .. rel end
-  for _, rel in ipairs(folder_copied) do files[#files + 1] = rel end
-  for _, rel in ipairs(files) do
-    local src = (rel:match("^ReaImGui/") and (CONFIG .. "/files/" .. rel)) or (RES .. "/" .. rel)
-    copy_file(src, REC .. "/files/" .. rel)
-  end
-  write_file(REC .. "/files.txt", table.concat(files, "\n") .. "\n")
-  write_file(REC .. "/record.txt", "ReaTooled setup record 1\nSet up " .. SETUP_VER ..
-    "\nConfig " .. CONFIG_VER .. "\nDate: " .. os.date("%Y-%m-%d %H:%M:%S") .. "\n")
 end
 
-------------------------------------------------------------
--- 6. Start the helper, then tell the user what's left
-------------------------------------------------------------
+-- The rest of the setup (defined below), run after the clashes are settled
+local finish_setup
+local clash_fallback = false   -- true when ReaImGui is missing (every clashing key stays yours)
 
--- The details go in a report file; the message only says what matters
-local details = {
-  "ReaTooled setup, " .. os.date("%Y-%m-%d %H:%M:%S") .. " (Set up " .. SETUP_VER .. ", config " .. CONFIG_VER .. ")",
-  "Backup of your settings: " .. backup_dir,
-  "Shortcuts: " .. #add_key .. " added" ..
-    (legacy_updated > 0 and (", " .. legacy_updated .. " from an earlier ReaTooled updated") or "") ..
-    (legacy_removed > 0 and (", " .. legacy_removed .. " old ReaTooled shortcut(s) removed") or "") ..
-    (#conflicts > 0 and (", " .. use_ours .. " clash(es) set to ReaTooled's, " .. kept .. " kept as yours") or "") ..
-    (midi_conflicts > 0 and (" (" .. midi_conflicts .. " of the clashes in the MIDI editor)") or "") .. ".",
-  "Script settings: " .. ext_count .. ". Files: " .. copied .. " copied" ..
-    (kept_files > 0 and (", " .. kept_files .. " of your own templates/FX chains kept") or "") .. ".",
-  theme_note,
-  "Screenset: the ReaTooled layout opens on the first start (your REAPER window keeps its size and place)" ..
-    (screenset_needs_window and "; the window size is added when REAPER quits." or "."),
-  hook_note,
-  "Mousewheel: ReaTooled's wheel scripts set to " .. (wheel_invert == "1" and "Reversed" or "Standard") .. " (" .. wheel_note .. "); \"Scrolling and zooming\" opens on the first start.",
-}
-write_file(RES .. "/Data/ReaTooled/setup_report.txt", table.concat(details, "\n") .. "\n")
+local function clash_window()
+  if not reaper.ImGui_GetBuiltinPath then return false end
+  package.path = reaper.ImGui_GetBuiltinPath() .. "/?.lua"
+  local ok, ImGui = pcall(function() return require "imgui" "0.9" end)
+  if not ok or not ImGui then return false end
 
--- Only problems are shown
-local problems = {}
-if theme_note:find("NOT", 1, true) then problems[#problems + 1] = theme_note end
-if hook_note:find("NOT", 1, true) then problems[#problems + 1] = hook_note end
-local problem_text = #problems > 0 and ("\n\nPlease note:\n" .. table.concat(problems, "\n")) or ""
+  local IS_MAC = not IS_WIN and (reaper.GetOS():match("^OSX") or reaper.GetOS():match("^macOS")) ~= nil
 
-local quit_cmd = find_cmd("File: Quit REAPER", 40004)
-local restart_now = false
-if quit_cmd then
-  restart_now = (msg("ReaTooled is set up. Click OK to restart REAPER and finish." ..
-    "\n\nWhen REAPER reopens, a small window lets you try scrolling and zooming, and adjust them if you like." ..
-    problem_text ..
-    "\n\nYour old settings were backed up to:\n" .. backup_dir ..
-    "\n\nTo undo, run \"Restore settings from a backup\".", 1) == 1)
+  -- Keys that can be chosen, with REAPER's own codes (as in reaper-kb.ini)
+  local KEYS = {}
+  local function add(name, code, label) if ImGui["Key_" .. name] then KEYS[#KEYS + 1] = { ImGui["Key_" .. name], code, label } end end
+  for i = 0, 25 do local ch = string.char(65 + i); add(ch, 65 + i, ch) end
+  for i = 0, 9 do add(tostring(i), 48 + i, tostring(i)) end
+  for i = 1, 24 do add("F" .. i, 111 + i, "F" .. i) end
+  for i = 0, 9 do add("Keypad" .. i, 96 + i, "NumPad " .. i) end
+  add("KeypadDecimal", 110, "NumPad ."); add("KeypadDivide", 111, "NumPad /")
+  add("KeypadMultiply", 106, "NumPad *"); add("KeypadSubtract", 109, "NumPad -")
+  add("KeypadAdd", 107, "NumPad +"); add("KeypadEnter", 32781, "NumPad Enter")
+  add("Space", 32, "Space"); add("Enter", 13, "Return"); add("Tab", 9, "Tab")
+  add("Backspace", 8, "Backspace"); add("Delete", 32814, "Delete"); add("Insert", 32813, "Insert")
+  add("Home", 32804, "Home"); add("End", 32803, "End")
+  add("PageUp", 32801, "Page Up"); add("PageDown", 32802, "Page Down")
+  add("LeftArrow", 32805, "Left"); add("UpArrow", 32806, "Up")
+  add("RightArrow", 32807, "Right"); add("DownArrow", 32808, "Down")
+  -- REAPER saves these by the character they type, which depends on the keyboard
+  -- layout, so they can't be chosen here (they can in the Actions list)
+  local CHAR_KEYS = {}
+  for _, n in ipairs({ "Apostrophe", "Comma", "Minus", "Period", "Slash", "Semicolon", "Equal",
+                       "LeftBracket", "Backslash", "RightBracket", "GraveAccent" }) do
+    if ImGui["Key_" .. n] then CHAR_KEYS[#CHAR_KEYS + 1] = ImGui["Key_" .. n] end
+  end
+
+  -- REAPER's modifier bits: 4 Shift, 8 Cmd (Ctrl on Windows), 16 Opt (Alt), 32 Control (Win)
+  local function down(ctx, a, b) return ImGui.IsKeyDown(ctx, a) or ImGui.IsKeyDown(ctx, b) end
+  local function mods_now(ctx)
+    local m = 0
+    if down(ctx, ImGui.Key_LeftShift, ImGui.Key_RightShift) then m = m | 4 end
+    if down(ctx, ImGui.Key_LeftAlt, ImGui.Key_RightAlt) then m = m | 16 end
+    local ctrl  = down(ctx, ImGui.Key_LeftCtrl, ImGui.Key_RightCtrl)     -- Control key
+    local super = down(ctx, ImGui.Key_LeftSuper, ImGui.Key_RightSuper)   -- Cmd / Windows key
+    if IS_MAC then
+      if super then m = m | 8 end
+      if ctrl then m = m | 32 end
+    else
+      if ctrl then m = m | 8 end
+      if super then m = m | 32 end
+    end
+    return m
+  end
+  local function mods_label(m)
+    local parts = {}
+    if IS_MAC then
+      if m & 8 ~= 0 then parts[#parts + 1] = "Cmd" end
+      if m & 16 ~= 0 then parts[#parts + 1] = "Opt" end
+      if m & 4 ~= 0 then parts[#parts + 1] = "Shift" end
+      if m & 32 ~= 0 then parts[#parts + 1] = "Control" end
+    else
+      if m & 8 ~= 0 then parts[#parts + 1] = "Ctrl" end
+      if m & 16 ~= 0 then parts[#parts + 1] = "Alt" end
+      if m & 4 ~= 0 then parts[#parts + 1] = "Shift" end
+      if m & 32 ~= 0 then parts[#parts + 1] = "Win" end
+    end
+    return #parts > 0 and (table.concat(parts, "+") .. "+") or ""
+  end
+
+  local ctx = ImGui.CreateContext(TITLE)
+  local font = ImGui.CreateFont("sans-serif", 14)
+  local font_b = ImGui.CreateFont("sans-serif", 15, ImGui.FontFlags_Bold)
+  ImGui.Attach(ctx, font); ImGui.Attach(ctx, font_b)
+
+  local C_ACCENT, C_ACCENT_H, C_ACCENT_A = 0x2F7FD6FF, 0x3A8FE8FF, 0x2669B3FF
+  local C_RESULT, C_NOTE, C_WARN = 0x8FC3FFFF, 0x8A8A8AFF, 0xE8A33AFF
+  local W = 600
+  local LABEL_X = 110
+  local CHILD_BORDER = ImGui.ChildFlags_Borders or ImGui.ChildFlags_Border or 1
+
+  local capture        -- { row = c, side = "alt_ours"/"alt_yours", start = time }
+  local capture_msg    -- text under the row being recorded
+  local first_frame, outcome = true, nil   -- outcome: "continue" / "cancel"
+
+  local function note(text, col)
+    ImGui.PushStyleColor(ctx, ImGui.Col_Text, col or C_NOTE)
+    ImGui.PushTextWrapPos(ctx, W); ImGui.TextWrapped(ctx, text); ImGui.PopTextWrapPos(ctx)
+    ImGui.PopStyleColor(ctx)
+  end
+  local function labeled(label, text)
+    ImGui.TextDisabled(ctx, label); ImGui.SameLine(ctx, LABEL_X)
+    ImGui.PushTextWrapPos(ctx, W - 16); ImGui.TextWrapped(ctx, text); ImGui.PopTextWrapPos(ctx)
+  end
+  local function accent_button(label, w)
+    ImGui.PushStyleColor(ctx, ImGui.Col_Button, C_ACCENT)
+    ImGui.PushStyleColor(ctx, ImGui.Col_ButtonHovered, C_ACCENT_H)
+    ImGui.PushStyleColor(ctx, ImGui.Col_ButtonActive, C_ACCENT_A)
+    ImGui.PushStyleColor(ctx, ImGui.Col_Text, 0xFFFFFFFF)
+    local pressed = ImGui.Button(ctx, label, w, 0)
+    ImGui.PopStyleColor(ctx, 4)
+    return pressed
+  end
+
+  -- While recording: the next key pressed (with its modifiers) becomes the shortcut
+  local function record()
+    ImGui.SetNextFrameWantCaptureKeyboard(ctx, true)   -- keys don't reach REAPER meanwhile
+    if ImGui.IsKeyPressed(ctx, ImGui.Key_Escape, false) then capture, capture_msg = nil, nil; return end
+    local m = mods_now(ctx)
+    for _, k in ipairs(CHAR_KEYS) do
+      if ImGui.IsKeyPressed(ctx, k, false) then
+        capture_msg = "Keys like , . / ; [ ] can't be chosen here. Press another key, or give it one in the Actions list after setup."
+        return
+      end
+    end
+    for _, k in ipairs(KEYS) do
+      if ImGui.IsKeyPressed(ctx, k[1], false) then
+        if (m & 4) ~= 0 and k[2] >= 48 and k[2] <= 57 then
+          capture_msg = "Shift with a number key can't be chosen here. Press another key, or give it one in the Actions list after setup."
+          return
+        end
+        local flags = 1 | m
+        local kstr = flags .. "|" .. k[2] .. "|" .. capture.row.section
+        local label = mods_label(m) .. k[3]
+        local who = owner_of(kstr, capture.row, capture.side)
+        if who then
+          capture_msg = label .. " is already used by \"" .. who .. "\". Press another key."
+          return
+        end
+        capture.row[capture.side] = { flags = flags, key = k[2], k = kstr, label = label }
+        capture, capture_msg = nil, nil
+        return
+      end
+    end
+  end
+
+  local function row(n, c)
+    ImGui.PushID(ctx, n)
+    ImGui.PushFont(ctx, font_b); ImGui.Text(ctx, c.key_text); ImGui.PopFont(ctx)
+    labeled("Yours now", c.yours_name)
+    labeled("ReaTooled's", c.ours_name)
+    if ImGui.RadioButton(ctx, "Keep yours", not c.update) then c.update = false end
+    ImGui.SameLine(ctx, 0, 18)
+    if ImGui.RadioButton(ctx, "Update to ReaTooled's", c.update) then c.update = true end
+
+    if c.keyboard then
+      local side = c.update and "alt_yours" or "alt_ours"
+      local who = c.update and "yours" or "ReaTooled's"
+      local recording = capture and capture.row == c and capture.side == side
+      ImGui.SameLine(ctx, 0, 18)
+      if recording then
+        ImGui.PushStyleColor(ctx, ImGui.Col_Text, C_WARN)
+        ImGui.Text(ctx, "Press the new key now (Esc to stop)")
+        ImGui.PopStyleColor(ctx)
+      elseif c[side] then
+        ImGui.PushStyleColor(ctx, ImGui.Col_Text, C_RESULT)
+        ImGui.Text(ctx, (c.update and "Yours" or "ReaTooled's") .. " moves to " .. c[side].label)
+        ImGui.PopStyleColor(ctx)
+        ImGui.SameLine(ctx)
+        if ImGui.SmallButton(ctx, "Change") then capture, capture_msg = { row = c, side = side }, nil end
+        ImGui.SameLine(ctx)
+        if ImGui.SmallButton(ctx, "Remove") then c[side] = nil end
+      else
+        if ImGui.SmallButton(ctx, "Give " .. who .. " another key...") then capture, capture_msg = { row = c, side = side }, nil end
+      end
+      if recording and capture_msg then note(capture_msg, C_WARN) end
+    end
+    ImGui.PopID(ctx)
+  end
+
+  local function counts()
+    local keep, upd, moved = 0, 0, 0
+    for _, c in ipairs(conflicts) do
+      if c.update then upd = upd + 1 else keep = keep + 1 end
+      if (c.update and c.alt_yours) or (not c.update and c.alt_ours) then moved = moved + 1 end
+    end
+    return keep, upd, moved
+  end
+
+  local function frame()
+    ImGui.PushFont(ctx, font)
+    ImGui.PushStyleVar(ctx, ImGui.StyleVar_WindowPadding, 16, 14)
+    ImGui.PushStyleVar(ctx, ImGui.StyleVar_FramePadding, 8, 5)
+    ImGui.PushStyleVar(ctx, ImGui.StyleVar_ItemSpacing, 8, 7)
+    ImGui.PushStyleVar(ctx, ImGui.StyleVar_FrameRounding, 4)
+    ImGui.PushStyleVar(ctx, ImGui.StyleVar_WindowRounding, 6)
+    if first_frame then
+      local cx, cy = ImGui.Viewport_GetCenter(ImGui.GetMainViewport(ctx))
+      ImGui.SetNextWindowPos(ctx, cx, cy, ImGui.Cond_Appearing, 0.5, 0.5)
+      ImGui.SetNextWindowFocus(ctx)
+    end
+
+    local flags = ImGui.WindowFlags_NoCollapse | ImGui.WindowFlags_AlwaysAutoResize | ImGui.WindowFlags_NoDocking
+    local visible, open = ImGui.Begin(ctx, TITLE .. " - shortcuts", true, flags)
+    if visible then
+      if capture then record() end
+      ImGui.PushFont(ctx, font_b); ImGui.Text(ctx, "Shortcut clashes"); ImGui.PopFont(ctx)
+      ImGui.SameLine(ctx)
+      ImGui.SetCursorPosX(ctx, W + 16 - ImGui.CalcTextSize(ctx, "ReaTooled"))
+      ImGui.TextDisabled(ctx, "ReaTooled")
+      ImGui.Separator(ctx)
+      note((#conflicts == 1 and "1 ReaTooled shortcut uses a key" or (#conflicts .. " ReaTooled shortcuts use keys")) ..
+        " you already use for something else. Choose what each key should do. Nothing changes until you press Continue.", 0xD0D0D0FF)
+      if legacy_updated > 0 then
+        note("Shortcuts from your earlier ReaTooled (" .. legacy_updated .. ") were updated automatically.")
+      end
+      ImGui.Dummy(ctx, 0, 2)
+
+      local h = math.min(#conflicts * 118, 420)
+      if ImGui.BeginChild(ctx, "rows", W, h, CHILD_BORDER) then
+        for n, c in ipairs(conflicts) do
+          if n > 1 then ImGui.Separator(ctx) end
+          row(n, c)
+        end
+        ImGui.EndChild(ctx)
+      end
+
+      if ImGui.Button(ctx, "Keep all of mine") then
+        for _, c in ipairs(conflicts) do c.update = false end
+      end
+      ImGui.SameLine(ctx)
+      if ImGui.Button(ctx, "Update all to ReaTooled's") then
+        for _, c in ipairs(conflicts) do c.update = true end
+      end
+      local keep, upd, moved = counts()
+      ImGui.SameLine(ctx)
+      ImGui.SetCursorPosX(ctx, W + 16 - ImGui.CalcTextSize(ctx, "Keeping 00, updating 00, another key 00"))
+      ImGui.TextDisabled(ctx, string.format("Keeping %d, updating %d%s", keep, upd,
+        moved > 0 and (", another key " .. moved) or ""))
+      ImGui.Dummy(ctx, 0, 2)
+      note("Changed your mind later? Run \"Set up ReaTooled\" again: keys you kept are offered again. " ..
+        "\"Restore settings from a backup\" brings back shortcuts you replaced. You can also change any " ..
+        "shortcut in the Actions list.")
+      ImGui.Separator(ctx)
+
+      local w1, w2 = 110, 110
+      ImGui.SetCursorPosX(ctx, ImGui.GetCursorPosX(ctx) + math.max(0, W - w1 - w2 - 8))
+      if ImGui.Button(ctx, "Cancel setup", w1, 0) then outcome = "cancel" end
+      ImGui.SameLine(ctx)
+      if accent_button("Continue", w2) then outcome = "continue" end
+      ImGui.End(ctx)
+    end
+    ImGui.PopStyleVar(ctx, 5)
+    ImGui.PopFont(ctx)
+    first_frame = false
+    if not open then outcome = "cancel" end
+  end
+
+  local function loop()
+    frame()
+    if outcome == "continue" then
+      apply_choices()
+      reaper.defer(finish_setup)   -- after the window has closed
+      return
+    elseif outcome == "cancel" then
+      reaper.defer(function()
+        msg("Setup cancelled. Nothing was changed.\n\n" ..
+            "Run \"Set up ReaTooled\" again whenever you're ready.")
+      end)
+      return
+    end
+    reaper.defer(loop)
+  end
+  reaper.defer(loop)
+  return true
+end
+
+finish_setup = function()
+  -- Build the new reaper-kb.ini: user's lines (with replacements), then new
+  -- script and custom action lines before the first shortcut, then new shortcuts
+  local kb_out, inserted = {}, false
+  local function insert_defs()
+    for _, l in ipairs(add_scr) do kb_out[#kb_out + 1] = l end
+    for _, l in ipairs(add_act) do kb_out[#kb_out + 1] = l end
+    inserted = true
+  end
+  for i, line in ipairs(user_lines) do
+    if not inserted and line:match("^KEY ") then insert_defs() end
+    if not remove_line[i] then kb_out[#kb_out + 1] = replace_line[i] or line end
+  end
+  if not inserted then insert_defs() end
+  for _, l in ipairs(add_key) do kb_out[#kb_out + 1] = l end
+
+  ------------------------------------------------------------
+  -- 4. Prepare the files that are written after REAPER quits
+  ------------------------------------------------------------
+
+  -- Anything left over from an earlier setup or restore that didn't finish
+  for _, f in ipairs({ "copy.txt", "merge.txt", "remove.txt", "restore.txt", "info.txt", "screenset_window.txt" }) do
+    os.remove(PENDING .. "/" .. f)
+  end
+
+  local copies, merges = {}, {}
+  local function stage_copy(rel, data)
+    if write_file(PENDING .. "/files/" .. rel, data) then copies[#copies + 1] = rel end
+  end
+  local function stage_merge(rel, data)
+    if write_file(PENDING .. "/merge/" .. rel, data) then merges[#merges + 1] = rel end
+  end
+
+  stage_copy("reaper-kb.ini", table.concat(kb_out, "\n") .. "\n")
+
+  local function staged_section_merge(target, config_file, key_merge)
+    local patch = read_file(CONFIG .. "/" .. config_file)
+    if patch then
+      stage_copy(target, ini_merge(read_file(RES .. "/" .. target) or "", patch, key_merge))
+    end
+  end
+  staged_section_merge("reaper-menu.ini",        "menus.ini")
+  staged_section_merge("reaper-mouse.ini",       "mouse.ini", { hasimported = true })
+  -- Screensets. The ReaTooled screenset ships without a main window size and
+  -- position (they'd be the developer's screen). REAPER needs one, so this
+  -- writes the user's own, from REAPER's own record of its window (wnd_x,
+  -- wnd_y, wnd_w, wnd_h in reaper.ini), in the screenset's format: left, top,
+  -- right, bottom as 4-byte numbers, then a check byte (the sum of the others).
+  local screensets_patch = read_file(CONFIG .. "/screensets.ini")
+  local screenset_needs_window = false
+  do
+    local function cfg(key)
+      local ok, v = reaper.get_config_var_string(key)
+      if ok and tonumber(v) then return math.floor(tonumber(v)) end
+      local ini = ini_parse(read_file(RES .. "/reaper.ini") or "")
+      for name, lines in pairs(ini.sec) do
+        if name:lower() == "reaper" then   -- [REAPER] or [reaper] (macOS)
+          for _, l in ipairs(lines) do
+            local k, val = l:match("^([^=]+)=(.*)$")
+            if k == key and tonumber(val) then return math.floor(tonumber(val)) end
+          end
+        end
+      end
+    end
+    local x, y, w, h = cfg("wnd_x"), cfg("wnd_y"), cfg("wnd_w"), cfg("wnd_h")
+    local rect, status
+    if x and y and w and h and w > 100 and h > 100 then
+      local bytes, sum = {}, 0
+      for _, n in ipairs({ x, y, x + w, y + h }) do
+        if n < 0 then n = n + 4294967296 end
+        for _ = 1, 4 do
+          local byte = n % 256
+          bytes[#bytes + 1] = string.format("%02X", byte)
+          sum = sum + byte
+          n = (n - byte) // 256
+        end
+      end
+      rect = table.concat(bytes) .. string.format("%02X", sum % 256)
+      status = tostring(cfg("wnd_state") or 0)
+    end
+    if screensets_patch and rect then
+      local p = ini_parse(screensets_patch)
+      for _, name in ipairs(p.order) do
+        if name:match("^sset%d+$") then
+          local lines = {}
+          for _, l in ipairs(p.sec[name]) do
+            if not l:match("^mainwnd_rect=") and not l:match("^mainwnd_status=") then lines[#lines + 1] = l end
+          end
+          table.insert(lines, 1, "mainwnd_rect=" .. rect)
+          table.insert(lines, 2, "mainwnd_status=" .. (status or "0"))
+          p.sec[name] = lines
+        end
+      end
+      screensets_patch = ini_text(p)
+    elseif screensets_patch then
+      -- A brand-new REAPER hasn't saved its window size yet (it does that when
+      -- it quits). The helper adds it to the screenset right after REAPER quits.
+      screenset_needs_window = true
+    end
+  end
+  if screensets_patch then
+    stage_copy("reaper-screensets.ini", ini_merge(read_file(RES .. "/reaper-screensets.ini") or "", screensets_patch))
+  end
+  staged_section_merge("reaper-themeconfig.ini", "themeconfig.ini")
+
+  -- ReaImGui window settings (docked script windows)
+  for _, rel in ipairs(list_files(CONFIG .. "/files/ReaImGui")) do
+    local data = read_file(CONFIG .. "/files/ReaImGui/" .. rel)
+    if data then stage_copy("ReaImGui/" .. rel, data) end
+  end
+
+  -- Preferences (reaper.ini), merged key by key, plus the theme
+  local prefs_patch
+  local theme = (read_file(CONFIG .. "/theme.txt") or ""):match("^%s*(.-)%s*$")
+  do
+    local prefs = { "[REAPER]" }
+    for _, name in ipairs({ "prefs.ini", "prefs_offline.ini" }) do
+      for _, l in ipairs(lines_of(read_file(CONFIG .. "/" .. name))) do
+        if l:match("^[^;].*=") then prefs[#prefs + 1] = l end
+      end
+    end
+    if theme ~= "" and exists(RES .. "/ColorThemes/" .. theme) then
+      -- lastthemefn5 is the theme REAPER loads at startup (full path);
+      -- ui_img is the image set that goes with it
+      local full = RES .. "/ColorThemes/" .. theme
+      if IS_WIN then full = full:gsub("/", "\\") end
+      prefs[#prefs + 1] = "lastthemefn5=" .. full
+      prefs[#prefs + 1] = "ui_img=" .. theme
+      -- Fonts belong to the theme. Font lines left in reaper.ini by an earlier theme
+      -- (e.g. ReaTooled v2.6.1's, which was never saved as a theme file) would override
+      -- the new theme's fonts, so they go (the backup keeps them for Restore).
+      for _, k in ipairs(THEME_FONT_KEYS) do prefs[#prefs + 1] = "!delete " .. k end
+    end
+    -- Whole reaper.ini sections (floating toolbar windows), merged key by key too
+    local extra = read_file(CONFIG .. "/reaper_sections.ini")
+    if extra then
+      for _, l in ipairs(lines_of(extra)) do
+        if not l:match("^;") then prefs[#prefs + 1] = l end
+      end
+    end
+    prefs_patch = table.concat(prefs, "\n") .. "\n"
+    stage_merge("reaper.ini", prefs_patch)
+  end
+
+  -- Extension settings (SWS etc.), merged key by key
+  local sws_patches = {}
+  for _, rel in ipairs(list_files(CONFIG .. "/sws")) do
+    local data = read_file(CONFIG .. "/sws/" .. rel)
+    if data then
+      stage_merge(rel, data)
+      sws_patches[rel] = data
+    end
+  end
+
+  write_file(PENDING .. "/copy.txt", table.concat(copies, "\n") .. "\n")
+  write_file(PENDING .. "/merge.txt", table.concat(merges, "\n") .. "\n")
+  if screenset_needs_window then
+    write_file(PENDING .. "/screenset_window.txt", "Add the REAPER window size to screenset #1 after REAPER quits\n")
+  end
+  write_file(PENDING .. "/info.txt", "Prepared by Set up ReaTooled " .. SETUP_VER .. " on " ..
+    os.date("%Y-%m-%d %H:%M:%S") .. " (config " .. CONFIG_VER .. ")\n")
+
+  ------------------------------------------------------------
+  -- 5. Applied now, while REAPER runs
+  ------------------------------------------------------------
+
+  -- Saved script settings
+  local ext_count = 0
+  do
+    local ext = ini_parse(read_file(CONFIG .. "/extstate.ini") or "")
+    for _, section in ipairs(ext.order) do
+      for _, l in ipairs(ext.sec[section]) do
+        local k, v = l:match("^([^=]+)=(.*)$")
+        if k then
+          if section == "ReaTooled" and k == "WheelInvert" then v = wheel_invert end
+          reaper.SetExtState(section, k, v, true)
+          ext_count = ext_count + 1
+        end
+      end
+    end
+    reaper.SetExtState("ReaTooled", "WheelInvert", wheel_invert, true)   -- even if the config has none
+  end
+
+  -- Cursors, menu sets, templates, FX chains
+  local copied, kept_files, folder_copied = 0, 0, {}
+  for _, f in ipairs(FOLDERS) do
+    for _, rel in ipairs(list_files(CONFIG .. "/files/" .. f.name)) do
+      local dst = RES .. "/" .. f.name .. "/" .. rel
+      if exists(dst) and not f.overwrite then
+        kept_files = kept_files + 1
+      elseif copy_file(CONFIG .. "/files/" .. f.name .. "/" .. rel, dst) then
+        copied = copied + 1
+        folder_copied[#folder_copied + 1] = f.name .. "/" .. rel
+      end
+    end
+  end
+
+  -- Theme: selected through reaper.ini (lastthemefn5 above), so it appears when REAPER
+  -- restarts. Not switched while REAPER is running: ReaSmoothPlayhead would see a theme
+  -- change in the middle of setup and turn itself off ("your theme has unsaved changes").
+  local theme_note
+  if theme == "" then
+    theme_note = "Theme: none in the configuration."
+  elseif not exists(RES .. "/ColorThemes/" .. theme) then
+    theme_note = "Theme NOT applied: " .. theme .. " isn't in ColorThemes/. Install the " ..
+      "\"ReaTooled Themes\" package in ReaPack, then run Set up again."
+  else
+    theme_note = "Theme: " .. theme:gsub("%.ReaperThemeZip$", ""):gsub("%.ReaperTheme$", "") ..
+      " (selected when REAPER restarts)"
+  end
+
+  -- Startup block in Scripts/__startup.lua
+  local hook_note
+  if exists(HOOK_SCRIPT) then
+    _G.REATOOLED_SETUP = {}
+    local ran, err = pcall(dofile, HOOK_SCRIPT)
+    local result = _G.REATOOLED_SETUP
+    _G.REATOOLED_SETUP = nil
+    if ran and result.ok then
+      hook_note = "ReaTooled was added to REAPER's startup."
+    else
+      hook_note = "ReaTooled could NOT be added to REAPER's startup: " ..
+        tostring(ran and result.result or err) ..
+        "\nRun 'Script: ReaTooled_Install startup hook.lua' from the Actions list to try again."
+    end
+  else
+    hook_note = "ReaTooled could NOT be added to REAPER's startup (missing " .. HOOK_SCRIPT .. ")."
+  end
+
+  -- ReaPack: install every ReaTooled package, now and when new ones are added
+  local repo_ok = reaper.ReaPack_AddSetRepository(REPO_NAME, REPO_URL, true, 1, "")
+  -- ReaSmoothPlayhead too (installed on the next ReaPack sync, after the restart).
+  -- Already installed some other way: adding its repository again changes nothing.
+  reaper.ReaPack_AddSetRepository(SMOOTH_REPO_NAME, SMOOTH_REPO_URL, true, 1, "")
+  if repo_ok then reaper.ReaPack_ProcessQueue(true) end
+
+  reaper.SetExtState("ReaTooled", "SetupVersion", SETUP_VER, true)
+  os.remove(RES .. "/Data/ReaTooled/starter_off.txt")   -- the ReaTooled Starter may start Set up again after a restore
+  if screensets_patch then reaper.SetExtState("ReaTooled", "LoadScreensetOnce", "1", true) end
+  if repo_ok then reaper.SetExtState("ReaTooled", "SyncOnce", "1", true) end
+  reaper.SetExtState("ReaTooled", "ScrollingWindowOnce", "1", true)   -- "Scrolling and zooming" on the first start
+
+  ------------------------------------------------------------
+  -- 5b. The record of exactly what this setup changed, kept with the backup.
+  -- "Restore settings from a backup" uses it to remove ReaTooled but keep
+  -- what the user changed afterwards.
+  ------------------------------------------------------------
+
+  do
+    local REC = backup_dir .. "/applied"
+    -- Settings merged one by one (key=value)
+    write_file(REC .. "/keys/reaper.ini", prefs_patch or "")
+    for rel, data in pairs(sws_patches) do write_file(REC .. "/keys/" .. rel, data) end
+    do  -- what was really applied: the config's script settings with the mousewheel choice
+      local ext_text = read_file(CONFIG .. "/extstate.ini") or ""
+      local found
+      ext_text = ext_text:gsub("\nWheelInvert=[^\n]*", function() found = true; return "\nWheelInvert=" .. wheel_invert end)
+      if not found then
+        if ext_text:find("%[ReaTooled%]") then
+          ext_text = ext_text:gsub("%[ReaTooled%]\n", "[ReaTooled]\nWheelInvert=" .. wheel_invert .. "\n", 1)
+        else
+          ext_text = ext_text .. "\n[ReaTooled]\nWheelInvert=" .. wheel_invert .. "\n"
+        end
+      end
+      write_file(REC .. "/keys/reaper-extstate.ini", ext_text)
+    end
+    -- Whole sections replaced (menus/toolbars, screensets, theme settings);
+    -- mouse modifier contexts are restored one modifier at a time, so they
+    -- go with the key-by-key settings
+    for target, name in pairs({ ["reaper-menu.ini"] = "menus.ini", ["reaper-themeconfig.ini"] = "themeconfig.ini" }) do
+      local data = read_file(CONFIG .. "/" .. name)
+      if data then write_file(REC .. "/sections/" .. target, data) end
+    end
+    if screensets_patch then write_file(REC .. "/sections/reaper-screensets.ini", screensets_patch) end
+    local mouse = read_file(CONFIG .. "/mouse.ini")
+    if mouse then write_file(REC .. "/keys/reaper-mouse.ini", mouse) end
+    -- Shortcuts: "+ line" = added, "- old" then "= new" = replaced
+    local kb = {}
+    for _, l in ipairs(add_key) do kb[#kb + 1] = "+ " .. l end
+    for i, l in pairs(replace_line) do
+      kb[#kb + 1] = "- " .. user_lines[i]
+      kb[#kb + 1] = "= " .. l
+    end
+    -- "x line" = an earlier ReaTooled shortcut that was removed
+    for i in pairs(remove_line) do kb[#kb + 1] = "x " .. user_lines[i] end
+    write_file(REC .. "/kb.txt", table.concat(kb, "\n") .. "\n")
+    -- Whole files written (ReaImGui windows, cursors, templates ...)
+    local files = {}
+    for _, rel in ipairs(list_files(CONFIG .. "/files/ReaImGui")) do files[#files + 1] = "ReaImGui/" .. rel end
+    for _, rel in ipairs(folder_copied) do files[#files + 1] = rel end
+    for _, rel in ipairs(files) do
+      local src = (rel:match("^ReaImGui/") and (CONFIG .. "/files/" .. rel)) or (RES .. "/" .. rel)
+      copy_file(src, REC .. "/files/" .. rel)
+    end
+    write_file(REC .. "/files.txt", table.concat(files, "\n") .. "\n")
+    write_file(REC .. "/record.txt", "ReaTooled setup record 1\nSet up " .. SETUP_VER ..
+      "\nConfig " .. CONFIG_VER .. "\nDate: " .. os.date("%Y-%m-%d %H:%M:%S") .. "\n")
+  end
+
+  ------------------------------------------------------------
+  -- 6. Start the helper, then tell the user what's left
+  ------------------------------------------------------------
+
+  -- The details go in a report file; the message only says what matters
+  local details = {
+    "ReaTooled setup, " .. os.date("%Y-%m-%d %H:%M:%S") .. " (Set up " .. SETUP_VER .. ", config " .. CONFIG_VER .. ")",
+    "Backup of your settings: " .. backup_dir,
+    "Shortcuts: " .. #add_key .. " added" ..
+      (legacy_updated > 0 and (", " .. legacy_updated .. " from an earlier ReaTooled updated") or "") ..
+      (legacy_removed > 0 and (", " .. legacy_removed .. " old ReaTooled shortcut(s) removed") or "") ..
+      (#conflicts > 0 and (", " .. use_ours .. " clash(es) set to ReaTooled's, " .. kept .. " kept as yours") or "") ..
+      (rekeyed > 0 and (", " .. rekeyed .. " given another key") or "") ..
+      (midi_conflicts > 0 and (" (" .. midi_conflicts .. " of the clashes in the MIDI editor)") or "") .. ".",
+    "Script settings: " .. ext_count .. ". Files: " .. copied .. " copied" ..
+      (kept_files > 0 and (", " .. kept_files .. " of your own templates/FX chains kept") or "") .. ".",
+    theme_note,
+    "Screenset: the ReaTooled layout opens on the first start (your REAPER window keeps its size and place)" ..
+      (screenset_needs_window and "; the window size is added when REAPER quits." or "."),
+    hook_note,
+    "Mousewheel: ReaTooled's wheel scripts set to " .. (wheel_invert == "1" and "Reversed" or "Standard") .. " (" .. wheel_note .. "); \"Scrolling and zooming\" opens on the first start.",
+  }
+  if #left_without > 0 then
+    details[#details + 1] = "ReaTooled actions without a shortcut (you kept your own key): " .. table.concat(left_without, "; ")
+  end
+  if #gave_away > 0 then
+    details[#details + 1] = "Your actions now without a shortcut (their key went to ReaTooled): " .. table.concat(gave_away, "; ")
+  end
+  if clash_fallback then
+    details[#details + 1] = "ReaImGui isn't installed, so the shortcut clashes weren't shown: every clashing key was kept as yours."
+  end
+  write_file(RES .. "/Data/ReaTooled/setup_report.txt", table.concat(details, "\n") .. "\n")
+
+  -- Only problems are shown
+  local problems = {}
+  if theme_note:find("NOT", 1, true) then problems[#problems + 1] = theme_note end
+  if hook_note:find("NOT", 1, true) then problems[#problems + 1] = hook_note end
+  if clash_fallback then
+    problems[#problems + 1] = #conflicts .. " ReaTooled shortcut(s) clash with yours. ReaImGui isn't installed, so " ..
+      "yours were kept. Install ReaImGui and run \"Set up ReaTooled\" again to choose."
+  end
+  local problem_text = #problems > 0 and ("\n\nPlease note:\n" .. table.concat(problems, "\n")) or ""
+
+  -- ReaTooled actions left without a key, so nobody wonders where they went
+  local skipped_text = ""
+  if #left_without > 0 and not clash_fallback then
+    local shown = {}
+    for i = 1, math.min(#left_without, 8) do shown[#shown + 1] = "  " .. left_without[i] end
+    if #left_without > 8 then shown[#shown + 1] = "  and " .. (#left_without - 8) .. " more (listed in Data/ReaTooled/setup_report.txt)" end
+    skipped_text = "\n\nThese ReaTooled actions have no shortcut, because you kept your own keys:\n" ..
+      table.concat(shown, "\n") ..
+      "\nGive them keys in the Actions list, or run \"Set up ReaTooled\" again to choose differently."
+  end
+
+  local quit_cmd = find_cmd("File: Quit REAPER", 40004)
+  local restart_now = false
+  if quit_cmd then
+    restart_now = (msg("ReaTooled is set up. Click OK to restart REAPER and finish." ..
+      "\n\nWhen REAPER reopens, a small window lets you try scrolling and zooming, and adjust them if you like." ..
+      problem_text .. skipped_text ..
+      "\n\nYour old settings were backed up to:\n" .. backup_dir ..
+      "\n\nTo undo, run \"Restore settings from a backup\".", 1) == 1)
+  else
+    msg("ReaTooled is set up. Quit REAPER and open it again to finish." ..
+      "\n\nWhen REAPER reopens, a small window lets you try scrolling and zooming, and adjust them if you like." .. problem_text .. skipped_text ..
+      "\n\nYour old settings were backed up to:\n" .. backup_dir)
+  end
+
+  if not launch_helper(restart_now) then
+    msg("The finishing step couldn't be prepared (no permission to write in\n" .. PENDING ..
+        ").\n\nPlease contact support.")
+    return
+  end
+
+  if restart_now then reaper.Main_OnCommand(quit_cmd, 0) end
+end
+
+if #conflicts > 0 then
+  if not clash_window() then
+    -- No ReaImGui: nothing is asked, every clashing key stays yours
+    clash_fallback = true
+    apply_choices()
+    finish_setup()
+  end
 else
-  msg("ReaTooled is set up. Quit REAPER and open it again to finish." ..
-    "\n\nWhen REAPER reopens, a small window lets you try scrolling and zooming, and adjust them if you like." .. problem_text ..
-    "\n\nYour old settings were backed up to:\n" .. backup_dir)
+  finish_setup()
 end
-
-if not launch_helper(restart_now) then
-  msg("The finishing step couldn't be prepared (no permission to write in\n" .. PENDING ..
-      ").\n\nPlease contact support.")
-  return
-end
-
-if restart_now then reaper.Main_OnCommand(quit_cmd, 0) end
