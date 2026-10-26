@@ -20,7 +20,10 @@
     copy of REAPER opens again.
 -- CHANGELOG
 -- v1.1.4 "Keep my later changes" also puts back earlier ReaTooled shortcuts that Set up
---        removed when upgrading (if their key is still free)
+--        removed when upgrading (if their key is still free), and settings Set up removed
+--        (such as an earlier theme's font lines), unless you've set them again since.
+--        Finds your backed-up preferences whatever the case of the section name ([reaper]
+--        on macOS), so they're put back instead of removed
 -- v1.1.3 "Keep my later changes" now also puts back your window layout (docked
 --        windows, dockers, toolbars) and your screensets as they were before ReaTooled;
 --        fixed settings in [reaper] (lowercase, as on macOS) counting as "you changed it";
@@ -417,7 +420,13 @@ local function plan_keep()
     for _, rel in ipairs(list_files(record_of(b) .. "/keys")) do
       if not items[rel] then items[rel] = {}; order[#order + 1] = rel end
       local rt = values_of(record_of(b) .. "/keys/" .. rel)
-      local base = values_of(BACKUP_ROOT .. "/" .. b.name .. "/" .. rel)
+      local base_raw = values_of(BACKUP_ROOT .. "/" .. b.name .. "/" .. rel)
+      -- section names in any case: the backup may say [reaper] where the record says [REAPER]
+      local base = setmetatable({}, { __index = function(_, sec)
+        if base_raw[sec] then return base_raw[sec] end
+        local want = tostring(sec):lower()
+        for name, kv in pairs(base_raw) do if name:lower() == want then return kv end end
+      end })
       for sec, kv in pairs(rt) do
         local t = items[rel][sec]
         if not t then
@@ -437,19 +446,24 @@ local function plan_keep()
           t[k].rt = v
         end
       end
+      -- "!delete key" lines: settings this setup removed (rt = false)
+      local raw = ini_parse(read_file(record_of(b) .. "/keys/" .. rel) or "")
+      for _, sec in ipairs(raw.order) do
+        for _, l in ipairs(raw.sec[sec]) do
+          local k = l:match("^!delete%s+(.-)%s*$")
+          if k then
+            items[rel][sec] = items[rel][sec] or {}
+            local t = items[rel][sec]
+            if not t[k] then t[k] = { base = (base[sec] or {})[k] } end
+            t[k].rt = false
+          end
+        end
+      end
     end
   end
 
   local current_file = {}
-  local function current(rel, sec, key)
-    if rel == "reaper-extstate.ini" then
-      if reaper.HasExtState(sec, key) then return reaper.GetExtState(sec, key) end
-      return nil
-    end
-    if rel == "reaper.ini" and sec:lower() == "reaper" then
-      local ok, v = reaper.get_config_var_string(key)
-      if ok then return v end
-    end
+  local function current_in_file(rel, sec, key)
     if not current_file[rel] then
       -- section names in any case ([reaper] on macOS = [REAPER])
       current_file[rel] = {}
@@ -460,6 +474,17 @@ local function plan_keep()
       end
     end
     return (current_file[rel][sec:lower()] or {})[key]
+  end
+  local function current(rel, sec, key)
+    if rel == "reaper-extstate.ini" then
+      if reaper.HasExtState(sec, key) then return reaper.GetExtState(sec, key) end
+      return nil
+    end
+    if rel == "reaper.ini" and sec:lower() == "reaper" then
+      local ok, v = reaper.get_config_var_string(key)
+      if ok then return v end
+    end
+    return current_in_file(rel, sec, key)
   end
 
   for _, rel in ipairs(order) do
@@ -474,7 +499,11 @@ local function plan_keep()
       table.sort(keys)
       for _, k in ipairs(keys) do
         local it = items[rel][sec][k]
-        local cur_v = current(rel, sec, k)
+        -- a setting this setup removed is judged by the file: still absent = put it back
+        local removed = (it.rt == false)
+        local rtv = (not removed) and it.rt or nil
+        local cur_v
+        if removed then cur_v = current_in_file(rel, sec, k) else cur_v = current(rel, sec, k) end
         -- The theme: still ReaTooled's whenever a ReaTooled theme is selected
         -- (REAPER may write the path differently from Set up)
         local theme_key = rel == "reaper.ini" and sec:lower() == "reaper" and (k == "lastthemefn5" or k == "ui_img")
@@ -482,12 +511,12 @@ local function plan_keep()
           if k == "lastthemefn5" and reaper.GetLastColorThemeFile then
             cur_v = reaper.GetLastColorThemeFile() or cur_v
           end
-          if cur_v and cur_v:find("ReaTooled", 1, true) then cur_v = it.rt end
+          if cur_v and cur_v:find("ReaTooled", 1, true) then cur_v = rtv end
         end
         if rel == "reaper.ini" and is_layout(sec, k) then
           -- the window layout is put back below
-        elseif same_value(cur_v, it.rt) then
-          if not same_value(it.rt, it.base) then
+        elseif same_value(cur_v, rtv) then
+          if not same_value(rtv, it.base) then
             reverted = reverted + 1
             if rel == "reaper-extstate.ini" then
               plan.ext[#plan.ext + 1] = { sec, k, it.base }

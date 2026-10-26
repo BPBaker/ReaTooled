@@ -27,7 +27,12 @@
 --        "unsaved changes" during setup. Upgrading from an earlier ReaTooled: shortcuts that
 --        still match what that release installed are updated without asking, and old
 --        ReaTooled-section shortcuts the current release doesn't use are removed (only if
---        unchanged); only clashes with the user's own shortcuts are asked about
+--        unchanged); only clashes with the user's own shortcuts are asked about.
+--        ReaSmoothPlayhead is no longer installed by ReaBoot: Set up adds its ReaPack
+--        repository, so it's installed with the rest after the restart, once the ReaTooled
+--        theme is in place (an earlier unsaved theme made it report "unsaved changes").
+--        Font settings left in reaper.ini by an earlier theme are removed, so the ReaTooled
+--        theme's own fonts apply (they're in the backup, and Restore puts them back)
 -- v2.2.5 Adds ReaTooled's MIDI editor shortcuts (clashes are asked about like the others,
 --        with the real action names); reads the REAPER window size from [reaper] in any
 --        case; clears anything left over from an unfinished
@@ -64,6 +69,15 @@
 
 local REPO_NAME = "ReaTooled"   -- must match the index name, never change it
 local REPO_URL  = "https://raw.githubusercontent.com/BPBaker/ReaTooled/main/index.xml"
+
+-- reaper.ini font settings that belong to the theme
+local THEME_FONT_KEYS = { "lb_font", "lb_font2", "mi_font", "tl_font", "trans_font" }
+for i = 0, 15 do THEME_FONT_KEYS[#THEME_FONT_KEYS + 1] = "user_font" .. i end
+
+-- ReaSmoothPlayhead: installed through ReaPack after setup instead of by ReaBoot, so it
+-- first starts with the ReaTooled theme in place (with an unsaved theme it turns itself off)
+local SMOOTH_REPO_NAME = "ReaSmoothPlayhead"   -- the repository's index name
+local SMOOTH_REPO_URL  = "https://raw.githubusercontent.com/Sakhnovkrg/ReaSmoothPlayheadReapack/main/index.xml"
 
 -- The ReaTooled keymap section (Main (alt-16) = 16)
 local KEY_SECTION = 16
@@ -1023,6 +1037,10 @@ do
     if IS_WIN then full = full:gsub("/", "\\") end
     prefs[#prefs + 1] = "lastthemefn5=" .. full
     prefs[#prefs + 1] = "ui_img=" .. theme
+    -- Fonts belong to the theme. Font lines left in reaper.ini by an earlier theme
+    -- (e.g. ReaTooled v2.6.1's, which was never saved as a theme file) would override
+    -- the new theme's fonts, so they go (the backup keeps them for Restore).
+    for _, k in ipairs(THEME_FONT_KEYS) do prefs[#prefs + 1] = "!delete " .. k end
   end
   -- Whole reaper.ini sections (floating toolbar windows), merged key by key too
   local extra = read_file(CONFIG .. "/reaper_sections.ini")
@@ -1122,6 +1140,9 @@ end
 
 -- ReaPack: install every ReaTooled package, now and when new ones are added
 local repo_ok = reaper.ReaPack_AddSetRepository(REPO_NAME, REPO_URL, true, 1, "")
+-- ReaSmoothPlayhead too (installed on the next ReaPack sync, after the restart).
+-- Already installed some other way: adding its repository again changes nothing.
+reaper.ReaPack_AddSetRepository(SMOOTH_REPO_NAME, SMOOTH_REPO_URL, true, 1, "")
 if repo_ok then reaper.ReaPack_ProcessQueue(true) end
 
 reaper.SetExtState("ReaTooled", "SetupVersion", SETUP_VER, true)
