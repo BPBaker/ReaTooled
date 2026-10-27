@@ -1,14 +1,15 @@
 -- @description ReaTooled - Loop END stop+cursor handler (pref-aware)
 --                [LOOP POINTS ONLY, LP+EC-aware, ▶ forced to ID 0]
--- @version 2.7
--- @date 2026.10.24
+-- @version 2.8
+-- @date 2026.10.27
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
 --   • Follows REAPER's "Stop playback at end of loop if repeat is disabled" (stopendofloop):
 --       – ON : REAPER stops at the loop end itself; this script only does the cleanup below,
 --              and only when playback really ended at the loop end (not when you press stop).
---       – OFF: this script stops playback at the loop end, then does the cleanup.
+--       – OFF: playback carries on past the loop end, and this script does nothing
+--              (the cursor and loop points stay where they are).
 --   • ▶ Play Marker is a singleton and is always forced to **ID 0**:
 --       – If ID 0 is occupied (marker or region), it is faithfully recreated at a new auto ID, then removed.
 --       – ▶ is then created/moved at ID 0 and any other ▶ by **name** are deleted (no color matching).
@@ -18,6 +19,9 @@
 --       – Follow ON  + LP+EC ON : EDIT := loop end; clear LP & Razor.
 --   • When LP+EC is OFF and loop points change, ▶ mirrors Loop Start (queued while playing).
 -- @changelog
+--   v2.8 - With "Stop playback at end of loop if repeat is disabled" off, playback now
+--          carries on past the loop end, as in REAPER: the script no longer stops it or
+--          moves the cursor. With the preference on, nothing changes.
 --   v2.7 - Reads the real preference (stopendofloop, live) instead of a name that doesn't
 --          exist (stoploopnomode), which made the script always stop playback itself,
 --          slightly before the loop end. With the preference on, REAPER now stops exactly
@@ -191,12 +195,8 @@ local function main()
     local aboutToHit = (dist > 0 and dist <= STOP_THRESHOLD)
     local justPassed = (playPos > lpEnd and playPos - lpEnd < OVERRUN_MARGIN)
 
-    if isPlaying and not stopPrefEnabled and not triggered_rt_loopstop then
-      if aboutToHit or justPassed then
-        reaper.Main_OnCommand(1016, 0) -- Stop
-        triggered_rt_loopstop = true
-      end
-    end
+    -- Preference OFF: REAPER keeps playing past the loop end, and so does this
+    -- script (no stop, no cleanup). Preference ON: REAPER stops by itself (below).
   end
 
   -- REAPER stopped by itself at the loop end (preference ON): playback was

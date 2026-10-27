@@ -65,7 +65,7 @@ Mouse Actions/ReaTooled_Mousewheel to zoom items peaks view gain.lua	1.1	e693972
 Startup/ReaTooled Startup	2.4.11	b499e6dd
 Toggles/ReaTooled - Ripple Off (Slip).lua	1.2	55e703da
 Toggles/ReaTooled MULTI Icon toggle.lua	1.0	e80a68cc
-Toggles/ReaTooled_At loop end, move cursor to loop end and clear selection (only when loop button is off).lua	2.7	c0d31850
+Toggles/ReaTooled_At loop end, move cursor to loop end and clear selection (only when loop button is off).lua	2.8	ab09eee2
 Toggles/ReaTooled_Cycle Peaks Display Mode.lua	1.0	395c748d
 Toggles/ReaTooled_Hover Edit Mode.lua	1.0	8525efb2
 Toggles/ReaTooled_Invert mousewheel direction (for natural scrolling).lua	1.1	ea2bc6b6

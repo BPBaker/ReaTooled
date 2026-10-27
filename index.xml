@@ -12,7 +12,7 @@
   </category>
   <category name="Config">
     <reapack name="ReaTooled Config" type="data" desc="ReaTooled configuration (applied by Set up ReaTooled)">
-      <version name="3.2026.1026.1857" author="Brendan Baker">
+      <version name="3.2026.1027.944" author="Brendan Baker">
         <source file="ReaTooled/Config/keymap.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/keymap.ini</source>
         <source file="ReaTooled/Config/menus.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/menus.ini</source>
         <source file="ReaTooled/Config/mouse.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/mouse.ini</source>
@@ -154,7 +154,7 @@
       </version>
     </reapack>
     <reapack name="ReaTooled Themes" type="theme" desc="ReaTooled themes">
-      <version name="3.2026.1026.1857" author="Brendan Baker">
+      <version name="3.2026.1027.944" author="Brendan Baker">
         <source file="Assembled_ReaTooled v1.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Assembled_ReaTooled%20v1.ReaperThemeZip</source>
         <source file="Default_7.0 ReaTooled v2 Light.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Default_7.0%20ReaTooled%20v2%20Light.ReaperThemeZip</source>
         <source file="Default_7.0 ReaTooled v3 Dark.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Default_7.0%20ReaTooled%20v3%20Dark.ReaperThemeZip</source>
@@ -519,7 +519,7 @@
       </version>
     </reapack>
     <reapack name="ReaTooled_At loop end, move cursor to loop end and clear selection (only when loop button is off).lua" type="script" desc="ReaTooled - Loop END stop+cursor handler (pref-aware)">
-      <version name="2.7" author="Brendan Baker">
+      <version name="2.8" author="Brendan Baker">
         <source file="ReaTooled_At loop end, move cursor to loop end and clear selection (only when loop button is off).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Toggles/ReaTooled_At%20loop%20end%2C%20move%20cursor%20to%20loop%20end%20and%20clear%20selection%20%28only%20when%20loop%20button%20is%20off%29.lua</source>
       </version>
     </reapack>
