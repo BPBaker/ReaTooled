@@ -1,11 +1,13 @@
 -- @description ReaTooled - Default Multi Tool (Smart)
--- @version 1.6.4
--- @date 2026.10.24
+-- @version 1.6.6
+-- @date 2026.10.28
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
 --   # This script loads ReaTooled's default set of mouse modifiers, which gives similar functionality to ProTools' "Smart Tool." 
 -- CHANGELOG
+-- # v1.6.6 Stopping the Trim Tool and the toolbar buttons are shared with the other tools (ReaTooled_Tools lib.lua), which also knows the new Pencil Tool
+-- # v1.6.5 Follows "Toggle swap left and right drag": with it on, right-drag selects razor areas and left-drag in empty track space is marquee
 -- # v1.6.4 Shift+Ctrl double-click on an item (top and bottom half) runs ReaTooled_Clear take envelopes and Reset Volume to 0db.lua
 --        (the old custom action no longer exists); clears the Cmd+Opt+Ctrl item edge double-click
 -- # v1.6.3 Add/update edge mouse modifiers for new ripple options
@@ -27,60 +29,6 @@ local function setModifiers(context, modifiers)
   end
 end
 
--- === Hardened Trim Tool killer (matches worker's keys/heartbeat) ===
-local RT_NS        = "ReaTooled"
-local RT_RUN_KEY   = "TrimToolWorkerRunning"
-local RT_KILL_KEY  = "KillTrimTool"
-local RT_HEARTBEAT = "TrimToolHeartbeat"
-local RT_STALE_SEC = 0.8   -- must match the worker script
-
-local function _trimToolAlive()
-  if not reaper.HasExtState(RT_NS, RT_RUN_KEY) then return false end
-  local hb = tonumber(reaper.GetExtState(RT_NS, RT_HEARTBEAT) or "") or 0
-  if hb == 0 then return true end  -- unknown, assume alive to be safe
-  local age = reaper.time_precise() - hb
-  return age <= RT_STALE_SEC
-end
-
-local function killTrimTool()
-  -- Persist the kill so the worker sees it even if we ran first or block briefly
-  reaper.SetExtState(RT_NS, RT_KILL_KEY, "1", true)
-
-  -- Best-effort immediate cursor neutralization (visual fix while worker exits)
-  if reaper.JS_Mouse_LoadCursor and reaper.JS_Mouse_SetCursor then
-    local arrow = reaper.JS_Mouse_LoadCursor(32512)
-    if arrow then pcall(reaper.JS_Mouse_SetCursor, arrow) end
-  end
-
-  -- Do NOT busy-wait here: it blocks the worker from processing the kill.
-  -- If a stale worker left RUN_KEY behind, opportunistically clean it up
-  -- when heartbeat is older than RT_STALE_SEC.
-  local hb = tonumber(reaper.GetExtState(RT_NS, RT_HEARTBEAT) or "") or 0
-  if hb ~= 0 and (reaper.time_precise() - hb) > RT_STALE_SEC then
-    pcall(reaper.DeleteExtState, RT_NS, RT_RUN_KEY, false)
-    pcall(reaper.DeleteExtState, RT_NS, RT_RUN_KEY, true)
-  end
-end
-
-local function updateToolbar()
-  local toggleCommands = {
-    ["_RS21aa0b14cf72a27be535d32efe0d05513523aec9"] = 0,
-    ["_RSd77ea649952c67db183a19cece290cf3e1b3d49d"] = 1,
-    ["_RSb08c9a159d1a7537eda8df72b777b1cc4c9422e8"] = 1,
-    ["_RSc2c7d733888679038b4a4341074dc703d0f7f9c2"] = 1,
-    ["_RS5e85a066efd01fde2482832bf4a3502dce0427b6"] = 1,
-    ["_RS27973b4ea6ddfabb982b8206b117b31843c68991"] = 0, -- scrub tool
-    ["_RSb90cf42a9ad3d180fdab1c2fbe82e70a76347b1f"] = 0, -- TCE tool
-  }
-
-  for command_id, state in pairs(toggleCommands) do
-    local cmd = reaper.NamedCommandLookup(command_id)
-    if cmd ~= 0 then
-      reaper.SetToggleCommandState(0, cmd, state)
-    end
-  end
-  reaper.RefreshToolbar(0)
-end
 
 ----------------------------------------
 -- Set All Mouse Modifiers
@@ -155,6 +103,19 @@ reaper.Main_OnCommand(42621, 0) -- Clear arrange override mode
 ----------------------------------------
 -- Run cleanup and refresh states
 ----------------------------------------
-killTrimTool()
-updateToolbar()
+
+----------------------------------------
+-- Finish: Trim Tool off, drag swap, Pencil cleanup, toolbar buttons
+-- (shared by every tool: ReaTooled_Tools lib.lua)
+----------------------------------------
+do
+  local dir = ({reaper.get_action_context()})[2]:match("^(.*[/\\])") or ""
+  local ok, tools = pcall(dofile, dir .. "ReaTooled_Tools lib.lua")
+  if ok and type(tools) == "table" then
+    tools.finish("smart")
+  else
+    reaper.ShowConsoleMsg("ReaTooled: tools library not loaded: " .. tostring(tools) .. "\n")
+  end
+end
+
 

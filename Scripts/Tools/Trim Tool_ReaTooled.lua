@@ -1,12 +1,14 @@
 -- @description ReaTooled - Trim Tool (Controller)
--- @version 2.1
--- @date 2025.11.18
+-- @version 2.3
+-- @date 2026.10.28
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about Launches Trim Tool background worker if not already running.
 --        If already running, simply reapplies Trim modifiers/locks and syncs toolbar.
 --        Does NOT toggle off and does NOT spawn duplicates.
 -- CHANGELOG
+-- v2.3  Stopping the Trim Tool and the toolbar buttons are shared with the other tools (ReaTooled_Tools lib.lua), which also knows the new Pencil Tool
+-- v2.2  Puts right-drag back to marquee when "Toggle swap left and right drag" had changed it
 -- v2.1  add new item edge ripple mouse modifiers
 
 local NS         = "ReaTooled"
@@ -14,27 +16,6 @@ local RUN_KEY    = "TrimToolWorkerRunning"
 local KILL_KEY   = "KillTrimTool"
 local WORKER_RS  = "_RS9a9ee6e4eb895674476dc0226ffbda20d9318887" -- background worker ID
 
--- Toolbar button sync (same set you used)
-local toggle_ids = {
-  "_RS21aa0b14cf72a27be535d32efe0d05513523aec9",
-  "_RSd77ea649952c67db183a19cece290cf3e1b3d49d", -- Trim tool button (this one ON)
-  "_RSb08c9a159d1a7537eda8df72b777b1cc4c9422e8",
-  "_RSc2c7d733888679038b4a4341074dc703d0f7f9c2",
-  "_RS5e85a066efd01fde2482832bf4a3502dce0427b6",
-  "_RS27973b4ea6ddfabb982b8206b117b31843c68991", -- scrub tool
-  "_RSb90cf42a9ad3d180fdab1c2fbe82e70a76347b1f"  -- TCE tool
-}
-
-local function sync_toolbar_leds(on)
-  for _, id in ipairs(toggle_ids) do
-    local cmd = reaper.NamedCommandLookup(id)
-    if cmd ~= 0 then
-      local lit = (id == "_RSd77ea649952c67db183a19cece290cf3e1b3d49d") and (on and 1 or 0) or 0
-      reaper.SetToggleCommandState(0, cmd, lit)
-    end
-  end
-  reaper.RefreshToolbar(0)
-end
 
 -- === Preserve ALL your modifiers/locks EXACTLY ===
 local function SetAllMouseModifiers()
@@ -80,7 +61,6 @@ local running = reaper.HasExtState(NS, RUN_KEY)
 if running then
   SetAllMouseModifiers()
   ApplyTrimLocks()
-  sync_toolbar_leds(true)
 else
   -- Clear any stale Kill only when about to launch (don’t cancel a legit stop mid-flight)
   reaper.DeleteExtState(NS, KILL_KEY, false)
@@ -94,5 +74,18 @@ else
     return
   end
   reaper.Main_OnCommand(cmd, 0)
-  sync_toolbar_leds(true)
+end
+
+----------------------------------------
+-- Finish: Trim Tool off, drag swap, Pencil cleanup, toolbar buttons
+-- (shared by every tool: ReaTooled_Tools lib.lua)
+----------------------------------------
+do
+  local dir = ({reaper.get_action_context()})[2]:match("^(.*[/\\])") or ""
+  local ok, tools = pcall(dofile, dir .. "ReaTooled_Tools lib.lua")
+  if ok and type(tools) == "table" then
+    tools.finish("trim")
+  else
+    reaper.ShowConsoleMsg("ReaTooled: tools library not loaded: " .. tostring(tools) .. "\n")
+  end
 end

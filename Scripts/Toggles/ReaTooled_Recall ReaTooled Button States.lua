@@ -1,12 +1,13 @@
 --[[
 -- @description ReaTooled - Recall ReaTooled Button States
--- @version 1.4
--- @date 2026.10.14
+-- @version 1.5
+-- @date 2026.10.28
 -- @author Brendan Baker
 -- @link http://brendanpatrickbaker.com/reatooled/
 -- @about
     # Recalls various ReaTooled Button States
 -- CHANGELOG
+-- v1.5 Recalls the "Toggle swap left and right drag" button
 -- v1.4 Scripts are found by file path instead of hard-coded command IDs, so
 --      renames show up here as readable lines. Corrected section comments
 --      (no behavior changes).
@@ -51,6 +52,7 @@ local RECALL_HOVER_MODE    = cmd("Startup/ReaTooled_Recall Hover Mode State.lua"
 local REATOOLED_SHORTCUTS  = cmd("Toggles/ReaTooled_Toggle ReaTooled Shortcuts.lua")
 local LAYERED_EDITING      = cmd("Toggles/ReaTooled_Toggle Layered Editing.lua")
 local SLIP_INDICATOR       = cmd("Toggles/ReaTooled - Ripple Off (Slip).lua")
+local DRAG_SWAP            = cmd("Tools/ReaTooled_Toggle swap left and right drag.lua")
 
 
 -- TAB TO TRANSIENT
@@ -120,6 +122,9 @@ do
   -- Ensure toolbar button matches the desired recall state
   set_button(LAYERED_EDITING, want_on)
 end
+
+-- SWAP LEFT AND RIGHT DRAG (button only: the mouse settings are kept by REAPER)
+set_button(DRAG_SWAP, reaper.GetExtState("ReaTooled", "DragSwap") == "1")
 
 -- SLIP INDICATOR (Ripple Off)
 run(SLIP_INDICATOR)

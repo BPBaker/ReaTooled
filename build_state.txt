@@ -71,7 +71,7 @@ Toggles/ReaTooled_Hover Edit Mode.lua	1.0	8525efb2
 Toggles/ReaTooled_Invert mousewheel direction (for natural scrolling).lua	1.1	ea2bc6b6
 Toggles/ReaTooled_Link Track and Item and Razor Selection.lua	2.22	5433a8b1
 Toggles/ReaTooled_Loudness normalize new items.lua	1.0	4f7959cd
-Toggles/ReaTooled_Recall ReaTooled Button States.lua	1.4	1e77591b
+Toggles/ReaTooled_Recall ReaTooled Button States.lua	1.5	14bfffde
 Toggles/ReaTooled_Recall ReaTooled Keymap State.lua	1.0	8f4e193a
 Toggles/ReaTooled_Region Shuffle.lua	1.0	40a8c6d7
 Toggles/ReaTooled_Synch razor areas on grouped items.lua	1.1	1a049470
@@ -84,7 +84,7 @@ Toggles/ReaTooled_Toggle ReaTooled Shortcuts.lua	1.0	7253b2aa
 Toggles/ReaTooled_Toggle Tab to Transient.lua	1.0	22d4150f
 Toggles/ReaTooled_Toggle envelope lanes visible or in lane.lua	1.0	8075ba1e
 Toggles/ReaTooled_Toggle item volume envelope for all items.lua	1.0	bb7b25b0
-Tools/ReaTooled Tools	7.2.1	4da223a8
+Tools/ReaTooled Tools	7.2.2	783c7c1a
 Tracks/ReaTooled_Toggle selected tracks inactive.lua	1.0	effb180d
 Transport/ReaTooled_Go to marker by number (keypad . number .).lua	1.1	c4a952d2
 Transport/ReaTooled_Play-Stop (with memory, edit-play toggles, and no undo).lua	2.7.6	ada81617
