@@ -1,5 +1,5 @@
 -- @description ReaTooled - Tools library (shared by the tool scripts)
--- @version 1.0
+-- @version 1.5
 -- @date 2026.10.28
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
@@ -10,9 +10,20 @@
 --     - applies the left/right drag swap (ReaTooled_Drag swap lib.lua)
 --     - undoes the Pencil Tool's envelope and sample-edit drawing when another
 --       tool is chosen
+--     - in Spot mode, makes Move Tool clicks (and Multi tool lower-half clicks)
+--       open the Spot dialog
+--     - in Shuffle mode, has Move Tool drags (and Multi tool lower-half drags)
+--       reorder items (ReaTooled_Shuffle move (background).lua)
 --     - lights the tool's toolbar button(s) and turns the others off
 --   Adding a tool means adding it to TOOLS below, and nowhere else.
 -- @changelog
+--   v1.5 The Shuffle move script is restarted each time a tool is applied (an updated
+--        script takes over)
+--   v1.4 Shuffle mode: with the Move Tool or the Multi tool, REAPER's plain item drag is
+--        turned off and the Shuffle move background script reorders items instead
+--   v1.3 Shuffle mode state (shuffle_on, set_shuffle); Spot and Shuffle are exclusive
+--   v1.2 Tools no longer touch "Take: Toggle sample edits active" (it is per take, not a switch)
+--   v1.1 Spot mode
 --   v1.0 Initial version (moved here from the tool scripts)
 
 local M = {}
@@ -141,6 +152,76 @@ function M.leave_pencil(key)
 end
 
 ------------------------------------------------------------
+-- Spot mode (ReaTooled_Toggle Spot mode): Move Tool clicks, and Multi tool
+-- lower-half clicks, open the Spot dialog. Not kept when REAPER restarts.
+------------------------------------------------------------
+local SPOT_KEY = "SpotMode"
+
+function M.spot_on() return reaper.GetExtState(NS, SPOT_KEY) == "1" end
+function M.set_spot(on) reaper.SetExtState(NS, SPOT_KEY, on and "1" or "0", false) end
+
+------------------------------------------------------------
+-- Shuffle mode (ReaTooled_Toggle Shuffle mode): per-track ripple, plus (later) the
+-- Move Tool reordering items like Pro Tools' Shuffle. Kept when REAPER restarts.
+-- Spot and Shuffle are exclusive, like Pro Tools' edit modes.
+------------------------------------------------------------
+local SHUFFLE_KEY = "ShuffleMode"
+
+function M.shuffle_on() return reaper.GetExtState(NS, SHUFFLE_KEY) == "1" end
+function M.set_shuffle(on) reaper.SetExtState(NS, SHUFFLE_KEY, on and "1" or "0", true) end
+
+-- Toolbar button of a mode toggle script in this folder
+function M.set_button(file, on)
+  local cmd = command_of({ file = file })
+  if cmd ~= 0 then
+    reaper.SetToggleCommandState(0, cmd, on and 1 or 0)
+    reaper.RefreshToolbar2(0, cmd)
+  end
+end
+
+-- Re-apply the current tool when a mode changes what its clicks/drags do
+function M.reapply_tool()
+  for _, key in ipairs({ "grabber", "smart" }) do
+    if M.is_active(key) and not (key == "grabber" and M.is_active("smart")) then
+      local cmd = command_of(M.find(key))
+      if cmd ~= 0 then reaper.Main_OnCommand(cmd, 0) end
+      return
+    end
+  end
+end
+
+local function apply_spot(key)
+  if not M.spot_on() then return end
+  local contexts = (key == "grabber" and { "MM_CTX_ITEM_CLK", "MM_CTX_ITEMLOWER_CLK" })
+                or (key == "smart" and { "MM_CTX_ITEMLOWER_CLK" })
+  if not contexts then return end
+  local cmd = command_of({ file = "ReaTooled_Spot click.lua" })
+  if cmd == 0 then return end
+  local action = "_" .. reaper.ReverseNamedCommandLookup(cmd)
+  for _, c in ipairs(contexts) do reaper.SetMouseModifier(c, 0, action) end
+end
+
+-- Shuffle mode with the Move Tool or the Multi tool: REAPER's plain item drag off
+-- (Move Tool: whole item; Multi tool: lower half, where it moves items), and the
+-- Shuffle move background script started. Any other tool or mode: the script stops
+-- by itself (each tool script sets its own item drags again).
+local SHUFFLE_TOOL_KEY = "ShuffleMoveTool"
+local function apply_shuffle(key)
+  local want = (M.shuffle_on() and (key == "grabber" or key == "smart")) and key or ""
+  reaper.SetExtState(NS, SHUFFLE_TOOL_KEY, want, false)
+  if want == "" then return end
+  if key == "grabber" then
+    reaper.SetMouseModifier("MM_CTX_ITEM", 0, "0")
+    reaper.SetMouseModifier("MM_CTX_ITEMLOWER", 0, "0")
+  else
+    reaper.SetMouseModifier("MM_CTX_ITEMLOWER", 0, "0")
+  end
+  -- (Re)start it: a running copy is stopped and the new one takes over
+  local cmd = command_of({ file = "ReaTooled_Shuffle move (background).lua" })
+  if cmd ~= 0 then reaper.Main_OnCommand(cmd, 0) end
+end
+
+------------------------------------------------------------
 -- Called at the end of every tool script
 ------------------------------------------------------------
 function M.finish(key)
@@ -152,6 +233,8 @@ function M.finish(key)
   else
     reaper.ShowConsoleMsg("ReaTooled: drag swap library not loaded: " .. tostring(swap) .. "\n")
   end
+  apply_spot(key)
+  apply_shuffle(key)
   M.light(key)
 end
 

@@ -1,5 +1,5 @@
 -- @description ReaTooled - Move Tool Left Click (Select Under Mouse + Cursor to Item/Group Start) [no-flicker + loop-if-linked]
--- @version 5.9
+-- @version 5.10
 -- @author Brendan Baker
 -- @about
 --   Replaces selection with the item under the mouse (no 40529), expands to group via 40034 only if
@@ -12,6 +12,9 @@
 --   razor area is there, dragging in it does nothing, and with "Razor edits in media item lane
 --   affect all track envelopes" on, deleting also deletes the automation under it.
 -- @changelog
+--   v5.10 Does nothing right after a Shuffle mode drag (REAPER runs this click when the
+--        drag is let go; the Shuffle move script already selected the item and made the
+--        undo step)
 --   v5.9 Moves the edit cursor to the item/group start again (and sets the loop points when
 --        linked): this had been switched off. Keeping a plain item selection means the item can
 --        still be dragged (razor-area drag has no action) and deleting it leaves the track's
@@ -91,6 +94,16 @@ local function razor_over_selection()
     end
     local _, cur = reaper.GetSetMediaTrackInfo_String(tr, "P_RAZOREDITS", "", false)
     if cur ~= str then reaper.GetSetMediaTrackInfo_String(tr, "P_RAZOREDITS", str, true) end
+  end
+end
+
+-- A Shuffle mode drag just ended (REAPER calls this click on its release):
+-- the Shuffle move script has done the selection and the undo step
+do
+  local t = tonumber(reaper.GetExtState("ReaTooled", "ShuffleDragTime"))
+  if t and reaper.time_precise() - t < 0.5 then
+    reaper.defer(function() end)   -- no undo point
+    return
   end
 end
 

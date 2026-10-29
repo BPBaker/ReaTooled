@@ -1,12 +1,13 @@
 --[[
 -- @description ReaTooled - Recall ReaTooled Button States
--- @version 1.5
--- @date 2026.10.28
+-- @version 1.6
+-- @date 2026.10.29
 -- @author Brendan Baker
 -- @link http://brendanpatrickbaker.com/reatooled/
 -- @about
     # Recalls various ReaTooled Button States
 -- CHANGELOG
+-- v1.6 Recalls Shuffle mode (if REAPER still has per-track ripple)
 -- v1.5 Recalls the "Toggle swap left and right drag" button
 -- v1.4 Scripts are found by file path instead of hard-coded command IDs, so
 --      renames show up here as readable lines. Corrected section comments
@@ -53,6 +54,7 @@ local REATOOLED_SHORTCUTS  = cmd("Toggles/ReaTooled_Toggle ReaTooled Shortcuts.l
 local LAYERED_EDITING      = cmd("Toggles/ReaTooled_Toggle Layered Editing.lua")
 local SLIP_INDICATOR       = cmd("Toggles/ReaTooled - Ripple Off (Slip).lua")
 local DRAG_SWAP            = cmd("Tools/ReaTooled_Toggle swap left and right drag.lua")
+local SHUFFLE_MODE         = cmd("Tools/ReaTooled_Toggle Shuffle mode.lua")
 
 
 -- TAB TO TRANSIENT
@@ -128,6 +130,14 @@ set_button(DRAG_SWAP, reaper.GetExtState("ReaTooled", "DragSwap") == "1")
 
 -- SLIP INDICATOR (Ripple Off)
 run(SLIP_INDICATOR)
+
+-- SHUFFLE MODE (recalled without toggling; stays off unless per-track ripple is on)
+if reaper.GetExtState("ReaTooled", "ShuffleMode") == "1" then
+  reaper.SetExtState("ReaTooled", "ShuffleRecall", "1", false)
+  run(SHUFFLE_MODE)
+else
+  set_button(SHUFFLE_MODE, false)
+end
 
 -- === Force ripple option states on startup ===
 local function ensure(command, want_on)

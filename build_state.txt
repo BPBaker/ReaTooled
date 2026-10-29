@@ -23,9 +23,9 @@ Edit/ReaTooled_Fade In to Edit Cursor Or Mouse (Hover Mode Dependent).lua	1.2	a5
 Edit/ReaTooled_Fade Out From Edit Cursor Or Mouse (Hover Mode Dependent).lua	1.2	7730e49d
 Edit/ReaTooled_Glide Envelope Points.lua	3.0	5a04e65f
 Edit/ReaTooled_Glue items with handles.lua	1.1	12b11d72
-Edit/ReaTooled_Grid and Nudge Settings.lua	2.1.7	0dcad2bb
+Edit/ReaTooled_Grid and Nudge Settings.lua	2.1.8	2567b241
 Edit/ReaTooled_Magic Zero Crossing Loop Copy Buffer Maker.lua	1.0	12cca528
-Edit/ReaTooled_Move Tool Left Click (Select item under mouse cursor, move cursor to start of items).lua	5.9	1343320e
+Edit/ReaTooled_Move Tool Left Click (Select item under mouse cursor, move cursor to start of items).lua	5.10	9f9922ed
 Edit/ReaTooled_Move Tool Left Shift-Click (Select item and extend razor edit).lua	6.3	f06929f3
 Edit/ReaTooled_Move edit cursor to next (right) transient or item edge (Tab to Transient toggle dependent).lua	1.17	3ff181d8
 Edit/ReaTooled_Move edit cursor to previous (left) transient or item edge (Tab to Transient toggle dependent).lua	1.17	5daa363b
@@ -71,7 +71,7 @@ Toggles/ReaTooled_Hover Edit Mode.lua	1.0	8525efb2
 Toggles/ReaTooled_Invert mousewheel direction (for natural scrolling).lua	1.1	ea2bc6b6
 Toggles/ReaTooled_Link Track and Item and Razor Selection.lua	2.22	5433a8b1
 Toggles/ReaTooled_Loudness normalize new items.lua	1.0	4f7959cd
-Toggles/ReaTooled_Recall ReaTooled Button States.lua	1.5	14bfffde
+Toggles/ReaTooled_Recall ReaTooled Button States.lua	1.6	1a106c2d
 Toggles/ReaTooled_Recall ReaTooled Keymap State.lua	1.0	8f4e193a
 Toggles/ReaTooled_Region Shuffle.lua	1.0	40a8c6d7
 Toggles/ReaTooled_Synch razor areas on grouped items.lua	1.1	1a049470
@@ -84,7 +84,7 @@ Toggles/ReaTooled_Toggle ReaTooled Shortcuts.lua	1.0	7253b2aa
 Toggles/ReaTooled_Toggle Tab to Transient.lua	1.0	22d4150f
 Toggles/ReaTooled_Toggle envelope lanes visible or in lane.lua	1.0	8075ba1e
 Toggles/ReaTooled_Toggle item volume envelope for all items.lua	1.0	bb7b25b0
-Tools/ReaTooled Tools	7.2.2	783c7c1a
+Tools/ReaTooled Tools	7.8.2	2f440ecf
 Tracks/ReaTooled_Toggle selected tracks inactive.lua	1.0	effb180d
 Transport/ReaTooled_Go to marker by number (keypad . number .).lua	1.1	c4a952d2
 Transport/ReaTooled_Play-Stop (with memory, edit-play toggles, and no undo).lua	2.7.6	ada81617

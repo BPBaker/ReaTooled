@@ -1,6 +1,6 @@
 -- @description ReaTooled - Grid & Nudge Settings (Dockable GUI)
--- @version 2.1.7
--- @date 2026.10.20
+-- @version 2.1.8
+-- @date 2026.10.29
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -25,6 +25,9 @@
 --     the label shown when the project's grid can't be matched to a menu entry.
 --
 -- @changelog
+--   v2.1.8  (2026-10-29)
+--     • The nudge value field is wider (room for 9 characters instead of 6), so longer
+--       values like 1:23.456 or 12.345678 show in full.
 --   v2.1.7  (2026-10-20)
 --     • Fixed: Grid button showed "1/16" for the first ~10 frames regardless of the
 --       project's actual grid, because the first sync waited on the poll throttle.
@@ -602,7 +605,7 @@ local function DrawFrame()
     reaper.ImGui_PopStyleColor(ctx)
 
     reaper.ImGui_SameLine(ctx, nil, 2)
-    local text_width = ({ reaper.ImGui_CalcTextSize(ctx, '000000') })[1]
+    local text_width = ({ reaper.ImGui_CalcTextSize(ctx, '000000000') })[1]   -- room for 9 digits
     reaper.ImGui_SetNextItemWidth(ctx, text_width)
 
     local nudge_field_active_this_frame = false

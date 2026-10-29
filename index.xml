@@ -12,7 +12,7 @@
   </category>
   <category name="Config">
     <reapack name="ReaTooled Config" type="data" desc="ReaTooled configuration (applied by Set up ReaTooled)">
-      <version name="3.2026.1028.1945" author="Brendan Baker">
+      <version name="3.2026.1029.1825" author="Brendan Baker">
         <source file="ReaTooled/Config/keymap.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/keymap.ini</source>
         <source file="ReaTooled/Config/menus.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/menus.ini</source>
         <source file="ReaTooled/Config/mouse.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/mouse.ini</source>
@@ -154,7 +154,7 @@
       </version>
     </reapack>
     <reapack name="ReaTooled Themes" type="theme" desc="ReaTooled themes">
-      <version name="3.2026.1028.1945" author="Brendan Baker">
+      <version name="3.2026.1029.1825" author="Brendan Baker">
         <source file="Assembled_ReaTooled v1.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Assembled_ReaTooled%20v1.ReaperThemeZip</source>
         <source file="Default_7.0 ReaTooled v2 Light.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Default_7.0%20ReaTooled%20v2%20Light.ReaperThemeZip</source>
         <source file="Default_7.0 ReaTooled v3 Dark.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Default_7.0%20ReaTooled%20v3%20Dark.ReaperThemeZip</source>
@@ -287,7 +287,7 @@
       </version>
     </reapack>
     <reapack name="ReaTooled_Grid and Nudge Settings.lua" type="script" desc="ReaTooled - Grid &amp; Nudge Settings (Dockable GUI)">
-      <version name="2.1.7" author="Brendan Baker">
+      <version name="2.1.8" author="Brendan Baker">
         <source file="ReaTooled_Grid and Nudge Settings.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Grid%20and%20Nudge%20Settings.lua</source>
       </version>
     </reapack>
@@ -307,7 +307,7 @@
       </version>
     </reapack>
     <reapack name="ReaTooled_Move Tool Left Click (Select item under mouse cursor, move cursor to start of items).lua" type="script" desc="ReaTooled - Move Tool Left Click (Select Under Mouse + Cursor to Item/Group Start) [no-flicker + loop-if-linked]">
-      <version name="5.9" author="Brendan Baker">
+      <version name="5.10" author="Brendan Baker">
         <source file="ReaTooled_Move Tool Left Click (Select item under mouse cursor, move cursor to start of items).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Move%20Tool%20Left%20Click%20%28Select%20item%20under%20mouse%20cursor%2C%20move%20cursor%20to%20start%20of%20items%29.lua</source>
       </version>
     </reapack>
@@ -549,7 +549,7 @@
       </version>
     </reapack>
     <reapack name="ReaTooled_Recall ReaTooled Button States.lua" type="script" desc="ReaTooled - Recall ReaTooled Button States">
-      <version name="1.5" author="Brendan Baker">
+      <version name="1.6" author="Brendan Baker">
         <source file="ReaTooled_Recall ReaTooled Button States.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Toggles/ReaTooled_Recall%20ReaTooled%20Button%20States.lua</source>
       </version>
     </reapack>
@@ -616,18 +616,24 @@
   </category>
   <category name="Tools">
     <reapack name="ReaTooled Tools" type="script" desc="ReaTooled Tools">
-      <version name="7.2.2" author="Brendan Baker">
+      <version name="7.8.2" author="Brendan Baker">
         <source file="Default Multi Tool (Smart)_ReaTooled.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/Default%20Multi%20Tool%20%28Smart%29_ReaTooled.lua</source>
         <source file="Move Tool (Grabber)_ReaTooled.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/Move%20Tool%20%28Grabber%29_ReaTooled.lua</source>
         <source file="Pencil Tool_ReaTooled.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/Pencil%20Tool_ReaTooled.lua</source>
         <source file="Razor Select Tool (Selector)_ReaTooled.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/Razor%20Select%20Tool%20%28Selector%29_ReaTooled.lua</source>
         <source file="ReaTooled_AdjustItemEdge.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/ReaTooled_AdjustItemEdge.lua</source>
         <source file="ReaTooled_Drag swap lib.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/ReaTooled_Drag%20swap%20lib.lua</source>
+        <source file="ReaTooled_Mouse lib.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/ReaTooled_Mouse%20lib.lua</source>
         <source file="ReaTooled_Pencil click on item.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/ReaTooled_Pencil%20click%20on%20item.lua</source>
+        <source file="ReaTooled_Pencil sample edits (background).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/ReaTooled_Pencil%20sample%20edits%20%28background%29.lua</source>
+        <source file="ReaTooled_Shuffle move (background).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/ReaTooled_Shuffle%20move%20%28background%29.lua</source>
+        <source file="ReaTooled_Spot click.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/ReaTooled_Spot%20click.lua</source>
+        <source file="ReaTooled_Spot dialog.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/ReaTooled_Spot%20dialog.lua</source>
+        <source file="ReaTooled_Toggle Shuffle mode.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/ReaTooled_Toggle%20Shuffle%20mode.lua</source>
+        <source file="ReaTooled_Toggle Spot mode.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/ReaTooled_Toggle%20Spot%20mode.lua</source>
         <source file="ReaTooled_Toggle swap left and right drag.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/ReaTooled_Toggle%20swap%20left%20and%20right%20drag.lua</source>
         <source file="ReaTooled_Tools lib.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/ReaTooled_Tools%20lib.lua</source>
         <source file="ReaTooled_Trim Tool (Background).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/ReaTooled_Trim%20Tool%20%28Background%29.lua</source>
-        <source file="ReaTooled_Trim Tool Click.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/ReaTooled_Trim%20Tool%20Click.lua</source>
         <source file="Scrub Tool_ReaTooled.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/Scrub%20Tool_ReaTooled.lua</source>
         <source file="Trim Tool_ReaTooled.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/Trim%20Tool_ReaTooled.lua</source>
         <source file="Zoom Tool_ReaTooled.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/Zoom%20Tool_ReaTooled.lua</source>

@@ -1,5 +1,5 @@
 -- @description ReaTooled - Pencil Tool
--- @version 1.0
+-- @version 1.1
 -- @date 2026.10.28
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
@@ -13,9 +13,13 @@
 --       edits)
 --     - Empty track space: drag draws an empty MIDI item
 --     - Items never move or trim with the Pencil
---   Run it again while the Pencil is selected (F10 twice) to turn sample edits
---   on or off for the selected items: an A/B of your waveform drawing.
+--   Sample edits: when you're zoomed in to draw samples and the item under the
+--   mouse has its sample edits bypassed, they're turned on for that item only
+--   (by a small background script that stops when you choose another tool).
+--   Other items, and the other tools, leave sample edits as they are.
 -- @changelog
+--   v1.1 Sample edits are turned on only for the item you're about to draw on
+--        (no longer toggled for the selected items by running it again)
 --   v1.0 Initial version
 
 local _, script_path = reaper.get_action_context()
@@ -25,20 +29,6 @@ local ok, tools = pcall(dofile, dir .. "ReaTooled_Tools lib.lua")
 if not ok or type(tools) ~= "table" then
   reaper.ShowMessageBox("ReaTooled_Tools lib.lua is missing from:\n" .. dir ..
     "\n\nUpdate ReaTooled in ReaPack (Extensions > ReaPack > Synchronize packages).", "ReaTooled", 0)
-  return
-end
-
-----------------------------------------
--- Already the selected tool: toggle sample edits for the selected items
-----------------------------------------
-if tools.is_active("pencil") then
-  local n = reaper.CountSelectedMediaItems(0)
-  if n > 0 then
-    reaper.Main_OnCommand(41668, 0) -- Take: Toggle sample edits active
-    local x, y = reaper.GetMousePosition()
-    reaper.TrackCtl_SetToolTip("Sample edits toggled for " .. n .. " selected item" .. (n == 1 and "" or "s"),
-      x + 12, y + 12, true)
-  end
   return
 end
 
@@ -77,6 +67,18 @@ tools.set_mods({
   MM_CTX_TRACK_CLK        = all("-1"),
 })
 tools.enter_pencil()   -- envelopes and sample edits (put back by the other tools)
+
+-- Background helper: turns sample edits on for the item you're about to draw on
+do
+  local alive = tonumber(reaper.GetExtState("ReaTooled", "PencilSampleEditsAlive")) or 0
+  if reaper.time_precise() - alive > 1 then
+    local path = dir .. "ReaTooled_Pencil sample edits (background).lua"
+    if reaper.file_exists(path) then
+      local id = reaper.AddRemoveReaScript(true, 0, path, true)
+      if id and id ~= 0 then reaper.Main_OnCommand(id, 0) end
+    end
+  end
+end
 
 ----------------------------------------
 -- Locking: off, so take envelopes (clip gain) can be drawn
