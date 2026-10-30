@@ -1,12 +1,13 @@
 --[[
 -- @description ReaTooled - Recall ReaTooled Button States
--- @version 1.6
--- @date 2026.10.29
+-- @version 1.7
+-- @date 2026.10.30
 -- @author Brendan Baker
 -- @link http://brendanpatrickbaker.com/reatooled/
 -- @about
     # Recalls various ReaTooled Button States
 -- CHANGELOG
+-- v1.7 Recalls the Separation mode button
 -- v1.6 Recalls Shuffle mode (if REAPER still has per-track ripple)
 -- v1.5 Recalls the "Toggle swap left and right drag" button
 -- v1.4 Scripts are found by file path instead of hard-coded command IDs, so
@@ -55,6 +56,7 @@ local LAYERED_EDITING      = cmd("Toggles/ReaTooled_Toggle Layered Editing.lua")
 local SLIP_INDICATOR       = cmd("Toggles/ReaTooled - Ripple Off (Slip).lua")
 local DRAG_SWAP            = cmd("Tools/ReaTooled_Toggle swap left and right drag.lua")
 local SHUFFLE_MODE         = cmd("Tools/ReaTooled_Toggle Shuffle mode.lua")
+local SEPARATION_MODE      = cmd("Tools/ReaTooled_Toggle Separation mode.lua")
 
 
 -- TAB TO TRANSIENT
@@ -127,6 +129,9 @@ end
 
 -- SWAP LEFT AND RIGHT DRAG (button only: the mouse settings are kept by REAPER)
 set_button(DRAG_SWAP, reaper.GetExtState("ReaTooled", "DragSwap") == "1")
+
+-- SEPARATION MODE (button only: REAPER keeps the razor area drag setting itself)
+set_button(SEPARATION_MODE, reaper.GetExtState("ReaTooled", "SeparationMode") == "1")
 
 -- SLIP INDICATOR (Ripple Off)
 run(SLIP_INDICATOR)

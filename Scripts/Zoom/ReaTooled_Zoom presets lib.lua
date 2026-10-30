@@ -88,7 +88,24 @@ function Z.notify(msg)
   reaper.defer(wait)
 end
 
+-- Cmd+click on a toolbar button (Ctrl+click on Windows) saves instead, like Pro Tools'
+-- zoom preset buttons. A keyboard shortcut always recalls: if the preset's number
+-- key is down, the script was started from the keyboard.
+local function save_click(n)
+  if not (reaper.JS_Mouse_GetState and reaper.JS_VKeys_GetState) then return false end
+  if (reaper.JS_Mouse_GetState(4) & 4) == 0 then return false end   -- Cmd (Ctrl on Windows)
+  local keys = reaper.JS_VKeys_GetState(-0.5) or ""
+  local digit, numpad = 0x30 + n, 0x60 + n
+  if keys:byte(digit) == 1 or keys:byte(numpad) == 1 then return false end
+  return true
+end
+
 function Z.recall(n)
+  if save_click(n) then
+    Z.save(n)
+    reaper.defer(function() end) -- no undo point
+    return
+  end
   local pps = Z.get(n)
 
   if Z.CENTER == "reaper" then

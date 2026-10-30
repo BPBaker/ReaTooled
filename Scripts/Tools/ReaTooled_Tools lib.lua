@@ -1,5 +1,5 @@
 -- @description ReaTooled - Tools library (shared by the tool scripts)
--- @version 1.8
+-- @version 1.10
 -- @date 2026.10.29
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
@@ -17,6 +17,12 @@
 --     - lights the tool's toolbar button(s) and turns the others off
 --   Adding a tool means adding it to TOOLS below, and nowhere else.
 -- @changelog
+--   v1.10 Shuffle + Separation: razor area drags go to the Shuffle move script
+--         (release_mode_overrides() for the Separation toggle)
+--   v1.9 tool_options(): Cmd+click or Option+click on the Move, Selector, Trim or Multi
+--        tool button
+--        shows a menu of that tool's options at the mouse (Separation, Swap left and
+--        right drag), ticked when on
 --   v1.8 Turning Spot or Shuffle on or off no longer re-runs the tool: only the few
 --        modifiers the mode changes are set, and the tool's own values are put back
 --        when it goes off (track, arrange, right-drag and the drag swap stay as the
@@ -233,7 +239,9 @@ local function release_overrides(group, restore)
   local keep = {}
   for _, e in ipairs(read_snaps()) do
     if group == nil or e.group == group then
-      if restore then reaper.SetMouseModifier(e.ctx, e.flag, e.value) end
+      local put_back = restore
+      if type(restore) == "function" then put_back = restore(e) end
+      if put_back then reaper.SetMouseModifier(e.ctx, e.flag, e.value) end
     else
       keep[#keep + 1] = e
     end
@@ -254,6 +262,10 @@ local apply_spot, apply_shuffle
 
 -- A mode changed (Spot or Shuffle on or off): only the modes' own overrides change;
 -- the tool's other modifiers stay exactly as they are
+-- Every mode's overrides put back as the tool had them (before a mode script
+-- changes one of the same modifiers itself; reapply_tool() sets them again)
+function M.release_mode_overrides() release_overrides(nil, true) end
+
 function M.reapply_tool()
   local key = M.current_tool()
   release_overrides(nil, true)
@@ -285,21 +297,97 @@ function apply_shuffle(key)
   -- drag is off while Shuffle is on: shuffling comes first.)
   override("shuffle", "MM_CTX_ITEM", 0, "0")
   override("shuffle", "MM_CTX_ITEMLOWER", 0, "-1")
+  -- With Separation on, razor area drags are the Shuffle move script's too
+  if reaper.GetExtState(NS, "SeparationMode") == "1" then
+    override("shuffle", "MM_CTX_AREASEL", 0, "0")
+  end
   -- (Re)start it: a running copy is stopped and the new one takes over
   local cmd = command_of({ file = "ReaTooled_Shuffle move (background).lua" })
   if cmd ~= 0 then reaper.Main_OnCommand(cmd, 0) end
 end
 
 ------------------------------------------------------------
+-- Tool options: Cmd+click or Option+click on a tool's toolbar button shows a menu
+-- of that tool's options at the mouse, ticked when on (the tool isn't chosen).
+-- Each entry runs a toggle script in this folder.
+------------------------------------------------------------
+local function ext_on(k) return function() return reaper.GetExtState(NS, k) == "1" end end
+
+local SEPARATION = { label = "Separation (drag a razor area to move what's in it)",
+                     file = "ReaTooled_Toggle Separation mode.lua", on = ext_on("SeparationMode") }
+local DRAG_SWAP  = { label = "Swap left and right drag",
+                     file = "ReaTooled_Toggle swap left and right drag.lua", on = ext_on("DragSwap") }
+
+local DRAG_SWAP_OTHER = { label = "Swap left and right drag (Selector and Multi tools)",
+                          file = DRAG_SWAP.file, on = DRAG_SWAP.on }
+
+M.TOOL_OPTIONS = {
+  grabber  = { SEPARATION, DRAG_SWAP_OTHER },
+  selector = { SEPARATION, DRAG_SWAP },
+  smart    = { SEPARATION, DRAG_SWAP },
+  trim     = { SEPARATION, DRAG_SWAP_OTHER },
+}
+
+M.BUSY_KEY = "ToolOptionsBusy"   -- set while an option runs (it may re-apply the tool)
+
+-- Was this tool script started by a Cmd+click or Option+click on its button (not
+-- by a keyboard shortcut: then a key other than the modifiers is down)?
+function M.options_click()
+  if reaper.GetExtState(NS, M.BUSY_KEY) == "1" then return false end
+  local getMods, getKeys = reaper.JS_Mouse_GetState, reaper.JS_VKeys_GetState
+  if not (getMods and getKeys) or (getMods(4 | 16) & (4 | 16)) == 0 then return false end
+  local MODIFIER_KEYS = { [1]=1, [2]=1, [4]=1, [5]=1, [6]=1, [16]=1, [17]=1, [18]=1, [20]=1,
+    [91]=1, [92]=1, [93]=1, [160]=1, [161]=1, [162]=1, [163]=1, [164]=1, [165]=1 }
+  local keys = getKeys(-0.5) or ""
+  for vk = 1, #keys do
+    if keys:byte(vk) == 1 and not MODIFIER_KEYS[vk] then return false end
+  end
+  return true
+end
+
+function M.tool_options(key)
+  local list = M.TOOL_OPTIONS[key]
+  if not list then return false end
+  local items = {}
+  for i, o in ipairs(list) do items[i] = (o.on() and "!" or "") .. o.label end
+  local title = "ReaTooled tool options"
+  local x, y = reaper.GetMousePosition()
+  gfx.init(title, 0, 0, 0, x, y)
+  if reaper.JS_Window_Find and reaper.JS_Window_SetOpacity then
+    local w = reaper.JS_Window_Find(title, true)
+    if w then reaper.JS_Window_SetOpacity(w, "ALPHA", 0) end
+  end
+  gfx.x, gfx.y = gfx.mouse_x, gfx.mouse_y
+  local choice = gfx.showmenu(table.concat(items, "|"))
+  gfx.quit()
+  local o = list[choice]
+  if o then
+    local cmd = command_of({ file = o.file })
+    if cmd ~= 0 then
+      reaper.SetExtState(NS, M.BUSY_KEY, "1", false)
+      reaper.Main_OnCommand(cmd, 0)
+      reaper.DeleteExtState(NS, M.BUSY_KEY, false)
+    end
+  end
+  return true
+end
+
+------------------------------------------------------------
 -- Called at the end of every tool script
 ------------------------------------------------------------
 local WRITES_ITEM_MODS = { grabber = true, smart = true, selector = true }
+-- The contexts those tools write themselves (others, like razor area drags, are
+-- never set by a tool: a mode's original there is still right)
+local TOOL_CONTEXTS = { MM_CTX_ITEM = true, MM_CTX_ITEMLOWER = true,
+                        MM_CTX_ITEM_CLK = true, MM_CTX_ITEMLOWER_CLK = true }
 
 function M.finish(key)
   -- The tool has just set its own modifiers: the modes' remembered originals are
   -- out of date for a tool that sets its item modifiers (forget them), and still
   -- right for one that doesn't (put them back)
-  release_overrides(nil, not WRITES_ITEM_MODS[key])
+  release_overrides(nil, function(e)
+    return not (WRITES_ITEM_MODS[key] and TOOL_CONTEXTS[e.ctx])
+  end)
   reaper.SetExtState(NS, CUR_TOOL_KEY, key, true)
   if key ~= "trim" then M.kill_trim_tool() end
   if key ~= "pencil" then M.leave_pencil(key) end

@@ -1,5 +1,5 @@
 -- @description ReaTooled - Shuffle move (background, started in Shuffle mode)
--- @version 2.2
+-- @version 2.4.1
 -- @date 2026.10.29
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
@@ -44,6 +44,15 @@
 --   up) and goes in at an item edge on the new track (on an empty track, at its
 --   time). Tracks with locked items aren't shuffled.
 -- @changelog
+--   v2.4.1 Separation: the razor area is read from just before the press (REAPER can
+--          clear it as the button goes down) and put back, so it can be dragged
+--   v2.4 Separation mode: dragging a razor area shuffles what's in it (like Pro Tools'
+--        Separation Grabber in Shuffle). Once the drag starts, items on the tracks with
+--        that razor area are split at its edges and empty space in it is held by
+--        temporary empty items; the pieces then shuffle like selected items (crossfades,
+--        gaps, other tracks, grouped tracks, all tracks). Back home or cancelled,
+--        everything is as it was; dropped, the empty space comes back, the razor area
+--        is cleared and the pieces stay selected
 --   v2.2 What moves is selected while dragging (on every track it moves on, with the
 --        split pieces in all-tracks mode), so its bounds show; it stays selected
 --        after the drop. Back home or cancelled, the selection is as it was.
@@ -546,6 +555,7 @@ end
 -- The drag
 ------------------------------------------------------------
 local automation_apply, restore_envs   -- (defined with the automation below)
+local razor_drag, wrap_restore_fwd, wrap_commit_fwd   -- (Separation, below)
 
 -- An item's crossfade audio can't go before the project start: it is trimmed there
 -- (the timing of everything stays the same)
@@ -630,6 +640,7 @@ local function restore()
   restore_selection()
   reaper.PreventUIRefresh(-1)
   reaper.UpdateArrange()
+  if G.wrap then wrap_restore_fwd(G.wrap) end   -- Separation: splits undone
 end
 
 -- Another track D could go to: its row without D (nil if it has locked items)
@@ -1004,6 +1015,220 @@ function automation_apply(tr, b)
   end
 end
 
+------------------------------------------------------------
+-- Separation (ReaTooled_Toggle Separation mode) in Shuffle: dragging a razor area
+-- shuffles what's in it, like Pro Tools' Separation Grabber. Once the drag starts,
+-- the items on the tracks with that razor area are split at its edges (plain splits,
+-- as REAPER's razor edits make them) and empty space inside it on the clicked track
+-- is filled with temporary empty items; the pieces are selected, and the drag then
+-- runs as a Shuffle drag of selected items. Dropped back home or cancelled,
+-- everything is put back as it was; dropped, the temporary items go (empty space
+-- again), the razor area is cleared and the moved pieces stay selected.
+------------------------------------------------------------
+local function separation_on() return reaper.GetExtState(NS, "SeparationMode") == "1" end
+
+-- Track-level razor areas of a track: { {s, e}, ... }, and the whole string
+local function razor_areas(tr)
+  local _, str = reaper.GetSetMediaTrackInfo_String(tr, "P_RAZOREDITS", "", false)
+  local list = {}
+  for s, e, guid in (str or ""):gmatch('(%S+)%s+(%S+)%s+"([^"]*)"') do
+    if guid == "" then list[#list + 1] = { tonumber(s), tonumber(e) } end
+  end
+  return list, str or ""
+end
+
+local function razor_at(tr, t)
+  for _, ar in ipairs((razor_areas(tr))) do
+    if ar[1] and ar[2] and t >= ar[1] - TOL and t <= ar[2] + TOL then return ar[1], ar[2] end
+  end
+end
+
+-- Split items, fill the empty space and select the pieces; returns the undo record
+-- and the piece to drag (nil and a reason if it can't be done)
+local function razor_prepare(tr, a, b, pressTime)
+  local W = { created = {}, chunks = {}, temps = {}, razorSnap = {}, selSnap = {} }
+  for i = 0, reaper.CountSelectedMediaItems(0) - 1 do W.selSnap[#W.selSnap + 1] = reaper.GetSelectedMediaItem(0, i) end
+  -- The tracks with this razor area
+  local tracks = { tr }
+  for t = 0, reaper.CountTracks(0) - 1 do
+    local t2 = reaper.GetTrack(0, t)
+    if t2 ~= tr then
+      for _, ar in ipairs((razor_areas(t2))) do
+        if ar[1] < b - TOL and ar[2] > a + TOL then tracks[#tracks + 1] = t2 break end
+      end
+    end
+  end
+  -- Locked items at the edges can't be split
+  for _, t2 in ipairs(tracks) do
+    for i = 0, reaper.CountTrackMediaItems(t2) - 1 do
+      local it = reaper.GetTrackMediaItem(t2, i)
+      local p = reaper.GetMediaItemInfo_Value(it, "D_POSITION")
+      local e = p + reaper.GetMediaItemInfo_Value(it, "D_LENGTH")
+      if (reaper.GetMediaItemInfo_Value(it, "C_LOCK") or 0) ~= 0 and p < b - TOL and e > a + TOL then
+        return nil, nil, "a locked item is in the razor area"
+      end
+    end
+  end
+  for _, t2 in ipairs(tracks) do W.razorSnap[t2] = select(2, razor_areas(t2)) end
+  -- Split at the edges
+  for _, t2 in ipairs(tracks) do
+    for _, cut in ipairs({ a, b }) do
+      local list = {}
+      for i = 0, reaper.CountTrackMediaItems(t2) - 1 do list[#list + 1] = reaper.GetTrackMediaItem(t2, i) end
+      for _, it in ipairs(list) do
+        local p = reaper.GetMediaItemInfo_Value(it, "D_POSITION")
+        local e = p + reaper.GetMediaItemInfo_Value(it, "D_LENGTH")
+        if p < cut - TOL and e > cut + TOL then
+          if not W.created[it] and not W.chunks[it] then
+            local ok, chunk = reaper.GetItemStateChunk(it, "", false)
+            if ok then W.chunks[it] = chunk end
+          end
+          local right = reaper.SplitMediaItem(it, cut)
+          if right then W.created[right] = true end
+        end
+      end
+    end
+  end
+  -- Empty space inside the area on the clicked track: temporary empty items
+  local inside = {}
+  for i = 0, reaper.CountTrackMediaItems(tr) - 1 do
+    local it = reaper.GetTrackMediaItem(tr, i)
+    local p = reaper.GetMediaItemInfo_Value(it, "D_POSITION")
+    if p >= a - TOL and p < b - TOL then
+      inside[#inside + 1] = { p, p + reaper.GetMediaItemInfo_Value(it, "D_LENGTH") }
+    end
+  end
+  table.sort(inside, function(x, y) return x[1] < y[1] end)
+  local gaps, t0 = {}, a
+  for _, r in ipairs(inside) do
+    if r[1] > t0 + TOL then gaps[#gaps + 1] = { t0, r[1] } end
+    t0 = math.max(t0, r[2])
+  end
+  if b > t0 + TOL then gaps[#gaps + 1] = { t0, b } end
+  for _, g in ipairs(gaps) do
+    local it = reaper.AddMediaItemToTrack(tr)
+    if it then
+      reaper.SetMediaItemInfo_Value(it, "D_POSITION", g[1])
+      reaper.SetMediaItemInfo_Value(it, "D_LENGTH", g[2] - g[1])
+      W.temps[#W.temps + 1] = it
+    end
+  end
+  -- Select the pieces; the one under the mouse (or nearest) is dragged
+  reaper.SelectAllMediaItems(0, false)
+  local D, bestD = nil, math.huge
+  for _, t2 in ipairs(tracks) do
+    for i = 0, reaper.CountTrackMediaItems(t2) - 1 do
+      local it = reaper.GetTrackMediaItem(t2, i)
+      local p = reaper.GetMediaItemInfo_Value(it, "D_POSITION")
+      local e = p + reaper.GetMediaItemInfo_Value(it, "D_LENGTH")
+      if p >= a - TOL and p < b - TOL then
+        reaper.SetMediaItemSelected(it, true)
+        if t2 == tr then
+          local d = (pressTime >= p and pressTime <= e) and 0 or math.min(math.abs(pressTime - p), math.abs(pressTime - e))
+          if d < bestD then D, bestD = it, d end
+        end
+      end
+    end
+  end
+  return W, D
+end
+
+-- Everything as it was before the split
+local function wrap_restore(W)
+  reaper.PreventUIRefresh(1)
+  for _, it in ipairs(W.temps) do
+    if reaper.ValidatePtr2(0, it, "MediaItem*") then reaper.DeleteTrackMediaItem(reaper.GetMediaItem_Track(it), it) end
+  end
+  for it in pairs(W.created) do
+    if reaper.ValidatePtr2(0, it, "MediaItem*") then reaper.DeleteTrackMediaItem(reaper.GetMediaItem_Track(it), it) end
+  end
+  for it, chunk in pairs(W.chunks) do
+    if reaper.ValidatePtr2(0, it, "MediaItem*") then reaper.SetItemStateChunk(it, chunk, false) end
+  end
+  for tr, str in pairs(W.razorSnap) do
+    if reaper.ValidatePtr2(0, tr, "MediaTrack*") then reaper.GetSetMediaTrackInfo_String(tr, "P_RAZOREDITS", str, true) end
+  end
+  select_only(W.selSnap)
+  reaper.PreventUIRefresh(-1)
+  reaper.UpdateArrange()
+end
+
+-- Dropped: the temporary items go (empty space again), the razor area is cleared
+local function wrap_commit(W)
+  for _, it in ipairs(W.temps) do
+    if reaper.ValidatePtr2(0, it, "MediaItem*") then reaper.DeleteTrackMediaItem(reaper.GetMediaItem_Track(it), it) end
+  end
+  for tr in pairs(W.razorSnap) do
+    if reaper.ValidatePtr2(0, tr, "MediaTrack*") then reaper.GetSetMediaTrackInfo_String(tr, "P_RAZOREDITS", "", true) end
+  end
+end
+
+wrap_restore_fwd, wrap_commit_fwd = wrap_restore, wrap_commit
+
+-- The razor areas as they were before the press (REAPER may clear them as the button
+-- goes down, before this script sees the click)
+local razorCache = nil
+
+local function cache_razors()
+  local c = {}
+  for t = 0, reaper.CountTracks(0) - 1 do
+    local tr = reaper.GetTrack(0, t)
+    local _, str = reaper.GetSetMediaTrackInfo_String(tr, "P_RAZOREDITS", "", false)
+    if str and str ~= "" then c[tr] = str end
+  end
+  razorCache = c
+end
+
+-- The razor area under the press, from the areas as they were before it; puts them
+-- back if REAPER cleared them
+local function razor_press_area(tr, t)
+  if not razorCache then return nil end
+  local str = razorCache[tr]
+  if not str then return nil end
+  local a, b
+  for s1, e1, guid in str:gmatch('(%S+)%s+(%S+)%s+"([^"]*)"') do
+    s1, e1 = tonumber(s1), tonumber(e1)
+    if guid == "" and s1 and e1 and t >= s1 - TOL and t <= e1 + TOL then a, b = s1, e1 break end
+  end
+  if not a then return nil end
+  for t2, s2 in pairs(razorCache) do
+    if reaper.ValidatePtr2(0, t2, "MediaTrack*") then
+      local _, now = reaper.GetSetMediaTrackInfo_String(t2, "P_RAZOREDITS", "", false)
+      if now ~= s2 then reaper.GetSetMediaTrackInfo_String(t2, "P_RAZOREDITS", s2, true) end
+    end
+  end
+  return a, b
+end
+
+-- Pressed on a razor area: nothing happens until the mouse moves far enough
+local function start_razor_press(tr, a, b, pressTime)
+  local x, y = mouse.mouse()
+  G = { pendingRazor = { tr = tr, a = a, b = b, t = pressTime }, pressX = x, pressY = y }
+end
+
+function razor_drag()
+  local P = G.pendingRazor
+  if P then
+    local cx, cy = mouse.mouse()
+    if not cx or (math.abs(cx - G.pressX) < DEADBAND_PX and math.abs(cy - G.pressY) < DEADBAND_PX) then return end
+    local px, py = G.pressX, G.pressY
+    reaper.PreventUIRefresh(1)
+    local W, D, why = razor_prepare(P.tr, P.a, P.b, P.t)
+    reaper.PreventUIRefresh(-1)
+    G = nil
+    if not W then tip(why or "can't move this razor area") return end
+    if not D then wrap_restore(W) return end
+    start_drag(D, P.t)
+    if not G then wrap_restore(W) return end      -- (start_drag said why)
+    G.wrap = W
+    G.selSnap = W.selSnap
+    G.pressX, G.pressY = px, py
+    -- the razor area hides while dragging (it's cleared on the drop, back if cancelled)
+    for t2 in pairs(W.razorSnap) do reaper.GetSetMediaTrackInfo_String(t2, "P_RAZOREDITS", "", true) end
+  end
+  drag()
+end
+
 -- Like the Move Tool's click: what moved is selected (on every track it moved on),
 -- the edit cursor goes to the selection's start, and with Link Timeline and Edit
 -- Selection on the loop points span it
@@ -1032,8 +1257,12 @@ local function release()
     -- The drag made no undo points, so this block captures the whole move
     reaper.Undo_BeginBlock()   -- (the automation was already moved while dragging)
     select_and_place_cursor(G.D)
-    reaper.Undo_EndBlock(G.all and "Shuffle (all tracks)"
+    if G.wrap then wrap_commit_fwd(G.wrap) end
+    reaper.Undo_EndBlock(G.wrap and (G.all and "Shuffle razor area (all tracks)" or "Shuffle razor area")
+      or (G.all and "Shuffle (all tracks)")
       or ((#G.Dslot.members > 1 or #G.followers > 0) and "Shuffle items" or "Shuffle item"), -1)
+  elseif G.wrap then
+    wrap_restore_fwd(G.wrap)                    -- back home: splits undone
   end
   G = nil
   reaper.UpdateArrange()
@@ -1077,7 +1306,10 @@ local function loop()
   local down = reaper.JS_Mouse_GetState(1) == 1
   local mods = reaper.JS_Mouse_GetState(4 | 8 | 16 | 32)
   local cursorBefore = hoverCursor
-  if not down and not G then hoverCursor = mouse.current_cursor() end
+  if not down and not G then
+    hoverCursor = mouse.current_cursor()
+    if separation_on() then cache_razors() else razorCache = nil end
+  end
 
   if not G then
     local c = mouse.new_click()
@@ -1090,15 +1322,26 @@ local function loop()
     if sx and down then   -- a click already released can't be a drag
       local it = reaper.GetItemFromPoint(sx, sy, false)
       hoverCursor = cursorBefore or hoverCursor
-      if our_press(it, sx, sy, mods) then
+      -- Separation: a plain press on a razor area shuffles what's in it
+      local rtr, rinfo = reaper.GetTrackFromPoint(sx, sy)
+      local ra, rb
+      if separation_on() and (mods or 0) == 0 and rtr and (rinfo or 0) == 0 then
+        local cx = reaper.JS_Window_ScreenToClient(mouse.ARRANGE, sx, sy)
+        local pt = mouse.time_at(cx)
+        ra, rb = razor_press_area(rtr, pt)
+        if ra then start_razor_press(rtr, ra, rb, pt) end
+      end
+      if ra then
+        -- (taken by Separation)
+      elseif our_press(it, sx, sy, mods) then
         local cx = reaper.JS_Window_ScreenToClient(mouse.ARRANGE, sx, sy)
         start_drag(it, mouse.time_at(cx))
       end
     end
   elseif down then
-    drag()
+    if G.pendingRazor or G.wrap then razor_drag() else drag() end
   else
-    release()
+    if G.pendingRazor then G = nil else release() end
   end
 
   prevDown = down

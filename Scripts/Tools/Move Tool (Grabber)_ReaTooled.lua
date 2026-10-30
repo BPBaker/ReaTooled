@@ -1,11 +1,12 @@
 -- @description ReaTooled - Move Tool
--- @version 1.7
--- @date 2026.10.28
+-- @version 1.8
+-- @date 2026.10.30
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
 --   # This script loads a set of mouse modifiers focusing on moving items, which gives similar functionality to ProTools' "Grabber Tool."
 -- CHANGELOG
+-- # v1.8 Cmd+click or Option+click on the toolbar button shows a menu of the tool's options (Separation, Swap left and right drag) instead of choosing the tool
 -- # v1.7 Stopping the Trim Tool and the toolbar buttons are shared with the other tools (ReaTooled_Tools lib.lua), which also knows the new Pencil Tool
 -- # v1.6 Right-drag in the arrange selects a razor area (left-drag in empty track space is marquee)
 -- # v1.5 For click, set SHIFT and CMD to "5 m" and "4 m," respectively
@@ -13,6 +14,21 @@
 -- # v1.3 Many revisions to mouse modifiers for more features control
 -- # v1.2 Changed item left click to new companion script '_RS428db9286d6f978287e14df7cf9227628394585d' (Script: ReaTooled_Move Tool Left Click)
 -- # v1.1 Multiple tweaks to mouse modifier to more closely align with PT behavior
+
+----------------------------------------
+-- Cmd+click or Option+click on the toolbar button: a menu of the tool's options
+-- (Separation, Swap left and right drag) instead of choosing the tool. A keyboard
+-- shortcut always chooses the tool. (ReaTooled_Tools lib.lua)
+----------------------------------------
+do
+  local dir = ({ reaper.get_action_context() })[2]:match("^(.*[/\\])") or ""
+  local ok, tools = pcall(dofile, dir .. "ReaTooled_Tools lib.lua")
+  if ok and type(tools) == "table" and tools.options_click and tools.options_click() then
+    tools.tool_options("grabber")
+    reaper.defer(function() end)   -- no undo point
+    return
+  end
+end
 
 ----------------------------------------
 -- Utility Functions

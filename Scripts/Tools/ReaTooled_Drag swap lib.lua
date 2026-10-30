@@ -1,18 +1,21 @@
 -- @description ReaTooled - Drag swap library (used by the tool scripts)
--- @version 1.1
--- @date 2026.10.28
+-- @version 1.2
+-- @date 2026.10.30
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
 --   Not an action. The tool scripts load this after setting their own mouse
 --   modifiers. Right-drag in the arrange does the selection the tool's left-drag
 --   doesn't:
---     - Move Tool (Grabber): left-drag marquee, right-drag razor area
---     - Selector, Zoom, Trim, Scrub: right-drag marquee
---     - Multi tool: right-drag marquee (left-drag razor), or with
---       "ReaTooled_Toggle swap left and right drag" on, right-drag razor and
---       left-drag in empty track space marquee
+--     - Selector and Multi tool: left-drag razor, right-drag marquee
+--     - Move Tool (Grabber), Zoom, Trim, Scrub: right-drag marquee (the Move Tool
+--       only ever selects items, never razor areas: left-drag in empty track space
+--       is marquee too)
+--   With "ReaTooled_Toggle swap left and right drag" on, the Selector and Multi
+--   tool swap them: right-drag is razor and left-drag in empty track space marquee.
 -- @changelog
+--   v1.2 The swap applies to the Selector too. The Move Tool's right-drag is marquee
+--        (it no longer makes razor areas), and the swap doesn't change it
 --   v1.1 Right-drag is written in full (all 16 keys) for every tool, instead of
 --        read back and restored (that left right-drag on razor and copied razor
 --        onto unused keys). The swap applies to the Multi tool only; the Move
@@ -40,10 +43,14 @@ local RIGHT_RAZOR = {}
 for i, v in pairs(RIGHT_MARQUEE) do RIGHT_RAZOR[i] = v end
 RIGHT_RAZOR[0] = "24 m"
 
--- Multi tool with the swap on: left-drag in empty track space is marquee
+-- Left-drag in empty track space, swapped
 local TRACK_MARQUEE = {
   [0] = "9 m",    -- plain: marquee select items
   [1] = "13 m",   -- Shift: marquee add to item selection
+}
+local TRACK_RAZOR = {
+  [0] = "25 m",   -- plain: razor area (as the Selector and Multi tool have it)
+  [1] = "27 m",   -- Shift: add to razor areas
 }
 
 function M.is_on()
@@ -68,11 +75,14 @@ end
 -- Called by every tool script after it sets its own modifiers.
 -- tool: "smart", "grabber", "selector", "zoom", "trim" or "scrub"
 function M.apply(tool)
-  if tool == "grabber" then
-    set_right_drag(RIGHT_RAZOR)
-  elseif tool == "smart" and M.is_on() then
-    set_right_drag(RIGHT_RAZOR)
-    set(TRACK, TRACK_MARQUEE)
+  local swapped = M.is_on()
+  if tool == "smart" or tool == "selector" then   -- left razor, right marquee
+    if swapped then
+      set_right_drag(RIGHT_RAZOR)
+      set(TRACK, TRACK_MARQUEE)
+    else
+      set_right_drag(RIGHT_MARQUEE)
+    end
   else
     set_right_drag(RIGHT_MARQUEE)
   end

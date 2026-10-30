@@ -1,11 +1,12 @@
 -- @description ReaTooled - Default Multi Tool (Smart)
--- @version 1.6.6
--- @date 2026.10.28
+-- @version 1.6.7
+-- @date 2026.10.30
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
 --   # This script loads ReaTooled's default set of mouse modifiers, which gives similar functionality to ProTools' "Smart Tool." 
 -- CHANGELOG
+-- # v1.6.7 Cmd+click or Option+click on the toolbar button shows a menu of the tool's options (Separation, Swap left and right drag) instead of choosing the tool
 -- # v1.6.6 Stopping the Trim Tool and the toolbar buttons are shared with the other tools (ReaTooled_Tools lib.lua), which also knows the new Pencil Tool
 -- # v1.6.5 Follows "Toggle swap left and right drag": with it on, right-drag selects razor areas and left-drag in empty track space is marquee
 -- # v1.6.4 Shift+Ctrl double-click on an item (top and bottom half) runs ReaTooled_Clear take envelopes and Reset Volume to 0db.lua
@@ -19,6 +20,21 @@
 -- # v1.3 Revision, resulting in no change
 -- # v1.2 Revert Track Left Drag to Marquee Select Items AND Time (instead of just marquee select)
 -- # v1.1 Multiple tweaks to mouse modifier to more closely align with PT behavior
+
+----------------------------------------
+-- Cmd+click or Option+click on the toolbar button: a menu of the tool's options
+-- (Separation, Swap left and right drag) instead of choosing the tool. A keyboard
+-- shortcut always chooses the tool. (ReaTooled_Tools lib.lua)
+----------------------------------------
+do
+  local dir = ({ reaper.get_action_context() })[2]:match("^(.*[/\\])") or ""
+  local ok, tools = pcall(dofile, dir .. "ReaTooled_Tools lib.lua")
+  if ok and type(tools) == "table" and tools.options_click and tools.options_click() then
+    tools.tool_options("smart")
+    reaper.defer(function() end)   -- no undo point
+    return
+  end
+end
 
 ----------------------------------------
 -- Utility Functions

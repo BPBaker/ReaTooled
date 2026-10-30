@@ -1,18 +1,19 @@
 -- @description ReaTooled - Toggle swap left and right drag
--- @version 1.1
--- @date 2026.10.28
+-- @version 1.2
+-- @date 2026.10.30
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
---   # Multi tool: swap razor and marquee between left-drag and right-drag
---   For people who are used to REAPER. With it on, in the Multi tool:
---     - right-drag in the arrange selects a razor area (instead of marquee)
---     - left-drag in empty track space is marquee (instead of razor)
---   The other tools aren't affected: right-drag is always the selection their
---   left-drag isn't (Move Tool: razor; Selector, Zoom, Trim, Scrub: marquee).
+--   # Swap razor and marquee between left-drag and right-drag
+--   For people who are used to REAPER. With it on, in the Selector and the Multi
+--   tool, right-drag selects a razor area and left-drag in empty track space is
+--   marquee (swapped from razor left, marquee right).
+--   The other tools aren't affected (the Move Tool only ever selects items: left-
+--   and right-drag are marquee; Zoom, Trim and Scrub: right-drag is marquee).
 --   Off by default; your choice is kept when REAPER restarts. Takes effect right
---   away if the Multi tool is selected.
+--   away for the tool that's selected.
 -- @changelog
+--   v1.2 Applies to the Selector too
 --   v1.1 Applies to the Multi tool only
 --   v1.0 Initial version
 
@@ -31,12 +32,18 @@ swap.set_on(on)
 reaper.SetToggleCommandState(section, cmd_id, on and 1 or 0)
 reaper.RefreshToolbar2(section, cmd_id)
 
--- Re-apply the Multi tool if it's selected, so the change takes effect right away
-local MULTI_ID, MULTI_FILE = "_RS5e85a066efd01fde2482832bf4a3502dce0427b6", "Default Multi Tool (Smart)_ReaTooled.lua"
-local cmd = reaper.NamedCommandLookup(MULTI_ID)
-if cmd == 0 and reaper.file_exists(dir .. MULTI_FILE) then
-  cmd = reaper.AddRemoveReaScript(true, 0, dir .. MULTI_FILE, true) or 0
+-- Re-apply the selected tool if the swap changes it, so it takes effect right away
+local okT, tools = pcall(dofile, dir .. "ReaTooled_Tools lib.lua")
+if okT and type(tools) == "table" then
+  local key = tools.current_tool()
+  if key == "selector" or key == "smart" then
+    local t = tools.find(key)
+    local tcmd = t and tools.command_of(t) or 0
+    if tcmd ~= 0 then
+      reaper.SetExtState("ReaTooled", tools.BUSY_KEY or "ToolOptionsBusy", "1", false)
+      reaper.Main_OnCommand(tcmd, 0)
+      reaper.DeleteExtState("ReaTooled", tools.BUSY_KEY or "ToolOptionsBusy", false)
+    end
+  end
 end
-if cmd ~= 0 and reaper.GetToggleCommandState(cmd) == 1 then reaper.Main_OnCommand(cmd, 0) end
-
 reaper.defer(function() end)   -- no undo point

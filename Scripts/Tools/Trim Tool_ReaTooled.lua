@@ -1,12 +1,13 @@
 -- @description ReaTooled - Trim Tool (Controller)
--- @version 2.5
--- @date 2026.10.29
+-- @version 2.6
+-- @date 2026.10.30
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about Launches Trim Tool background worker if not already running.
 --        If already running, simply reapplies Trim modifiers/locks and syncs toolbar.
 --        Does NOT toggle off and does NOT spawn duplicates.
 -- CHANGELOG
+-- v2.6  Cmd+click or Option+click on the toolbar button shows a menu of tool options (Separation, Swap left and right drag) instead of choosing the tool
 -- v2.5  Left click in empty track space deselects all items and moves the edit cursor (as in the other tools), so you can clear the selection and move around
 -- v2.4  Plain edge drags are the Trim Tool's own (the background worker trims the edge with group, selected-item, snap and ripple handling); edge drags with modifier keys stay REAPER's
 -- v2.3  Stopping the Trim Tool and the toolbar buttons are shared with the other tools (ReaTooled_Tools lib.lua), which also knows the new Pencil Tool
@@ -20,6 +21,21 @@ local WORKER_RS  = "_RS9a9ee6e4eb895674476dc0226ffbda20d9318887" -- background w
 
 
 -- === Preserve ALL your modifiers/locks EXACTLY ===
+----------------------------------------
+-- Cmd+click or Option+click on the toolbar button: a menu of the tool's options
+-- (Separation, Swap left and right drag) instead of choosing the tool. A keyboard
+-- shortcut always chooses the tool. (ReaTooled_Tools lib.lua)
+----------------------------------------
+do
+  local dir = ({ reaper.get_action_context() })[2]:match("^(.*[/\\])") or ""
+  local ok, tools = pcall(dofile, dir .. "ReaTooled_Tools lib.lua")
+  if ok and type(tools) == "table" and tools.options_click and tools.options_click() then
+    tools.tool_options("trim")
+    reaper.defer(function() end)   -- no undo point
+    return
+  end
+end
+
 local function SetAllMouseModifiers()
   for i = 0, 15 do
     reaper.SetMouseModifier('MM_CTX_ITEM', i, '0')

@@ -43,7 +43,7 @@ Edit/ReaTooled_Select Tool Left Click.lua	1.3	ad13b480
 Edit/ReaTooled_Select Tool Shift+Double Click.lua	1.2	093544b6
 Edit/ReaTooled_Set Envelope Point Value - Use last value.lua	1.4	d6a0b535
 Edit/ReaTooled_Set Envelope Point Value.lua	1.3	7e5b7cdc
-Edit/ReaTooled_Smart Remove.lua	1.8	3a99a2bb
+Edit/ReaTooled_Smart Remove.lua	1.10	58068525
 Edit/ReaTooled_Special Paste + Trim Edges to Adjacent Items (Expand to fill, Loop Source and Section On).lua	4.1	d4c731a1
 Edit/ReaTooled_Special Paste + Trim Item Edges to Next and Previous Items (Expand to fill between neighboring items).lua	3.13	768c2fdd
 Edit/ReaTooled_Split Item (Hover Mode Dependent).lua	1.6	8dbb8ff7
@@ -71,7 +71,7 @@ Toggles/ReaTooled_Hover Edit Mode.lua	1.0	8525efb2
 Toggles/ReaTooled_Invert mousewheel direction (for natural scrolling).lua	1.1	ea2bc6b6
 Toggles/ReaTooled_Link Track and Item and Razor Selection.lua	2.22	5433a8b1
 Toggles/ReaTooled_Loudness normalize new items.lua	1.0	4f7959cd
-Toggles/ReaTooled_Recall ReaTooled Button States.lua	1.6	1a106c2d
+Toggles/ReaTooled_Recall ReaTooled Button States.lua	1.7	4862baf4
 Toggles/ReaTooled_Recall ReaTooled Keymap State.lua	1.0	8f4e193a
 Toggles/ReaTooled_Region Shuffle.lua	1.0	40a8c6d7
 Toggles/ReaTooled_Synch razor areas on grouped items.lua	1.1	1a049470
@@ -84,7 +84,8 @@ Toggles/ReaTooled_Toggle ReaTooled Shortcuts.lua	1.0	7253b2aa
 Toggles/ReaTooled_Toggle Tab to Transient.lua	1.0	22d4150f
 Toggles/ReaTooled_Toggle envelope lanes visible or in lane.lua	1.0	8075ba1e
 Toggles/ReaTooled_Toggle item volume envelope for all items.lua	1.0	bb7b25b0
-Tools/ReaTooled Tools	7.8.3	624c2c86
+Toggles/ReaTooled_Toggle pre-roll (playback and recording).lua	1.4	99f3aeb8
+Tools/ReaTooled Tools	7.8.4	15607d4f
 Tracks/ReaTooled_Toggle selected tracks inactive.lua	1.0	effb180d
 Transport/ReaTooled_Go to marker by number (keypad . number .).lua	1.1	c4a952d2
 Transport/ReaTooled_Play-Stop (with memory, edit-play toggles, and no undo).lua	2.7.6	ada81617
@@ -92,7 +93,7 @@ Utilities/ReaTooled_Create backup key map.lua	1.0	a9f9f8b9
 Utilities/ReaTooled_Merge backup key map with current key map.lua	1.0	b181a2b8
 Utilities/ReaTooled_Scrolling settings.lua	1.2	713819d4
 Utilities/ReaTooled_Update key map from .ReaperConfigZip file.lua	1.0	7de8a313
-Zoom/ReaTooled Zoom Presets	1.0	0ae78f80
+Zoom/ReaTooled Zoom Presets	1.1	31240b26
 Zoom/ReaTooled_Zoom Horizontally (Mousewheel).lua	1.2	a319e68a
 Zoom/ReaTooled_Zoom Out Horizontally to Entire Project (Preserve Vertical Zoom).lua	1.0	d6a4946e
 Zoom/ReaTooled_Zoom Tool - Zoom in.lua	1.0	34193ebb
