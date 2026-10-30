@@ -1,5 +1,5 @@
 -- @description ReaTooled - Move Tool
--- @version 1.8
+-- @version 1.8.1
 -- @date 2026.10.30
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
@@ -60,7 +60,7 @@ local mouseMods = {
     [6]='6 m', [7]='8 m', [12]='6 m', [14]='19 m'
   },
   MM_CTX_TRACK = {
-    [0]='9 m', [1]='13 m', [2]='1 m', [3]='2 m', [4]='22 m', [5]='-1',
+    [0]='9 m', [1]='13 m', [2]='1 m', [3]='2 m', [4]='0', [5]='-1',   -- (Option-drag: no marquee zoom)
     [6]='16 m', [7]='17 m', [8]='10 m', [9]='-1', [10]='-1', [11]='-1',
     [12]='-1', [13]='-1', [14]='18 m', [15]='23 m'    
   },

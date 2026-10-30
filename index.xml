@@ -12,7 +12,7 @@
   </category>
   <category name="Config">
     <reapack name="ReaTooled Config" type="data" desc="ReaTooled configuration (applied by Set up ReaTooled)">
-      <version name="3.2026.1030.1428" author="Brendan Baker">
+      <version name="3.2026.1030.1832" author="Brendan Baker">
         <source file="ReaTooled/Config/keymap.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/keymap.ini</source>
         <source file="ReaTooled/Config/menus.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/menus.ini</source>
         <source file="ReaTooled/Config/mouse.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/mouse.ini</source>
@@ -154,7 +154,7 @@
       </version>
     </reapack>
     <reapack name="ReaTooled Themes" type="theme" desc="ReaTooled themes">
-      <version name="3.2026.1030.1428" author="Brendan Baker">
+      <version name="3.2026.1030.1832" author="Brendan Baker">
         <source file="Assembled_ReaTooled v1.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Assembled_ReaTooled%20v1.ReaperThemeZip</source>
         <source file="Default_7.0 ReaTooled v2 Light.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Default_7.0%20ReaTooled%20v2%20Light.ReaperThemeZip</source>
         <source file="Default_7.0 ReaTooled v3 Dark.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Default_7.0%20ReaTooled%20v3%20Dark.ReaperThemeZip</source>
@@ -367,7 +367,7 @@
       </version>
     </reapack>
     <reapack name="ReaTooled_Select Tool Left Click.lua" type="script" desc="ReaTooled - Select Tool Left Click (Edit Cursor + Group Aware)">
-      <version name="1.3" author="Brendan Baker">
+      <version name="1.4" author="Brendan Baker">
         <source file="ReaTooled_Select Tool Left Click.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Select%20Tool%20Left%20Click.lua</source>
       </version>
     </reapack>
@@ -549,7 +549,7 @@
       </version>
     </reapack>
     <reapack name="ReaTooled_Recall ReaTooled Button States.lua" type="script" desc="ReaTooled - Recall ReaTooled Button States">
-      <version name="1.7" author="Brendan Baker">
+      <version name="1.8" author="Brendan Baker">
         <source file="ReaTooled_Recall ReaTooled Button States.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Toggles/ReaTooled_Recall%20ReaTooled%20Button%20States.lua</source>
       </version>
     </reapack>
@@ -604,7 +604,7 @@
       </version>
     </reapack>
     <reapack name="ReaTooled_Toggle pre-roll (playback and recording).lua" type="script" desc="ReaTooled - Toggle pre-roll (playback and recording)">
-      <version name="1.4" author="Brendan Baker">
+      <version name="1.5" author="Brendan Baker">
         <source file="ReaTooled_Toggle pre-roll (playback and recording).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Toggles/ReaTooled_Toggle%20pre-roll%20%28playback%20and%20recording%29.lua</source>
       </version>
     </reapack>
@@ -621,7 +621,7 @@
   </category>
   <category name="Tools">
     <reapack name="ReaTooled Tools" type="script" desc="ReaTooled Tools">
-      <version name="7.8.4" author="Brendan Baker">
+      <version name="7.8.5" author="Brendan Baker">
         <source file="Default Multi Tool (Smart)_ReaTooled.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/Default%20Multi%20Tool%20%28Smart%29_ReaTooled.lua</source>
         <source file="Move Tool (Grabber)_ReaTooled.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/Move%20Tool%20%28Grabber%29_ReaTooled.lua</source>
         <source file="Pencil Tool_ReaTooled.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/Pencil%20Tool_ReaTooled.lua</source>

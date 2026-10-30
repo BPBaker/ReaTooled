@@ -1,6 +1,6 @@
 -- @description ReaTooled - Shuffle move (background, started in Shuffle mode)
--- @version 2.4.1
--- @date 2026.10.29
+-- @version 2.7
+-- @date 2026.10.30
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -38,12 +38,31 @@
 --   live while you drag.
 --   Automation items aren't moved.
 --   Move Tool: any plain drag on an item. Multi tool: plain drags on an item's lower
---   half (where it moves items); edges, fades and handles stay REAPER's. Drags with
---   modifier keys stay REAPER's own (copy and so on). A plain click still selects
+--   half (where it moves items); edges, fades and handles stay REAPER's.
+--   Option/Alt-drag copies: the copy goes in at the drop point and pushes what follows
+--   along, and the original stays. Other modifier drags stay REAPER's own. A plain click still selects
 --   the item. Dragged to another track, the item leaves its track (which closes
 --   up) and goes in at an item edge on the new track (on an empty track, at its
 --   time). Tracks with locked items aren't shuffled.
 -- @changelog
+--   v2.6.1 Option/Alt-dragging a razor area in Shuffle copies it with or without Separation
+--          Mode (the Selector too, and the Multi tool's upper half over a razor area); no
+--          error when an undo removes items during a drag
+--   v2.6 Option/Alt-drag copies, like Pro Tools' Option-drag in Shuffle: a copy goes in at
+--        the drop point and pushes what follows along (items, grouped and selected
+--        tracks, another track, all tracks, and razor areas with Separation Mode, where
+--        the copy is trimmed to the area). Razor areas are re-read only when the project
+--        changes. Drags switched off over a razor area are kept on disk and put back if
+--        the script stops before it can. A tip when razor areas on other tracks cover a
+--        different range (every track moves the clicked track's range)
+--   v2.5 Multi tool in Shuffle: its upper half works again (drag makes a razor area, as
+--        without Shuffle): while the mouse is over an item's upper half, the tool's own
+--        drag there is put back; the lower half shuffles
+--   v2.4.3 Separation: the placeholders for empty space are shaded like the track's
+--          background and never shown selected
+--   v2.4.2 Separation: while the mouse is over a razor area, the tool's own plain drags
+--          on items and empty track space are off (no new razor area or marquee is
+--          started under the Shuffle drag, e.g. with the Selector); back when it leaves
 --   v2.4.1 Separation: the razor area is read from just before the press (REAPER can
 --          clear it as the button goes down) and put back, so it can be dragged
 --   v2.4 Separation mode: dragging a razor area shuffles what's in it (like Pro Tools'
@@ -316,7 +335,9 @@ local function crossfades_for(segs, pos)
   local order = row_order(segs)
   for i = 1, #order - 1 do
     local A, B = order[i], order[i + 1]
-    if G.nextOf[A] ~= B then
+    local valid = reaper.ValidatePtr2(0, A, "MediaItem*") and reaper.ValidatePtr2(0, B, "MediaItem*")
+      and pos[A] and pos[B]                       -- (an undo during the drag can remove items)
+    if valid and G.nextOf[A] ~= B then
       local aEnd = pos[A] + reaper.GetMediaItemInfo_Value(A, "D_LENGTH")
       local ov = aEnd - pos[B]
       if ov > TOL then
@@ -556,6 +577,9 @@ end
 ------------------------------------------------------------
 local automation_apply, restore_envs   -- (defined with the automation below)
 local razor_drag, wrap_restore_fwd, wrap_commit_fwd   -- (Separation, below)
+local hover_razor_fwd                                   -- (Separation, below)
+local delete_copies_fwd                                 -- (copying, below)
+local upper_half_fwd                                    -- (Multi tool upper half, below)
 
 -- An item's crossfade audio can't go before the project start: it is trimmed there
 -- (the timing of everything stays the same)
@@ -617,9 +641,17 @@ local function show_moving()
   local list = {}
   for _, m in ipairs(G.Dslot.members) do list[#list + 1] = m.item end
   for _, F in ipairs(G.followers or {}) do
-    for _, sg in ipairs(F.blk) do if sg.item then list[#list + 1] = sg.item end end
+    for _, sg in ipairs(F.blk) do
+      if sg.item then list[#list + 1] = sg.item end
+      for _, m in ipairs(sg.members or {}) do list[#list + 1] = m.item end   -- (copies)
+    end
   end
   for _, it in ipairs(G.allMoving or {}) do list[#list + 1] = it end
+  if G.wrap and G.wrap.tempSet then   -- Separation's placeholders for empty space: never shown selected
+    local keep = {}
+    for _, it in ipairs(list) do if not G.wrap.tempSet[it] then keep[#keep + 1] = it end end
+    list = keep
+  end
   select_only(list)
 end
 
@@ -638,6 +670,7 @@ local function restore()
   restore_fades()
   restore_envs()
   restore_selection()
+  if G.copies then delete_copies_fwd() end      -- copying: the copies go
   reaper.PreventUIRefresh(-1)
   reaper.UpdateArrange()
   if G.wrap then wrap_restore_fwd(G.wrap) end   -- Separation: splits undone
@@ -780,17 +813,208 @@ local function start_drag(D, pressTime)
   for i = 0, reaper.CountSelectedMediaItems(0) - 1 do G.selSnap[#G.selSnap + 1] = reaper.GetSelectedMediaItem(0, i) end
 end
 
+------------------------------------------------------------
+-- Copy (Option/Alt-drag, like Pro Tools' Option-drag in Shuffle): a copy goes in at
+-- the drop point and pushes what follows along; the original stays where it is.
+------------------------------------------------------------
+local function strip_guids(chunk)
+  if type(chunk) ~= "string" then return chunk end
+  return (chunk:gsub("\n[ \t]*I?GUID [^\n]*", ""):gsub("\n[ \t]*POOLEDEVTS [^\n]*", ""))
+end
+
+-- A copy of an item on its own track (trimmed to a..b when they're given)
+local function copy_item(it, a, b)
+  local tr = reaper.GetMediaItem_Track(it)
+  local ok, chunk = reaper.GetItemStateChunk(it, "", false)
+  if not ok then return nil end
+  local new = reaper.AddMediaItemToTrack(tr)
+  if not new then return nil end
+  reaper.SetItemStateChunk(new, strip_guids(chunk), false)
+  reaper.SetMediaItemSelected(new, false)
+  if a then
+    local p = reaper.GetMediaItemInfo_Value(new, "D_POSITION")
+    local e = p + reaper.GetMediaItemInfo_Value(new, "D_LENGTH")
+    local s2, e2 = math.max(p, a), math.min(e, b)
+    if e2 <= s2 + TOL then reaper.DeleteTrackMediaItem(tr, new) return nil end
+    local cut = s2 - p
+    if cut > 0 then
+      for k = 0, reaper.CountTakes(new) - 1 do
+        local tk = reaper.GetTake(new, k)
+        if tk then
+          reaper.SetMediaItemTakeInfo_Value(tk, "D_STARTOFFS", reaper.GetMediaItemTakeInfo_Value(tk, "D_STARTOFFS")
+            + cut * reaper.GetMediaItemTakeInfo_Value(tk, "D_PLAYRATE"))
+        end
+      end
+      reaper.SetMediaItemInfo_Value(new, "D_FADEINLEN", math.max(0, reaper.GetMediaItemInfo_Value(new, "D_FADEINLEN") - cut))
+    end
+    if e2 < e - TOL then
+      reaper.SetMediaItemInfo_Value(new, "D_FADEOUTLEN", math.max(0, reaper.GetMediaItemInfo_Value(new, "D_FADEOUTLEN") - (e - e2)))
+    end
+    reaper.SetMediaItemInfo_Value(new, "D_POSITION", s2)
+    reaper.SetMediaItemInfo_Value(new, "D_LENGTH", e2 - s2)
+  end
+  return new
+end
+
+local function delete_copies()
+  for _, c in ipairs(G.copies or {}) do
+    if reaper.ValidatePtr2(0, c, "MediaItem*") then reaper.DeleteTrackMediaItem(reaper.GetMediaItem_Track(c), c) end
+  end
+  G.copies = nil
+end
+
+local function copy_dup(it, a, b)
+  local c = copy_item(it, a, b)
+  if c then
+    G.copies[#G.copies + 1] = c
+    G.copyHome[c] = reaper.GetMediaItemInfo_Value(c, "D_POSITION")
+    snap_fades({ { it = c, len = reaper.GetMediaItemInfo_Value(c, "D_LENGTH") } })
+  end
+  return c
+end
+
+-- All tracks: copies of the stretch on the other tracks, and drop points where no
+-- locked item would have to move
+-- Copying: the original's own start is two drop points. Right there it's home (no
+-- copy); a step to the left of it, the copy goes in at that same start and the
+-- original and what follows shuffle along (as copying it anywhere else would).
+local function add_copy_at_start(bounds, R, a)
+  local out = {}
+  for _, bd in ipairs(bounds) do
+    if bd.k == -1 or bd.split or math.abs(bd.t - a) > TOL then out[#out + 1] = bd end
+  end
+  local ins = cut_at(R, a)   -- (nil inside an item: a razor area starting mid-item)
+  if ins then ins.ins = true; out[#out + 1] = ins end
+  return out
+end
+
+-- Where the mouse picks it: halfway to the next drop point on the left (at most
+-- half the copy's length to the left of the start)
+local function copy_at_start_pick(bounds, a, len)
+  local ins, prev = nil, nil
+  for _, bd in ipairs(bounds) do
+    if bd.ins then ins = bd
+    elseif bd.t < a - TOL and (not prev or bd.t > prev) then prev = bd.t end
+  end
+  if not ins then return end
+  local half = a - len / 2
+  ins.pick = prev and math.max((prev + a) / 2, half) or half
+end
+
+local function copy_all_setup(bounds)
+  G.allCopies = {}
+  for _, o in ipairs(G.others) do
+    if not o.locked and o.pos < G.a + G.len - TOL and o.pos + o.len > G.a + TOL then
+      local c = copy_dup(o.it, G.a, G.a + G.len)
+      if c then G.allCopies[#G.allCopies + 1] = { it = c, off = reaper.GetMediaItemInfo_Value(c, "D_POSITION") - G.a } end
+    end
+  end
+  local ok = {}
+  for _, bd in ipairs(bounds) do
+    local free = math.abs(bd.t - G.a) <= TOL and not bd.split and not bd.ins
+    if not free then
+      free = true
+      for _, o in ipairs(G.others) do
+        if o.locked and o.pos + o.len > bd.t + TOL then free = false break end
+      end
+    end
+    if free then ok[#ok + 1] = bd end
+  end
+  return ok
+end
+
+local function copy_follower_filter(bounds)
+  if #G.followers == 0 then return bounds end
+  local ok = {}
+  for _, bd in ipairs(bounds) do
+    local free = math.abs(bd.t - G.a) <= TOL and not bd.split and not bd.ins
+    if not free then
+      free = true
+      for _, F in ipairs(G.followers) do if not cut_at(F.R, bd.t) then free = false break end end
+    end
+    if free then ok[#ok + 1] = bd end
+  end
+  return ok
+end
+
+-- An item drag becomes a copy once it's picked up: copies of what moves, and every
+-- track's row stays whole
+local function make_copy()
+  G.copies, G.copyHome = {}, {}
+  local members, set = {}, {}
+  for _, m in ipairs(G.Dslot.members) do
+    local c = copy_dup(m.item)
+    if c then
+      members[#members + 1] = { item = c, off = m.off }
+      set[c] = true
+      if m.item == G.D then G.D = c end
+    end
+  end
+  G.Dslot = { members = members, pos0 = G.a, len = G.len }
+  G.memberSet = set
+  G.src.R = build_row(G.src.list)
+  for _, F in ipairs(G.followers) do
+    F.R = build_row(F.list)
+    local fm = {}
+    for _, sg in ipairs(F.blk) do
+      if sg.item then
+        local c = copy_dup(sg.item)
+        if c then fm[#fm + 1] = { item = c, off = reaper.GetMediaItemInfo_Value(sg.item, "D_POSITION") - G.a } end
+      end
+    end
+    F.blk = { { members = fm, len = G.len } }
+  end
+  local bounds = row_bounds(G.src.R, G.a)
+  bounds[#bounds + 1] = { k = -1, t = G.a }   -- back home: no copy
+  bounds = add_copy_at_start(bounds, G.src.R, G.a)
+  bounds = copy_follower_filter(bounds)
+  if G.all then bounds = copy_all_setup(bounds) end
+  copy_at_start_pick(bounds, G.a, G.len)
+  G.src.bounds = bounds
+  G.rows = { [G.src.tr] = G.src }
+end
+
+-- All tracks, copying: the other tracks open up at T and take the copies there
+local function all_apply_copy(T)
+  local cur = {}
+  for _, o in ipairs(G.others) do if not o.locked then cur[#cur + 1] = o.it end end
+  for i = 1, #cur do
+    local right = split_at(cur[i], T)
+    if right then cur[#cur + 1] = right end
+  end
+  for _, it in ipairs(cur) do
+    local p = reaper.GetMediaItemInfo_Value(it, "D_POSITION")
+    if p >= T - TOL then reaper.SetMediaItemInfo_Value(it, "D_POSITION", p + G.len) end
+  end
+  G.allMoving = {}
+  for _, c in ipairs(G.allCopies or {}) do
+    reaper.SetMediaItemInfo_Value(c.it, "D_POSITION", T + c.off)
+    G.allMoving[#G.allMoving + 1] = c.it
+  end
+  for _, m in ipairs(G.markSnap or {}) do
+    local s1 = (m.pos >= T - TOL) and (m.pos + G.len) or m.pos
+    local e1 = m.isrgn and ((m.rend >= T + TOL) and (m.rend + G.len) or m.rend) or m.rend
+    set_marker(m, s1, e1)
+  end
+end
+
+delete_copies_fwd = delete_copies
+
+local function copy_home()
+  if G.copyHome then apply_positions(G.copyHome) end
+end
+
 local function nearest_bound(bounds, desired)
   local best, bestD = nil, math.huge
   for _, b in ipairs(bounds) do
-    local d = math.abs(b.t - desired)
+    local d = math.abs((b.pick or b.t) - desired)
     if d < bestD then best, bestD = b, d end
   end
   return best
 end
 
 local function at_start(tr, b)
-  return tr == G.src.tr and b and not b.split and math.abs(b.t - G.a) <= TOL
+  return tr == G.src.tr and b and not b.split and not b.ins and math.abs(b.t - G.a) <= TOL
 end
 
 -- Show D at drop point b of track tr (and the source track closed up)
@@ -807,6 +1031,7 @@ local function place(tr, b)
     put_D_on(G.src.tr)
     restore_list(G.src.list)
     for _, F in ipairs(G.followers) do restore_list(F.list) end
+    if G.copy then copy_home() end
   elseif tr == G.src.tr then
     put_D_on(tr)
     local F1 = insert(G.src.R, b, { G.Dslot })
@@ -816,15 +1041,23 @@ local function place(tr, b)
       local FF = insert(F.R, fb, F.blk)
       local fpos = layout(FF); apply_positions(fpos); crossfades_for(FF, fpos)
     end
-    if G.all then all_apply(b.t) end
+    if G.all then
+      if G.copy then all_apply_copy(b.t) else all_apply(b.t) end
+    end
   else
-    local spos = layout(G.src.R); apply_positions(spos); crossfades_for(G.src.R, spos)   -- source closes up
+    if G.copy then                                                                       -- copying: source stays
+      restore_list(G.src.list)
+    else
+      local spos = layout(G.src.R); apply_positions(spos); crossfades_for(G.src.R, spos) -- source closes up
+    end
     local row = G.rows[tr]
     put_D_on(tr)
     local F1 = insert(row.R, b, { G.Dslot })
     local pos = layout(F1); apply_positions(pos); crossfades_for(F1, pos)              -- target opens a slot
   end
-  if home then restore_selection() else show_moving() end
+  -- (a razor area dragged back home: its pieces stay selected, not what was selected
+  -- before, which may be the whole item it was cut from)
+  if home and not (G.razorClear or G.wrap) then restore_selection() else show_moving() end
   reaper.PreventUIRefresh(-1)
   reaper.UpdateArrange()
 end
@@ -844,6 +1077,9 @@ local function drag()
   if not G.active then   -- picked up once the mouse moves far enough, in any direction
     if not cx or (math.abs(cx - G.pressX) < DEADBAND_PX and math.abs(cy - G.pressY) < DEADBAND_PX) then return end
     G.active = true
+    if G.copy and not G.copies then
+      reaper.PreventUIRefresh(1); make_copy(); reaper.PreventUIRefresh(-1)
+    end
   end
   reaper.SetExtState(NS, DRAG_STAMP, tostring(reaper.time_precise()), false)
   local t = mouse.drag_time(AUTOSCROLL_RATE)
@@ -962,6 +1198,34 @@ local function automation_move(srcTr, dstTr, a, len, T)
   end
 end
 
+-- Copying: the stretch a..a+len copied in at T (this track or dst); what's at or
+-- after T moves along
+local function automation_copy(srcTr, dstTr, a, len, T)
+  local srcPts = {}
+  for _, env in ipairs(envelopes(srcTr)) do
+    if env_has_points(env) then
+      anchors(env, { a, a + len - ANCHOR })
+      local pts = {}
+      for i = 0, reaper.CountEnvelopePoints(env) - 1 do
+        local ok, t, v, sh, te = reaper.GetEnvelopePoint(env, i)
+        if ok and t >= a and t < a + len then pts[#pts + 1] = { t = t, v = v, sh = sh, te = te } end
+      end
+      srcPts[env_name(env)] = pts
+    end
+  end
+  for _, env in ipairs(envelopes(dstTr)) do
+    local pts = srcPts[env_name(env)]
+    if pts or env_has_points(env) then
+      anchors(env, { T - ANCHOR, T })
+      remap(env, function(t) return (t >= T) and (t + len) or t end)
+      for _, m in ipairs(pts or {}) do
+        reaper.InsertEnvelopePoint(env, T + (m.t - a), m.v, m.sh, m.te, false, true)
+      end
+      reaper.Envelope_SortPoints(env)
+    end
+  end
+end
+
 -- Live while dragging: the envelopes as they were at the click are kept, put back
 -- before each new drop point is shown, and the edit applied again from them
 local function snap_track_envs(tr)
@@ -1002,6 +1266,20 @@ function automation_apply(tr, b)
   restore_envs()
   if not b then return end
   local a, len, T = G.a, G.len, b.t
+  if G.copy then
+    if G.all then
+      for t = -1, reaper.CountTracks(0) - 1 do
+        local atr = (t < 0) and reaper.GetMasterTrack(0) or reaper.GetTrack(0, t)
+        if atr then automation_copy(atr, atr, a, len, T) end
+      end
+    elseif tr == G.src.tr then
+      automation_copy(G.src.tr, G.src.tr, a, len, T)
+      for _, F in ipairs(G.followers) do automation_copy(F.tr, F.tr, a, len, T) end
+    else
+      automation_copy(G.src.tr, tr, a, len, T)
+    end
+    return
+  end
   if G.all then
     for t = -1, reaper.CountTracks(0) - 1 do
       local atr = (t < 0) and reaper.GetMasterTrack(0) or reaper.GetTrack(0, t)
@@ -1049,15 +1327,22 @@ local function razor_prepare(tr, a, b, pressTime)
   local W = { created = {}, chunks = {}, temps = {}, razorSnap = {}, selSnap = {} }
   for i = 0, reaper.CountSelectedMediaItems(0) - 1 do W.selSnap[#W.selSnap + 1] = reaper.GetSelectedMediaItem(0, i) end
   -- The tracks with this razor area
-  local tracks = { tr }
+  -- (all of them move this track's range, so the tracks stay in sync, as with a
+  -- Pro Tools selection; a different range on another track is said in a tip)
+  local tracks, differs = { tr }, false
   for t = 0, reaper.CountTracks(0) - 1 do
     local t2 = reaper.GetTrack(0, t)
     if t2 ~= tr then
       for _, ar in ipairs((razor_areas(t2))) do
-        if ar[1] < b - TOL and ar[2] > a + TOL then tracks[#tracks + 1] = t2 break end
+        if ar[1] < b - TOL and ar[2] > a + TOL then
+          tracks[#tracks + 1] = t2
+          if math.abs(ar[1] - a) > TOL or math.abs(ar[2] - b) > TOL then differs = true end
+          break
+        end
       end
     end
   end
+  W.differs = differs
   -- Locked items at the edges can't be split
   for _, t2 in ipairs(tracks) do
     for i = 0, reaper.CountTrackMediaItems(t2) - 1 do
@@ -1105,12 +1390,22 @@ local function razor_prepare(tr, a, b, pressTime)
     t0 = math.max(t0, r[2])
   end
   if b > t0 + TOL then gaps[#gaps + 1] = { t0, b } end
+  -- (shaded like the track's background, so they look like the empty space they hold)
+  local bg
+  if reaper.GetThemeColor then
+    local n = reaper.GetMediaTrackInfo_Value(tr, "IP_TRACKNUMBER") or 1
+    bg = reaper.GetThemeColor((n % 2 == 1) and "col_tr1_bg" or "col_tr2_bg", 0)
+    if not bg or bg < 0 then bg = reaper.GetThemeColor("col_arrangebg", 0) end
+  end
+  W.tempSet = {}
   for _, g in ipairs(gaps) do
     local it = reaper.AddMediaItemToTrack(tr)
     if it then
       reaper.SetMediaItemInfo_Value(it, "D_POSITION", g[1])
       reaper.SetMediaItemInfo_Value(it, "D_LENGTH", g[2] - g[1])
+      if bg and bg >= 0 then reaper.SetMediaItemInfo_Value(it, "I_CUSTOMCOLOR", bg | 0x1000000) end
       W.temps[#W.temps + 1] = it
+      W.tempSet[it] = true
     end
   end
   -- Select the pieces; the one under the mouse (or nearest) is dragged
@@ -1168,8 +1463,11 @@ wrap_restore_fwd, wrap_commit_fwd = wrap_restore, wrap_commit
 -- The razor areas as they were before the press (REAPER may clear them as the button
 -- goes down, before this script sees the click)
 local razorCache = nil
+local razorStamp = nil   -- the project's change count when they were read
 
 local function cache_razors()
+  -- Read every pass while the button is up (razor edits don't always count as a
+  -- project change, so a newly drawn area could be missed)
   local c = {}
   for t = 0, reaper.CountTracks(0) - 1 do
     local tr = reaper.GetTrack(0, t)
@@ -1177,6 +1475,41 @@ local function cache_razors()
     if str and str ~= "" then c[tr] = str end
   end
   razorCache = c
+end
+
+-- REAPER clears the razor areas as the button goes down on one, and adds a "Clear
+-- razor edits" undo point for it. The areas are put back (below) and the drag makes
+-- its own undo point, so that one is taken back off: undone right away, before
+-- anything else changes. (Only one REAPER added since the button was last up.)
+local upUndo, upCount = nil, nil
+local upSel = nil   -- time selection and loop points, last seen with the button up
+local function note_undo_top()
+  upUndo = reaper.Undo_CanUndo2(0)
+  local u = {}
+  u.ls, u.le = reaper.GetSet_LoopTimeRange(false, true, 0, 0, false)
+  u.ts, u.te = reaper.GetSet_LoopTimeRange(false, false, 0, 0, false)
+  upSel = u
+  upCount = reaper.GetProjectStateChangeCount and reaper.GetProjectStateChangeCount(0)
+end
+local function drop_razor_clear()
+  local top = reaper.Undo_CanUndo2(0)
+  if not top or top == upUndo then return end
+  local low = top:lower()
+  if low:find("razor", 1, true) and low:find("clear", 1, true) then
+    reaper.Undo_DoUndo2(0)
+  end
+  upUndo = reaper.Undo_CanUndo2(0)
+end
+
+-- Is there a razor area under the press, in the areas as they were before it?
+local function razor_cached_at(tr, t)
+  local str = razorCache and razorCache[tr]
+  if not str then return false end
+  for s1, e1, guid in str:gmatch('(%S+)%s+(%S+)%s+"([^"]*)"') do
+    s1, e1 = tonumber(s1), tonumber(e1)
+    if guid == "" and s1 and e1 and t >= s1 - TOL and t <= e1 + TOL then return true end
+  end
+  return false
 end
 
 -- The razor area under the press, from the areas as they were before it; puts them
@@ -1200,18 +1533,205 @@ local function razor_press_area(tr, t)
   return a, b
 end
 
+-- While the mouse is over a razor area (button up), the tool's own plain drags on
+-- items and empty track space are turned off, so a press there doesn't start
+-- REAPER's drag (a new razor area, a marquee) under the Shuffle drag. They're put
+-- back as soon as the mouse leaves the area (and when this script stops).
+-- (The lower half's "0" is set explicitly: "-1" leaves its entry blank, which REAPER
+-- doesn't treat as passing through to the item context)
+local HOVER_OFF = { { "MM_CTX_ITEM", 0, "0" }, { "MM_CTX_ITEMLOWER", 0, "0" }, { "MM_CTX_TRACK", 0, "0" },
+                    { "MM_CTX_ITEM", 4, "0" }, { "MM_CTX_ITEMLOWER", 4, "0" }, { "MM_CTX_TRACK", 4, "0" } }
+local hoverSaved = nil
+-- Kept on disk while switched, so they can be put back even if this script (or
+-- REAPER) stops before it can: ReaTooled_Tools lib.lua repair_hover()
+local HOVER_KEY = "ShuffleHoverSaved"
+
+local function save_hover()
+  if not hoverSaved then reaper.DeleteExtState(NS, HOVER_KEY, true) return end
+  local out = {}
+  for _, o in ipairs(hoverSaved) do out[#out + 1] = table.concat({ o[1], o[2], o[3], o[4] or "" }, "|") end
+  reaper.SetExtState(NS, HOVER_KEY, table.concat(out, ";"), true)
+end
+
+local function hover_razor(on)
+  if on and not hoverSaved then
+    if not reaper.GetMouseModifier then return end
+    hoverSaved = {}
+    local plain = separation_on()   -- (without Separation Mode only Option/Alt-drags are ours)
+    for _, h in ipairs(HOVER_OFF) do
+      if h[2] ~= 0 or plain then
+      local v = reaper.GetMouseModifier(h[1], h[2])
+      if v == nil or v == "" then v = "-1" end
+      reaper.SetMouseModifier(h[1], h[2], h[3])
+      hoverSaved[#hoverSaved + 1] = { h[1], h[2], v, reaper.GetMouseModifier(h[1], h[2]) }
+      end
+    end
+    save_hover()
+  elseif not on and hoverSaved then
+    -- (only where it's still ours: a tool chosen meanwhile has set its own)
+    for _, o in ipairs(hoverSaved) do
+      if reaper.GetMouseModifier(o[1], o[2]) == o[4] then reaper.SetMouseModifier(o[1], o[2], o[3]) end
+    end
+    hoverSaved = nil
+    save_hover()
+  end
+end
+
+local function mouse_over_razor()
+  if not razorCache or not next(razorCache) then return false end
+  local mx, my = reaper.GetMousePosition()
+  local tr, info = reaper.GetTrackFromPoint(mx, my)
+  if not tr or (info or 0) ~= 0 or not razorCache[tr] then return false end
+  local cx = reaper.JS_Window_ScreenToClient(mouse.ARRANGE, mx, my)
+  if not cx then return false end
+  local t = mouse.time_at(cx)
+  for s1, e1, guid in razorCache[tr]:gmatch('(%S+)%s+(%S+)%s+"([^"]*)"') do
+    s1, e1 = tonumber(s1), tonumber(e1)
+    if guid == "" and s1 and e1 and t >= s1 and t <= e1 then return true end
+  end
+  return false
+end
+
+hover_razor_fwd = hover_razor
+
+-- Multi tool in Shuffle: its plain item drag is off (the lower half passes through to
+-- it, and the lower half shuffles). While the mouse is over an item's upper half, the
+-- tool's own upper-half drag (razor area) is put back, and taken off again elsewhere.
+local upperApplied = nil   -- { [flag] = the value we set }, while they're the tool's own
+local UPPER_FLAGS = { 0, 4 }   -- plain and Option/Alt drags
+
+local function upper_half_value(flag)
+  for line in (reaper.GetExtState(NS, "ModeOverrides") or ""):gmatch("[^;]+") do
+    local g, c, f, v = line:match("^(.-)|(.-)|(%-?%d+)|(.*)$")
+    if g == "shuffle" and c == "MM_CTX_ITEM" and tonumber(f) == flag then return v end
+  end
+end
+
+local function mouse_upper_half()
+  local mx, my = reaper.GetMousePosition()
+  local it = reaper.GetItemFromPoint(mx, my, false)
+  if not it then return false end
+  local _, cy = reaper.JS_Window_ScreenToClient(mouse.ARRANGE, mx, my)
+  local top, h = mouse.item_rect(it)
+  return cy and h > 0 and cy < top + h / 2
+end
+
+-- allow: { [flag] = true } for the drags to put back now (nil/false: none)
+local function multi_upper_half(allow)
+  if wanted_tool() ~= "smart" or not reaper.GetMouseModifier then allow = nil end
+  upperApplied = upperApplied or {}
+  for _, f in ipairs(UPPER_FLAGS) do
+    local want = allow and allow[f]
+    if want and not upperApplied[f] then
+      local v = upper_half_value(f)
+      if v and v ~= "" then
+        reaper.SetMouseModifier("MM_CTX_ITEM", f, v)
+        upperApplied[f] = reaper.GetMouseModifier("MM_CTX_ITEM", f)
+      end
+    elseif not want and upperApplied[f] then
+      if reaper.GetMouseModifier("MM_CTX_ITEM", f) == upperApplied[f] then
+        reaper.SetMouseModifier("MM_CTX_ITEM", f, "0")   -- back to Shuffle's (No action)
+      end
+      upperApplied[f] = nil
+    end
+  end
+end
+upper_half_fwd = multi_upper_half
+
 -- Pressed on a razor area: nothing happens until the mouse moves far enough
-local function start_razor_press(tr, a, b, pressTime)
+local function start_razor_press(tr, a, b, pressTime, copy)
   local x, y = mouse.mouse()
-  G = { pendingRazor = { tr = tr, a = a, b = b, t = pressTime }, pressX = x, pressY = y }
+  G = { pendingRazor = { tr = tr, a = a, b = b, t = pressTime, copy = copy }, pressX = x, pressY = y }
+end
+
+-- Option/Alt-drag on a razor area: a copy of what's in it goes in at the drop point
+-- (nothing is split: the copies are trimmed to the area; empty space in it comes along)
+local function razor_copy_begin(P, px, py)
+  local tr, a, b = P.tr, P.a, P.b
+  local len = b - a
+  local list = lane_items(tr, 0)
+  if not list then tip("this track has locked items") return end
+  local sel = {}
+  for i = 0, reaper.CountSelectedMediaItems(0) - 1 do sel[#sel + 1] = reaper.GetSelectedMediaItem(0, i) end
+  local all = reaper.GetToggleCommandState(RIPPLE_ALL) == 1
+  local razorTracks = { tr }
+  for t = 0, reaper.CountTracks(0) - 1 do
+    local t2 = reaper.GetTrack(0, t)
+    if t2 ~= tr then
+      for _, ar in ipairs((razor_areas(t2))) do
+        if ar[1] < b - TOL and ar[2] > a + TOL then razorTracks[#razorTracks + 1] = t2 break end
+      end
+    end
+  end
+  G = { fadeSnap = {}, offsSnap = {}, nextOf = {}, envSnap = {}, copy = true, copies = {}, copyHome = {} }
+  G.a, G.len = a, len
+  snap_fades(list); note_neighbors(list)
+  local members, set = {}, {}
+  for _, r in ipairs(list) do
+    if r.pos < b - TOL and r.pos + r.len > a + TOL then
+      local c = copy_dup(r.it, a, b)
+      if c then members[#members + 1] = { item = c, off = reaper.GetMediaItemInfo_Value(c, "D_POSITION") - a }; set[c] = true end
+    end
+  end
+  G.followers = {}
+  if not all then
+    for i = 2, #razorTracks do
+      local ftr = razorTracks[i]
+      local flist = lane_items(ftr, 0)
+      if not flist then delete_copies() G = nil tip("a track with the razor area has locked items") return end
+      snap_fades(flist); note_neighbors(flist)
+      local fm = {}
+      for _, r in ipairs(flist) do
+        if r.pos < b - TOL and r.pos + r.len > a + TOL then
+          local c = copy_dup(r.it, a, b)
+          if c then fm[#fm + 1] = { item = c, off = reaper.GetMediaItemInfo_Value(c, "D_POSITION") - a } end
+        end
+      end
+      G.followers[#G.followers + 1] = { tr = ftr, list = flist, R = build_row(flist), blk = { { members = fm, len = len } }, a = a, b = b }
+    end
+  end
+  local R = build_row(list)
+  local bounds = row_bounds(R, a)
+  bounds[#bounds + 1] = { k = -1, t = a }   -- back home: no copy
+  bounds = add_copy_at_start(bounds, R, a)
+  G.Dslot = { members = members, pos0 = a, len = len }
+  G.memberSet, G.lane = set, 0
+  G.src = { tr = tr, list = list, R = R, bounds = bounds }
+  G.rows = { [tr] = G.src }
+  G.D = members[1] and members[1].item or nil
+  bounds = copy_follower_filter(bounds)
+  if all then
+    G.others = other_items(tr, list)
+    G.all, G.splits, G.cutFade = true, {}, default_fade()
+    if MOVE_MARKERS then G.markSnap = snap_markers() end
+    bounds = copy_all_setup(bounds)
+  end
+  copy_at_start_pick(bounds, a, len)
+  G.src.bounds = bounds
+  G.track, G.b, G.grab, G.active = tr, nil, P.t - a, true
+  G.pressX, G.pressY = px, py
+  G.wasSelected = false
+  G.selSnap = sel
+  G.razorClear = razorTracks
 end
 
 function razor_drag()
   local P = G.pendingRazor
   if P then
+    drop_razor_clear()   -- (in case REAPER added it after the press was seen)
     local cx, cy = mouse.mouse()
     if not cx or (math.abs(cx - G.pressX) < DEADBAND_PX and math.abs(cy - G.pressY) < DEADBAND_PX) then return end
     local px, py = G.pressX, G.pressY
+    local top0 = reaper.Undo_CanUndo2(0)   -- (to find REAPER's own step at the drop)
+    local preSel = upSel   -- (as they were before the press)
+    if P.copy then
+      G = nil
+      reaper.PreventUIRefresh(1)
+      razor_copy_begin(P, px, py)
+      reaper.PreventUIRefresh(-1)
+      if G then G.undoTop = top0; G.preSel = preSel; drag() end
+      return
+    end
     reaper.PreventUIRefresh(1)
     local W, D, why = razor_prepare(P.tr, P.a, P.b, P.t)
     reaper.PreventUIRefresh(-1)
@@ -1220,8 +1740,12 @@ function razor_drag()
     if not D then wrap_restore(W) return end
     start_drag(D, P.t)
     if not G then wrap_restore(W) return end      -- (start_drag said why)
+    G.undoTop = top0
+    G.preSel = preSel
     G.wrap = W
     G.selSnap = W.selSnap
+    if W.differs then tip("every track moves this track's razor range") end
+    for _, it in ipairs(W.temps) do reaper.SetMediaItemSelected(it, false) end
     G.pressX, G.pressY = px, py
     -- the razor area hides while dragging (it's cleared on the drop, back if cancelled)
     for t2 in pairs(W.razorSnap) do reaper.GetSetMediaTrackInfo_String(t2, "P_RAZOREDITS", "", true) end
@@ -1249,20 +1773,140 @@ local function select_and_place_cursor(D)
   end
 end
 
+-- A razor drag: REAPER records its own "Clear razor edits" step when the button
+-- comes up (it cleared the areas as the button went down), ahead of the drop's.
+-- (In the Selector's lower half REAPER may record something else as well, so any
+-- step it added since the drag began counts.)
+local function reaper_clear_on_top()
+  if not G.undoTop then return false end
+  local top = reaper.Undo_CanUndo2(0)
+  return top ~= nil and top ~= G.undoTop
+end
+-- Undoes the steps REAPER added since the drag began (a few at most)
+local function undo_reaper_steps(top0)
+  for _ = 1, 4 do
+    local top = reaper.Undo_CanUndo2(0)
+    if not top or top == top0 then return end
+    reaper.Undo_DoUndo2(0)
+  end
+end
+
+-- The project as the drop left it (tracks, markers, razor areas, edit cursor, loop)
+local function snapshot_result()
+  local S = { tracks = {}, marks = {} }
+  local function add(tr)
+    local _, chunk = reaper.GetTrackStateChunk(tr, "", false)
+    local _, raz = reaper.GetSetMediaTrackInfo_String(tr, "P_RAZOREDITS", "", false)
+    S.tracks[#S.tracks + 1] = { guid = reaper.GetTrackGUID(tr), chunk = chunk, razor = raz or "" }
+  end
+  add(reaper.GetMasterTrack(0))
+  for t = 0, reaper.CountTracks(0) - 1 do add(reaper.GetTrack(0, t)) end
+  local i = 0
+  while true do
+    local ok, isrgn, pos, rend, name, num, color = reaper.EnumProjectMarkers3(0, i)
+    if ok == 0 then break end
+    S.marks[#S.marks + 1] = { isrgn, pos, rend, name, num, color }
+    i = i + 1
+  end
+  S.cursor = reaper.GetCursorPosition()
+  S.ls, S.le = reaper.GetSet_LoopTimeRange(false, true, 0, 0, false)    -- loop points
+  S.ts, S.te = reaper.GetSet_LoopTimeRange(false, false, 0, 0, false)   -- time selection
+  return S
+end
+
+local function marks_key(list)
+  local o = {}
+  for _, m in ipairs(list) do o[#o + 1] = table.concat({ tostring(m[1]), m[2], m[3], m[4], m[5], m[6] }, "|") end
+  return table.concat(o, "\n")
+end
+
+-- Puts that result back after REAPER's step has been undone, as one undo step
+local function apply_snapshot(S)
+  local byGuid = { [reaper.GetTrackGUID(reaper.GetMasterTrack(0))] = reaper.GetMasterTrack(0) }
+  for t = 0, reaper.CountTracks(0) - 1 do local tr = reaper.GetTrack(0, t); byGuid[reaper.GetTrackGUID(tr)] = tr end
+  for _, T in ipairs(S.tracks) do
+    local tr = byGuid[T.guid]
+    if tr then
+      local _, now = reaper.GetTrackStateChunk(tr, "", false)
+      if now ~= T.chunk then reaper.SetTrackStateChunk(tr, T.chunk, false) end
+      local _, raz = reaper.GetSetMediaTrackInfo_String(tr, "P_RAZOREDITS", "", false)
+      if (raz or "") ~= T.razor then reaper.GetSetMediaTrackInfo_String(tr, "P_RAZOREDITS", T.razor, true) end
+    end
+  end
+  local cur = {}
+  local i = 0
+  while true do
+    local ok, isrgn, pos, rend, name, num, color = reaper.EnumProjectMarkers3(0, i)
+    if ok == 0 then break end
+    cur[#cur + 1] = { isrgn, pos, rend, name, num, color }
+    i = i + 1
+  end
+  if marks_key(cur) ~= marks_key(S.marks) then
+    for j = #cur - 1, 0, -1 do reaper.DeleteProjectMarkerByIndex(0, j) end
+    for _, m in ipairs(S.marks) do reaper.AddProjectMarker2(0, m[1], m[2], m[3], m[4], m[5], m[6]) end
+  end
+  reaper.SetEditCurPos(S.cursor, false, false)
+  reaper.GetSet_LoopTimeRange(true, true, S.ls, S.le, false)
+  reaper.GetSet_LoopTimeRange(true, false, S.ts, S.te, false)
+end
+
 local function release()
   if G.active then   -- REAPER runs the item click on this release: tell it to skip
     reaper.SetExtState(NS, DRAG_STAMP, tostring(reaper.time_precise()), false)
   end
-  if G.active and G.b and not at_start(G.track, G.b) and reaper.ValidatePtr2(0, G.D, "MediaItem*") then
+  if G.active and G.b and not at_start(G.track, G.b) and (G.D == nil or reaper.ValidatePtr2(0, G.D, "MediaItem*")) then
+    local what = G.copy and "Shuffle copy" or "Shuffle"
+    local name = (G.wrap or G.razorClear) and (what .. " razor area" .. (G.all and " (all tracks)" or ""))
+      or (G.copy and (what .. (G.all and " (all tracks)" or "")))
+      or (G.all and "Shuffle (all tracks)")
+      or ((#G.Dslot.members > 1 or #G.followers > 0) and "Shuffle items" or "Shuffle item")
+    if reaper_clear_on_top() then
+      -- One step for the whole drag: the result is noted, REAPER's step undone (back to
+      -- before the press), and the result put back as this script's step
+      reaper.PreventUIRefresh(1)
+      select_and_place_cursor(G.D)
+      if G.wrap then wrap_commit_fwd(G.wrap) end
+      if G.razorClear then
+        for _, t2 in ipairs(G.razorClear) do reaper.GetSetMediaTrackInfo_String(t2, "P_RAZOREDITS", "", true) end
+      end
+      local S = snapshot_result()
+      local top0, pre = G.undoTop, G.preSel
+      G = nil   -- (its items may not survive the undo)
+      undo_reaper_steps(top0)
+      -- (the undo puts back the time selection and loop of the last undo point,
+      -- which may be older than what you had: back to what they were at the press)
+      if pre then
+        reaper.GetSet_LoopTimeRange(true, true, pre.ls, pre.le, false)
+        reaper.GetSet_LoopTimeRange(true, false, pre.ts, pre.te, false)
+      end
+      reaper.Undo_BeginBlock()
+      apply_snapshot(S)
+      reaper.Undo_EndBlock(name, -1)
+      reaper.PreventUIRefresh(-1)
+      reaper.UpdateArrange()
+      return
+    end
     -- The drag made no undo points, so this block captures the whole move
     reaper.Undo_BeginBlock()   -- (the automation was already moved while dragging)
     select_and_place_cursor(G.D)
     if G.wrap then wrap_commit_fwd(G.wrap) end
-    reaper.Undo_EndBlock(G.wrap and (G.all and "Shuffle razor area (all tracks)" or "Shuffle razor area")
-      or (G.all and "Shuffle (all tracks)")
-      or ((#G.Dslot.members > 1 or #G.followers > 0) and "Shuffle items" or "Shuffle item"), -1)
-  elseif G.wrap then
-    wrap_restore_fwd(G.wrap)                    -- back home: splits undone
+    if G.razorClear then
+      for _, t2 in ipairs(G.razorClear) do reaper.GetSetMediaTrackInfo_String(t2, "P_RAZOREDITS", "", true) end
+    end
+    reaper.Undo_EndBlock(name, -1)
+  else
+    restore_selection()
+    if G.copies then delete_copies_fwd() end    -- back home: no copy
+    if G.wrap then wrap_restore_fwd(G.wrap) end -- back home: splits undone
+    -- (nothing changed: REAPER's own "Clear razor edits" step is taken off too)
+    if reaper_clear_on_top() then
+      local pre = G.preSel
+      undo_reaper_steps(G.undoTop)
+      if pre then
+        reaper.GetSet_LoopTimeRange(true, true, pre.ls, pre.le, false)
+        reaper.GetSet_LoopTimeRange(true, false, pre.ts, pre.te, false)
+      end
+    end
   end
   G = nil
   reaper.UpdateArrange()
@@ -1273,15 +1917,48 @@ end
 ------------------------------------------------------------
 local hoverCursor = nil   -- REAPER's cursor, last seen with the button up
 
+local ALT = 16   -- JS_Mouse_GetState: Option (macOS) / Alt (Windows)
+
+-- Option/Alt over a razor area (and while copying it): REAPER's "copy areas" cursor,
+-- in place of the No action cursor REAPER shows there in Shuffle
+local COPY_CURSOR_ID = 182   -- arrow with a plus (REAPER's own razor "copy areas" cursor can't be loaded by ID)
+local copyCursor = nil
+do
+  local id = COPY_CURSOR_ID
+  if id == 0 then id = tonumber(reaper.GetExtState(NS, "RazorCopyCursor")) or 0 end
+  if id ~= 0 and reaper.JS_Mouse_LoadCursor then copyCursor = reaper.JS_Mouse_LoadCursor(id) end
+end
+local copyCursorShown = false
+-- While ours shows, REAPER's own cursor changes are held back (it would flicker)
+local function hold_cursor(on)
+  if not (mouse.ARRANGE and reaper.JS_WindowMessage_Intercept) then return end
+  if on then reaper.JS_WindowMessage_Intercept(mouse.ARRANGE, "WM_SETCURSOR", false)
+  else reaper.JS_WindowMessage_Release(mouse.ARRANGE, "WM_SETCURSOR") end
+end
+local function show_copy_cursor(on)
+  if on and copyCursor and reaper.JS_Mouse_SetCursor then
+    if not copyCursorShown then hold_cursor(true) end
+    reaper.JS_Mouse_SetCursor(copyCursor); copyCursorShown = true
+  elseif not on and copyCursorShown then
+    copyCursorShown = false
+    hold_cursor(false)
+    local arrow = reaper.JS_Mouse_LoadCursor and reaper.JS_Mouse_LoadCursor(32512)
+    if arrow then reaper.JS_Mouse_SetCursor(arrow) end
+  end
+end
+
+-- Ours, and is it a copy (Option/Alt-drag)? Other modifier drags stay REAPER's own.
 local function our_press(it, sx, sy, mods)
-  if not it or (mods or 0) ~= 0 then return false end   -- modifier drags: REAPER's own
+  mods = mods or 0
+  if not it or (mods ~= 0 and mods ~= ALT) then return false end
+  local copy = mods == ALT
   local tool = wanted_tool()
-  if tool == "grabber" then return true end              -- edges and fades are locked there
+  if tool == "grabber" then return true, copy end        -- edges and fades are locked there
   if tool == "smart" then
     if hoverCursor and mouse.REAPER_HANDLES[hoverCursor] then return false end
     local _, cy = reaper.JS_Window_ScreenToClient(mouse.ARRANGE, sx, sy)
     local top, h = mouse.item_rect(it)
-    return cy and h > 0 and cy >= top + h / 2              -- lower half moves items
+    return (cy and h > 0 and cy >= top + h / 2) or false, copy   -- lower half moves items
   end
   return false
 end
@@ -1293,6 +1970,10 @@ local prevDown, lastTry = false, 0
 
 local function stop()
   if G then restore() G = nil end
+  -- (only while Shuffle still has the Multi tool: otherwise its settings were just put back)
+  if upper_half_fwd and tools.shuffle_on() and wanted_tool() == "smart" then upper_half_fwd(nil) end
+  if hover_razor_fwd then hover_razor_fwd(false) end
+  show_copy_cursor(false)
   mouse.clicks_stop()
   reaper.DeleteExtState(NS, HEARTBEAT, false)
 end
@@ -1308,7 +1989,17 @@ local function loop()
   local cursorBefore = hoverCursor
   if not down and not G then
     hoverCursor = mouse.current_cursor()
-    if separation_on() then cache_razors() else razorCache = nil end
+    cache_razors()   -- (Option-drag copies razor areas even without Separation Mode)
+    note_undo_top()
+    local overRazor = razorCache ~= nil and mouse_over_razor()
+    -- Multi tool's upper half: its own drags, except where a razor area takes them
+    -- (Option/Alt-drags always over a razor area; plain ones with Separation Mode)
+    local upper = mouse_upper_half()
+    multi_upper_half(upper and { [0] = not (overRazor and separation_on()), [4] = not overRazor } or nil)
+    hover_razor(overRazor)
+    show_copy_cursor(overRazor and mods == ALT)
+  elseif G then
+    show_copy_cursor(G.copy or (G.pendingRazor and G.pendingRazor.copy) or false)
   end
 
   if not G then
@@ -1325,21 +2016,26 @@ local function loop()
       -- Separation: a plain press on a razor area shuffles what's in it
       local rtr, rinfo = reaper.GetTrackFromPoint(sx, sy)
       local ra, rb
-      if separation_on() and (mods or 0) == 0 and rtr and (rinfo or 0) == 0 then
+      if ((separation_on() and (mods or 0) == 0) or mods == ALT) and rtr and (rinfo or 0) == 0 then
         local cx = reaper.JS_Window_ScreenToClient(mouse.ARRANGE, sx, sy)
         local pt = mouse.time_at(cx)
+        if razor_cached_at(rtr, pt) then drop_razor_clear() end
         ra, rb = razor_press_area(rtr, pt)
-        if ra then start_razor_press(rtr, ra, rb, pt) end
+        if ra then start_razor_press(rtr, ra, rb, pt, mods == ALT) end
       end
       if ra then
         -- (taken by Separation)
-      elseif our_press(it, sx, sy, mods) then
-        local cx = reaper.JS_Window_ScreenToClient(mouse.ARRANGE, sx, sy)
-        start_drag(it, mouse.time_at(cx))
+      else
+        local mine, copy = our_press(it, sx, sy, mods)
+        if mine then
+          local cx = reaper.JS_Window_ScreenToClient(mouse.ARRANGE, sx, sy)
+          start_drag(it, mouse.time_at(cx))
+          if G and copy then G.copy = true end
+        end
       end
     end
   elseif down then
-    if G.pendingRazor or G.wrap then razor_drag() else drag() end
+    if G.pendingRazor then razor_drag() else drag() end
   else
     if G.pendingRazor then G = nil else release() end
   end
@@ -1351,6 +2047,7 @@ end
 -- Started again while running (each time a tool is applied): REAPER stops this copy
 -- and runs the new one, so an updated script always takes over
 if reaper.set_action_options then reaper.set_action_options(1 | 2) end
+if tools.repair_hover then tools.repair_hover() end   -- left switched by a copy that didn't stop cleanly
 reaper.atexit(stop)
 mouse.clicks_start()
 loop()

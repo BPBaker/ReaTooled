@@ -1,6 +1,6 @@
 -- @description ReaTooled - Select Tool Left Click (Edit Cursor + Group Aware)
--- @version 1.3
--- @date 2026.10.14
+-- @version 1.4
+-- @date 2026.10.30
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -11,6 +11,8 @@
 --   # Respects REAPER's native group selection preference (41156).
 --   # Only expands selection to group if "Selecting one grouped item selects group" option is ON.
 -- @changelog
+--   1.4 (2026.10.30) - Skipped right after a Shuffle mode drag (razor areas with Separation
+--                      Mode on): the Shuffle move script has done the selection and the undo step.
 --   1.3 (2026.10.14) - Fixed Link toggle lookup: the old hard-coded command ID pointed to a
 --                      script that no longer exists, so the time selection was never cleared.
 --                      The toggle is now found by file path.
@@ -18,6 +20,16 @@
 --                      matching Move Tool behavior. Previously always selected full group.
 
 local reaper = reaper
+
+-- A Shuffle mode drag just ended (REAPER calls this click on its release):
+-- the Shuffle move script has done the selection and the undo step
+do
+  local t = tonumber(reaper.GetExtState("ReaTooled", "ShuffleDragTime"))
+  if t and reaper.time_precise() - t < 0.5 then
+    reaper.defer(function() end)   -- no undo point
+    return
+  end
+end
 
 local CMD_GROUP_SELECT_OPTION = 41156  -- Options: Selecting one grouped item selects group
 local CMD_GROUP_EXPAND        = 40034  -- Item grouping: Select all items in group

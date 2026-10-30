@@ -1,6 +1,6 @@
 -- @description ReaTooled - Tools library (shared by the tool scripts)
--- @version 1.10
--- @date 2026.10.29
+-- @version 1.15
+-- @date 2026.10.30
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -17,6 +17,13 @@
 --     - lights the tool's toolbar button(s) and turns the others off
 --   Adding a tool means adding it to TOOLS below, and nowhere else.
 -- @changelog
+--   v1.14 Option/Alt-dragging a razor area in Shuffle copies with or without Separation
+--         Mode (the Selector included)
+--   v1.13 Shuffle mode: Option/Alt item drags (and razor area drags with Separation) go
+--         to the Shuffle move script, which copies
+--   v1.12 repair_hover(): drags the Shuffle move script switched off over a razor area
+--         are put back if it stopped before it could (also at startup and on tool apply)
+--   v1.11 Shuffle + Separation with the Selector: razor area drags shuffle there too
 --   v1.10 Shuffle + Separation: razor area drags go to the Shuffle move script
 --         (release_mode_overrides() for the Separation toggle)
 --   v1.9 tool_options(): Cmd+click or Option+click on the Move, Selector, Trim or Multi
@@ -262,6 +269,20 @@ local apply_spot, apply_shuffle
 
 -- A mode changed (Spot or Shuffle on or off): only the modes' own overrides change;
 -- the tool's other modifiers stay exactly as they are
+-- The Shuffle move script switches some drags off while the mouse is over a razor
+-- area and keeps what it switched on disk. If it (or REAPER) stopped before it could
+-- switch them back, they're put back here (only where they're still switched).
+function M.repair_hover()
+  local saved = reaper.GetExtState(NS, "ShuffleHoverSaved")
+  if saved == "" or not reaper.GetMouseModifier then return end
+  for line in saved:gmatch("[^;]+") do
+    local c, f, orig, ours = line:match("^(.-)|(%-?%d+)|(.-)|(.*)$")
+    f = tonumber(f)
+    if c and f and reaper.GetMouseModifier(c, f) == ours then reaper.SetMouseModifier(c, f, orig) end
+  end
+  reaper.DeleteExtState(NS, "ShuffleHoverSaved", true)
+end
+
 -- Every mode's overrides put back as the tool had them (before a mode script
 -- changes one of the same modifiers itself; reapply_tool() sets them again)
 function M.release_mode_overrides() release_overrides(nil, true) end
@@ -289,18 +310,28 @@ end
 -- tool or mode: the script stops by itself.
 local SHUFFLE_TOOL_KEY = "ShuffleMoveTool"
 function apply_shuffle(key)
-  local want = (M.shuffle_on() and (key == "grabber" or key == "smart")) and key or ""
+  local separation = reaper.GetExtState(NS, "SeparationMode") == "1"
+  -- Move Tool and Multi tool: item and razor area drags. Selector: razor area drags
+  -- only (Option/Alt-drag copies; plain drags too with Separation Mode); its other
+  -- drags stay the Selector's own
+  local ok = key == "grabber" or key == "smart" or key == "selector"
+  local want = (M.shuffle_on() and ok) and key or ""
   reaper.SetExtState(NS, SHUFFLE_TOOL_KEY, want, false)
   if want == "" then return end
-  -- Both tools: plain item drag No action ("0"); the lower half has no No action, so
-  -- it passes through to that ("-1", its default). (The Multi tool's upper-half razor
-  -- drag is off while Shuffle is on: shuffling comes first.)
-  override("shuffle", "MM_CTX_ITEM", 0, "0")
-  override("shuffle", "MM_CTX_ITEMLOWER", 0, "-1")
-  -- With Separation on, razor area drags are the Shuffle move script's too
-  if reaper.GetExtState(NS, "SeparationMode") == "1" then
-    override("shuffle", "MM_CTX_AREASEL", 0, "0")
+  if key ~= "selector" then
+    -- Both tools: plain item drag No action ("0"); the lower half has no No action, so
+    -- it passes through to that ("0", set explicitly). (The Multi tool's upper-half razor
+    -- drag is off while Shuffle is on: shuffling comes first.)
+    override("shuffle", "MM_CTX_ITEM", 0, "0")
+    override("shuffle", "MM_CTX_ITEMLOWER", 0, "0")   -- ("0": pass through, set explicitly; "-1" is a blank entry)
+    -- Option/Alt-drag: the Shuffle move script copies (like Pro Tools' Option-drag)
+    override("shuffle", "MM_CTX_ITEM", 4, "0")
+    override("shuffle", "MM_CTX_ITEMLOWER", 4, "0")
   end
+  -- With Separation on, razor area drags are the Shuffle move script's too
+  if separation then override("shuffle", "MM_CTX_AREASEL", 0, "0") end
+  -- Option/Alt-drag on a razor area: the Shuffle move script copies what's in it
+  override("shuffle", "MM_CTX_AREASEL", 4, "0")
   -- (Re)start it: a running copy is stopped and the new one takes over
   local cmd = command_of({ file = "ReaTooled_Shuffle move (background).lua" })
   if cmd ~= 0 then reaper.Main_OnCommand(cmd, 0) end
@@ -313,12 +344,12 @@ end
 ------------------------------------------------------------
 local function ext_on(k) return function() return reaper.GetExtState(NS, k) == "1" end end
 
-local SEPARATION = { label = "Separation (drag a razor area to move what's in it)",
+local SEPARATION = { label = "Separation Mode (Move razor areas)",
                      file = "ReaTooled_Toggle Separation mode.lua", on = ext_on("SeparationMode") }
-local DRAG_SWAP  = { label = "Swap left and right drag",
+local DRAG_SWAP  = { label = "Object Grabber Mode (Marquee left drag, Razor right drag)",
                      file = "ReaTooled_Toggle swap left and right drag.lua", on = ext_on("DragSwap") }
 
-local DRAG_SWAP_OTHER = { label = "Swap left and right drag (Selector and Multi tools)",
+local DRAG_SWAP_OTHER = { label = "Object Grabber Mode (Marquee left drag, Razor right drag: Selector and Multi tools)",
                           file = DRAG_SWAP.file, on = DRAG_SWAP.on }
 
 M.TOOL_OPTIONS = {
@@ -382,6 +413,7 @@ local TOOL_CONTEXTS = { MM_CTX_ITEM = true, MM_CTX_ITEMLOWER = true,
                         MM_CTX_ITEM_CLK = true, MM_CTX_ITEMLOWER_CLK = true }
 
 function M.finish(key)
+  M.repair_hover()
   -- The tool has just set its own modifiers: the modes' remembered originals are
   -- out of date for a tool that sets its item modifiers (forget them), and still
   -- right for one that doesn't (put them back)

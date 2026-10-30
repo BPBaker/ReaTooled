@@ -1,5 +1,5 @@
 -- @description ReaTooled - Toggle pre-roll (playback and recording)
--- @version 1.4
+-- @version 1.5
 -- @date 2026.10.30
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
@@ -23,6 +23,8 @@
 --   Metronome/pre-roll settings (pre-roll length, etc.) without switching anything.
 --   REAPER's own separate toggles still work: turning both off there ends this too.
 -- @changelog
+--   v1.5 At startup (Recall ReaTooled Button States), the marker and button come back if
+--        REAPER's pre-roll is on, without switching anything
 --   v1.4 Follows REAPER's "Start pre-roll at start of measure": checked, pre-roll
 --        starts on a bar line (drags snap to whole bars); unchecked, exactly the
 --        pre-roll length before the play start (drags snap to quarter bars)
@@ -162,7 +164,11 @@ end
 
 -- Run ------------------------------------------------------------------------
 local want
-if reaper.JS_Mouse_GetState and (reaper.JS_Mouse_GetState(ALT) & ALT) ~= 0 then
+local recall = reaper.GetExtState("ReaTooled", "PrerollRecall") == "1"
+reaper.DeleteExtState("ReaTooled", "PrerollRecall", false)
+if recall then
+  want = active()                          -- startup: as REAPER has it, nothing switched
+elseif reaper.JS_Mouse_GetState and (reaper.JS_Mouse_GetState(ALT) & ALT) ~= 0 then
   reaper.Main_OnCommand(SETTINGS, 0)       -- Option: settings only, nothing switched
   want = active()
 else

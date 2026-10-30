@@ -1,5 +1,5 @@
 -- @description ReaTooled - Default Multi Tool (Smart)
--- @version 1.6.7
+-- @version 1.6.8
 -- @date 2026.10.30
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
@@ -52,7 +52,7 @@ end
 
 local mouseMods = {
   MM_CTX_ITEM = {
-    [0]='62 m', [1]='64 m', [2]='64 m', [3]='66 m', [4]='48 m', [5]='12 m',
+    [0]='62 m', [1]='64 m', [2]='64 m', [3]='66 m', [4]='0', [5]='12 m',   -- (Option-drag: no marquee zoom)
     [6]='0', [7]='0', [8]='28 m', [9]='20 m', [10]='31 m', [11]='-1',
     [12]='-1', [13]='11 m', [14]='68 m', [15]='69 m'
   },
@@ -67,7 +67,7 @@ local mouseMods = {
     [12]='28 m', [13]='32 m', [14]='19 m', [15]='-1'
   },
   MM_CTX_TRACK = {
-    [0]='25 m', [1]='27 m', [2]='1 m', [3]='2 m', [4]='22 m', [5]='-1',
+    [0]='25 m', [1]='27 m', [2]='1 m', [3]='2 m', [4]='0', [5]='-1',   -- (Option-drag: no marquee zoom)
     [6]='16 m', [7]='17 m', [8]='10 m', [9]='-1', [10]='-1', [11]='-1',
     [12]='-1', [13]='-1', [14]='18 m', [15]='23 m'    
   },

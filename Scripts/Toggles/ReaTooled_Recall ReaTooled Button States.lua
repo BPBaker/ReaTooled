@@ -1,12 +1,14 @@
 --[[
 -- @description ReaTooled - Recall ReaTooled Button States
--- @version 1.7
+-- @version 1.8
 -- @date 2026.10.30
 -- @author Brendan Baker
 -- @link http://brendanpatrickbaker.com/reatooled/
 -- @about
     # Recalls various ReaTooled Button States
 -- CHANGELOG
+-- v1.8 Recalls the pre-roll toggle (its marker) when REAPER's pre-roll is on, and puts back
+--      drags the Shuffle move script left switched off over a razor area
 -- v1.7 Recalls the Separation mode button
 -- v1.6 Recalls Shuffle mode (if REAPER still has per-track ripple)
 -- v1.5 Recalls the "Toggle swap left and right drag" button
@@ -57,6 +59,7 @@ local SLIP_INDICATOR       = cmd("Toggles/ReaTooled - Ripple Off (Slip).lua")
 local DRAG_SWAP            = cmd("Tools/ReaTooled_Toggle swap left and right drag.lua")
 local SHUFFLE_MODE         = cmd("Tools/ReaTooled_Toggle Shuffle mode.lua")
 local SEPARATION_MODE      = cmd("Tools/ReaTooled_Toggle Separation mode.lua")
+local PREROLL_TOGGLE       = cmd("Toggles/ReaTooled_Toggle pre-roll (playback and recording).lua")
 
 
 -- TAB TO TRANSIENT
@@ -132,6 +135,20 @@ set_button(DRAG_SWAP, reaper.GetExtState("ReaTooled", "DragSwap") == "1")
 
 -- SEPARATION MODE (button only: REAPER keeps the razor area drag setting itself)
 set_button(SEPARATION_MODE, reaper.GetExtState("ReaTooled", "SeparationMode") == "1")
+
+-- PRE-ROLL (recalled without toggling: its marker comes back if REAPER's pre-roll is on)
+if reaper.GetToggleCommandState(41818) == 1 or reaper.GetToggleCommandState(41819) == 1 then
+  reaper.SetExtState("ReaTooled", "PrerollRecall", "1", false)
+  run(PREROLL_TOGGLE)
+else
+  set_button(PREROLL_TOGGLE, false)
+end
+
+-- SHUFFLE MOVE: drags left switched off over a razor area (if it didn't stop cleanly)
+do
+  local ok, tools = pcall(dofile, BASE .. "Tools/ReaTooled_Tools lib.lua")
+  if ok and type(tools) == "table" and tools.repair_hover then tools.repair_hover() end
+end
 
 -- SLIP INDICATOR (Ripple Off)
 run(SLIP_INDICATOR)
