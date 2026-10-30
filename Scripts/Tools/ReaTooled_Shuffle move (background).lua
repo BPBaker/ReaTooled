@@ -1,5 +1,5 @@
 -- @description ReaTooled - Shuffle move (background, started in Shuffle mode)
--- @version 2.0
+-- @version 2.2
 -- @date 2026.10.29
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
@@ -16,7 +16,8 @@
 --     - Gaps between items are kept, like empty items: they move along, and the item
 --       can be dropped on either side of a gap. In a gap with room, it can also go
 --       one item-length right or left of where it was (nothing else moves).
---     - The track shows the result while you drag; letting go makes one undo step.
+--     - The track shows the result while you drag, with what moves selected (it stays
+--       selected after the drop); letting go makes one undo step.
 --   Dragging a selected item moves the selected items on its track (and lane) as one
 --   block, keeping their spacing; unselected items between them come along.
 --   Tracks that follow the clicked track's group (media editing), other items in the
@@ -26,6 +27,10 @@
 --   those tracks that aren't inside an item on another (empty space is fine; nothing
 --   is ever split); if an item there crosses the start or end of what's moving, the
 --   shuffle doesn't start.
+--   With ripple editing all tracks, every track moves the same stretch of time (a
+--   razor move of the whole project): items crossing it, or the drop point, are split
+--   there with short fades, and markers and regions go along. Locked items never
+--   move or split.
 --   With "Move envelope points with media items" on, the tracks' automation follows:
 --   the moved stretch's points go with it (to the envelope of the same name on
 --   another track), the rest closes up or moves along like the items, and points are
@@ -39,6 +44,16 @@
 --   up) and goes in at an item edge on the new track (on an empty track, at its
 --   time). Tracks with locked items aren't shuffled.
 -- @changelog
+--   v2.2 What moves is selected while dragging (on every track it moves on, with the
+--        split pieces in all-tracks mode), so its bounds show; it stays selected
+--        after the drop. Back home or cancelled, the selection is as it was.
+--   v2.1 With ripple editing all tracks: every track moves the same stretch of time,
+--        like a razor move of the whole project. Items on other tracks crossing its
+--        start or end, or the drop point, are split there with short fades (REAPER's
+--        default fade length); markers and regions go along (MOVE_MARKERS); all
+--        tracks' automation follows (not the tempo map). Drop points come from the
+--        clicked track only. Locked items never move or split: drop points that would
+--        need that aren't offered.
 --   v2.0 Crossfades are preserved: a crossfade's edit point is its centre, so what
 --        moves runs from edit point to edit point and every track shifts by the same
 --        amount. Neighbors that close up meet in a crossfade made of their own
@@ -77,6 +92,8 @@ local LINK_CMD_GUID = "_RSed328eb507619b18c1154efa1b048d816cfc2d0c"   -- Link Ti
 local DEADBAND_PX     = 4      -- the mouse must move this far before the item is picked up
 local DRAG_STAMP      = "ShuffleDragTime"   -- read by the Move Tool click: skip the click after a drag
 local AUTOSCROLL_RATE = 0.5    -- pixels scrolled per frame, per pixel past the arrange's side
+local MOVE_MARKERS    = true   -- ripple editing all tracks: markers and regions move along
+local RIPPLE_ALL      = 40311  -- Options: Set ripple editing all tracks
 
 local _, script_path = reaper.get_action_context()
 local dir = script_path:match("^(.*[/\\])") or ""
@@ -308,6 +325,170 @@ local function note_neighbors(list)
 end
 
 ------------------------------------------------------------
+-- Ripple editing all tracks: every track moves the same stretch of time, like a
+-- razor move of the whole project. Items crossing its start or end, or the drop
+-- point, are split there (with short fades); markers and regions go along.
+------------------------------------------------------------
+local function default_fade()
+  local v
+  if reaper.get_config_var_string then
+    local ok, s = reaper.get_config_var_string("deffadelen")
+    if ok then v = tonumber(s) end
+  end
+  return (v and v > 0) and v or 0.01
+end
+
+-- Time T with the stretch a..a+len taken out, as a time on the timeline before the edit
+local function orig_time(a, len, T) return (T <= a + TOL) and T or (T + len) end
+
+-- The range a drop at T changes on the other tracks
+local function touched(a, len, T)
+  local u = orig_time(a, len, T)
+  return math.min(a, u), math.max(a + len, u)
+end
+
+-- Where something at time p (before the edit) goes: the stretch to T, the rest closes up
+-- and opens again at T
+local function outside_map(p, T)
+  local r = (p >= G.a + G.len - TOL) and (p - G.len) or p
+  return (r >= T - TOL) and (r + G.len) or r
+end
+local function all_map(p, T)
+  if p >= G.a - TOL and p < G.a + G.len - TOL then return T + (p - G.a) end
+  return outside_map(p, T)
+end
+local function all_map_end(e, T)   -- a region's end
+  if e > G.a + TOL and e <= G.a + G.len + TOL then return T + (e - G.a) end
+  return outside_map(e, T)
+end
+
+-- Items on every other track (and on the clicked track's other lanes)
+local function other_items(srcTr, srcList)
+  local mine = {}
+  for _, r in ipairs(srcList) do mine[r.it] = true end
+  local list = {}
+  for t = 0, reaper.CountTracks(0) - 1 do
+    local tr = reaper.GetTrack(0, t)
+    for i = 0, reaper.CountTrackMediaItems(tr) - 1 do
+      local it = reaper.GetTrackMediaItem(tr, i)
+      if not mine[it] then
+        list[#list + 1] = { it = it, pos = reaper.GetMediaItemInfo_Value(it, "D_POSITION"),
+                            len = reaper.GetMediaItemInfo_Value(it, "D_LENGTH"),
+                            locked = (reaper.GetMediaItemInfo_Value(it, "C_LOCK") or 0) ~= 0 }
+      end
+    end
+  end
+  return list
+end
+
+local function snap_markers()
+  local list = {}
+  local _, nm, nr = reaper.CountProjectMarkers(0)
+  for i = 0, (nm or 0) + (nr or 0) - 1 do
+    local ok, isrgn, pos, rend, name, num, color = reaper.EnumProjectMarkers3(0, i)
+    if ok then list[#list + 1] = { isrgn = isrgn, pos = pos, rend = rend, name = name, num = num, color = color } end
+  end
+  return list
+end
+
+local function set_marker(m, pos, rend)
+  reaper.SetProjectMarker3(0, m.num, m.isrgn, pos, rend, m.name, m.color)
+end
+
+-- Split an item at t (the cut gets short fades); remembered so it can be undone
+local function split_at(it, t)
+  local pos = reaper.GetMediaItemInfo_Value(it, "D_POSITION")
+  local len = reaper.GetMediaItemInfo_Value(it, "D_LENGTH")
+  if not (pos + TOL < t and pos + len - TOL > t) then return nil end
+  local rec = { left = it, len = len,
+                fout = reaper.GetMediaItemInfo_Value(it, "D_FADEOUTLEN"),
+                foutA = reaper.GetMediaItemInfo_Value(it, "D_FADEOUTLEN_AUTO"),
+                foutS = reaper.GetMediaItemInfo_Value(it, "C_FADEOUTSHAPE") }
+  local right = reaper.SplitMediaItem(it, t)
+  if not right then return nil end
+  rec.right = right
+  G.splits[#G.splits + 1] = rec
+  -- exactly at t, whatever REAPER's split preferences add (overlaps on split)
+  reaper.SetMediaItemInfo_Value(it, "D_LENGTH", t - pos)
+  local rpos = reaper.GetMediaItemInfo_Value(right, "D_POSITION")
+  if math.abs(rpos - t) > 1e-9 then
+    for k = 0, reaper.CountTakes(right) - 1 do
+      local tk = reaper.GetTake(right, k)
+      if tk then
+        reaper.SetMediaItemTakeInfo_Value(tk, "D_STARTOFFS", reaper.GetMediaItemTakeInfo_Value(tk, "D_STARTOFFS")
+          + (t - rpos) * reaper.GetMediaItemTakeInfo_Value(tk, "D_PLAYRATE"))
+      end
+    end
+    reaper.SetMediaItemInfo_Value(right, "D_POSITION", t)
+  end
+  reaper.SetMediaItemInfo_Value(right, "D_LENGTH", pos + len - t)
+  local f = G.cutFade
+  local fl, fr = math.min(f, (t - pos) / 2), math.min(f, (pos + len - t) / 2)
+  reaper.SetMediaItemInfo_Value(it, "D_FADEOUTLEN", fl)
+  if reaper.GetMediaItemInfo_Value(it, "D_FADEOUTLEN_AUTO") >= 0 then reaper.SetMediaItemInfo_Value(it, "D_FADEOUTLEN_AUTO", fl) end
+  reaper.SetMediaItemInfo_Value(right, "D_FADEINLEN", fr)
+  if reaper.GetMediaItemInfo_Value(right, "D_FADEINLEN_AUTO") >= 0 then reaper.SetMediaItemInfo_Value(right, "D_FADEINLEN_AUTO", fr) end
+  return right
+end
+
+-- Every other track back as it was at the click
+local function all_restore()
+  for _, o in ipairs(G.others) do
+    if reaper.ValidatePtr2(0, o.it, "MediaItem*")
+       and math.abs(reaper.GetMediaItemInfo_Value(o.it, "D_POSITION") - o.pos) > 1e-9 then
+      reaper.SetMediaItemInfo_Value(o.it, "D_POSITION", o.pos)
+    end
+  end
+  for i = #G.splits, 1, -1 do
+    local s = G.splits[i]
+    if reaper.ValidatePtr2(0, s.right, "MediaItem*") then
+      reaper.DeleteTrackMediaItem(reaper.GetMediaItem_Track(s.right), s.right)
+    end
+    if reaper.ValidatePtr2(0, s.left, "MediaItem*") then
+      reaper.SetMediaItemInfo_Value(s.left, "D_LENGTH", s.len)
+      reaper.SetMediaItemInfo_Value(s.left, "D_FADEOUTLEN", s.fout)
+      reaper.SetMediaItemInfo_Value(s.left, "D_FADEOUTLEN_AUTO", s.foutA)
+      reaper.SetMediaItemInfo_Value(s.left, "C_FADEOUTSHAPE", s.foutS)
+    end
+  end
+  G.splits = {}
+  G.allMoving = nil
+  for _, m in ipairs(G.markSnap or {}) do set_marker(m, m.pos, m.rend) end
+end
+
+-- Every other track with the stretch moved to T (T: time with the stretch taken out)
+local function all_apply(T)
+  local cur = {}
+  for _, o in ipairs(G.others) do if not o.locked then cur[#cur + 1] = o.it end end
+  for _, t in ipairs({ G.a, G.a + G.len, orig_time(G.a, G.len, T) }) do
+    for i = 1, #cur do
+      local right = split_at(cur[i], t)
+      if right then cur[#cur + 1] = right end
+    end
+  end
+  local pos = {}
+  G.allMoving = {}
+  for _, it in ipairs(cur) do
+    local p = reaper.GetMediaItemInfo_Value(it, "D_POSITION")
+    if p >= G.a - TOL and p < G.a + G.len - TOL then G.allMoving[#G.allMoving + 1] = it end
+    pos[it] = all_map(p, T)
+  end
+  for it, p in pairs(pos) do
+    if math.abs(reaper.GetMediaItemInfo_Value(it, "D_POSITION") - p) > 1e-9 then
+      reaper.SetMediaItemInfo_Value(it, "D_POSITION", p)
+    end
+  end
+  for _, m in ipairs(G.markSnap or {}) do
+    if m.isrgn then
+      local s, e = all_map(m.pos, T), all_map_end(m.rend, T)
+      if e > s + TOL then set_marker(m, s, e) end
+    else
+      set_marker(m, all_map(m.pos, T), m.rend)
+    end
+  end
+end
+
+------------------------------------------------------------
 -- Tracks that shuffle along (groups, selection on other tracks)
 ------------------------------------------------------------
 local function tg(id) return reaper.GetToggleCommandState(id) == 1 end
@@ -413,6 +594,29 @@ local function put_D_on(tr)
   end
 end
 
+-- While dragging, what moves is selected (on every track it moves on), so its
+-- bounds show; back home or cancelled, the selection is as it was at the click
+local function select_only(list)
+  reaper.SelectAllMediaItems(0, false)
+  for _, it in ipairs(list) do
+    if reaper.ValidatePtr2(0, it, "MediaItem*") then reaper.SetMediaItemSelected(it, true) end
+  end
+end
+
+local function show_moving()
+  local list = {}
+  for _, m in ipairs(G.Dslot.members) do list[#list + 1] = m.item end
+  for _, F in ipairs(G.followers or {}) do
+    for _, sg in ipairs(F.blk) do if sg.item then list[#list + 1] = sg.item end end
+  end
+  for _, it in ipairs(G.allMoving or {}) do list[#list + 1] = it end
+  select_only(list)
+end
+
+local function restore_selection()
+  if G.selSnap then select_only(G.selSnap) end
+end
+
 -- Everything back as it was at the click
 local function restore()
   if not G then return end
@@ -420,8 +624,10 @@ local function restore()
   put_D_on(G.src.tr)
   for _, row in pairs(G.rows) do if row then restore_list(row.list) end end
   for _, F in ipairs(G.followers or {}) do restore_list(F.list) end
+  if G.all then all_restore() end
   restore_fades()
   restore_envs()
+  restore_selection()
   reaper.PreventUIRefresh(-1)
   reaper.UpdateArrange()
 end
@@ -491,9 +697,32 @@ local function start_drag(D, pressTime)
   G = { fadeSnap = {}, offsSnap = {}, nextOf = {}, envSnap = {} }   -- (filled below; needed by the helpers)
   snap_fades(list); note_neighbors(list)
 
+  local all = reaper.GetToggleCommandState(RIPPLE_ALL) == 1
+  if all then
+    -- Every track moves: only drop points where no locked item would have to move
+    -- or be split
+    G.others = other_items(tr, list)
+    local ok = {}
+    for _, b in ipairs(bounds) do
+      local free = math.abs(b.t - a) <= TOL and not b.split
+      if not free then
+        local lo, hi = touched(a, len, b.t)
+        free = true
+        for _, o in ipairs(G.others) do
+          if o.locked and o.pos + o.len > lo + TOL and o.pos < hi - TOL then free = false break end
+        end
+      end
+      if free then ok[#ok + 1] = b end
+    end
+    if #ok < #bounds and #ok <= 1 then tip("locked items on other tracks are in the way") end
+    bounds = ok
+    G.all, G.splits, G.cutFade = true, {}, default_fade()
+    if MOVE_MARKERS then G.markSnap = snap_markers() end
+  end
+
   -- Tracks that shuffle along: the same stretch out, the same place back in
   local followers = {}
-  for ftr in pairs(follower_tracks(D, tr)) do
+  for ftr in pairs(all and {} or follower_tracks(D, tr)) do
     local flist = lane_items(ftr, lane)
     if not flist then G = nil tip("a grouped track has locked items") return end
     local FR, fblk = extract(build_row(flist), a, a + len)
@@ -536,6 +765,8 @@ local function start_drag(D, pressTime)
   G.track, G.b, G.grab, G.active = tr, nil, pressTime - a, false
   G.pressX, G.pressY = mouse.mouse()
   G.wasSelected = reaper.IsMediaItemSelected(D)
+  G.selSnap = {}
+  for i = 0, reaper.CountSelectedMediaItems(0) - 1 do G.selSnap[#G.selSnap + 1] = reaper.GetSelectedMediaItem(0, i) end
 end
 
 local function nearest_bound(bounds, desired)
@@ -554,6 +785,7 @@ end
 -- Show D at drop point b of track tr (and the source track closed up)
 local function place(tr, b)
   reaper.PreventUIRefresh(1)
+  if G.all then all_restore() end
   restore_fades()
   for t2, row in pairs(G.rows) do
     if row and t2 ~= tr and t2 ~= G.src.tr then restore_list(row.list) end   -- tracks left behind
@@ -573,6 +805,7 @@ local function place(tr, b)
       local FF = insert(F.R, fb, F.blk)
       local fpos = layout(FF); apply_positions(fpos); crossfades_for(FF, fpos)
     end
+    if G.all then all_apply(b.t) end
   else
     local spos = layout(G.src.R); apply_positions(spos); crossfades_for(G.src.R, spos)   -- source closes up
     local row = G.rows[tr]
@@ -580,13 +813,14 @@ local function place(tr, b)
     local F1 = insert(row.R, b, { G.Dslot })
     local pos = layout(F1); apply_positions(pos); crossfades_for(F1, pos)              -- target opens a slot
   end
+  if home then restore_selection() else show_moving() end
   reaper.PreventUIRefresh(-1)
   reaper.UpdateArrange()
 end
 
 -- The track D is over: the track under the mouse if it can take D, else the last one
 local function track_under_mouse()
-  if #G.followers > 0 then return G.src.tr end   -- grouped: stays on its tracks
+  if #G.followers > 0 or G.all then return G.src.tr end   -- grouped or all tracks: stays on its track
   local mx, my = reaper.GetMousePosition()
   local tr, info = reaper.GetTrackFromPoint(mx, my)
   if not tr or (info or 0) ~= 0 then return G.track end   -- envelope lanes, FX: stay
@@ -651,7 +885,11 @@ end
 
 local function envelopes(tr)
   local list = {}
-  for e = 0, reaper.CountTrackEnvelopes(tr) - 1 do list[#list + 1] = reaper.GetTrackEnvelope(tr, e) end
+  for e = 0, reaper.CountTrackEnvelopes(tr) - 1 do
+    local env = reaper.GetTrackEnvelope(tr, e)
+    local _, name = reaper.GetEnvelopeName(env)
+    if name ~= "Tempo map" then list[#list + 1] = env end   -- tempo stays where it is
+  end
   return list
 end
 
@@ -743,11 +981,22 @@ function automation_apply(tr, b)
   if reaper.GetToggleCommandState(40070) ~= 1 then return end   -- Move envelope points with media items
   snap_track_envs(G.src.tr)
   for _, F in ipairs(G.followers) do snap_track_envs(F.tr) end
+  if G.all then
+    for t = -1, reaper.CountTracks(0) - 1 do
+      local atr = (t < 0) and reaper.GetMasterTrack(0) or reaper.GetTrack(0, t)
+      if atr then snap_track_envs(atr) end
+    end
+  end
   if tr then snap_track_envs(tr) end
   restore_envs()
   if not b then return end
   local a, len, T = G.a, G.len, b.t
-  if tr == G.src.tr then
+  if G.all then
+    for t = -1, reaper.CountTracks(0) - 1 do
+      local atr = (t < 0) and reaper.GetMasterTrack(0) or reaper.GetTrack(0, t)
+      if atr then automation_shuffle(atr, a, len, T) end
+    end
+  elseif tr == G.src.tr then
     automation_shuffle(G.src.tr, a, len, T)
     for _, F in ipairs(G.followers) do automation_shuffle(F.tr, F.a, F.b - F.a, T) end
   else
@@ -755,12 +1004,11 @@ function automation_apply(tr, b)
   end
 end
 
--- Like the Move Tool's click: the item is selected (kept with the selection if it
--- was selected), the edit cursor goes to the selection's start, and with Link
--- Timeline and Edit Selection on the loop points span it
+-- Like the Move Tool's click: what moved is selected (on every track it moved on),
+-- the edit cursor goes to the selection's start, and with Link Timeline and Edit
+-- Selection on the loop points span it
 local function select_and_place_cursor(D)
-  if not G.wasSelected then reaper.SelectAllMediaItems(0, false) end
-  for _, m in ipairs(G.Dslot.members) do reaper.SetMediaItemSelected(m.item, true) end
+  show_moving()   -- what moved stays selected, on every track
   local s, e = math.huge, -math.huge
   for i = 0, reaper.CountSelectedMediaItems(0) - 1 do
     local it = reaper.GetSelectedMediaItem(0, i)
@@ -784,7 +1032,8 @@ local function release()
     -- The drag made no undo points, so this block captures the whole move
     reaper.Undo_BeginBlock()   -- (the automation was already moved while dragging)
     select_and_place_cursor(G.D)
-    reaper.Undo_EndBlock((#G.Dslot.members > 1 or #G.followers > 0) and "Shuffle items" or "Shuffle item", -1)
+    reaper.Undo_EndBlock(G.all and "Shuffle (all tracks)"
+      or ((#G.Dslot.members > 1 or #G.followers > 0) and "Shuffle items" or "Shuffle item"), -1)
   end
   G = nil
   reaper.UpdateArrange()
