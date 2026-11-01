@@ -19,6 +19,33 @@
     When you click OK at the end, REAPER quits, the helper writes those files,
     and the same copy of REAPER opens again by itself.
 -- CHANGELOG
+-- v2.3.3 Renamed and removed scripts (Startup/ReaTooled_Renamed scripts.lua): a renamed
+--        script keeps its shortcuts, toolbar and menu buttons and mouse modifiers (its
+--        old command ID is replaced by the new one everywhere, and its old Actions-list
+--        entry goes); a removed script's shortcuts go.
+-- v2.3.2 Run by "Update ReaTooled" after the user said yes: goes straight to the update
+--        (no second question).
+-- v2.3.1 Update: toolbars and menus you changed get ReaTooled's changes merged in, button by
+--        button: buttons the new release adds go in after the button they follow in
+--        ReaTooled's version (or at the start), buttons it removed go (if you still have
+--        them), changed icons follow (unless you changed that icon), and your own
+--        buttons, order and removals stay. Listed in the report.
+-- v2.3   Update mode. When ReaTooled is already set up, Set up asks whether to Update
+--        (keep your own changes and your window layout) or set up again from scratch;
+--        "Update ReaTooled" (_G.REATOOLED_UPDATE) goes straight to Update. An update
+--        compares three versions of each setting: what ReaTooled installed last time
+--        (the record of the last setup or update), what you have now, and the new
+--        release. Still as ReaTooled installed it: updated. Changed by you: kept, and
+--        listed in the report. Shortcuts as before (the clash window), plus shortcuts
+--        the last setup installed count as ReaTooled's. Toolbars and menus: whole
+--        toolbars, untouched ones replaced, ones you changed kept (and listed).
+--        Preferences, mouse modifiers, theme settings, SWS settings: setting by setting.
+--        Script settings: only new ones are added. Cursors and menu sets: replaced unless
+--        you changed them. Never touched in an update: screensets, docked windows
+--        (ReaImGui), floating toolbar windows, the mousewheel choice.
+--        Every setup and update now keeps a full copy of the configuration it applied
+--        with its record (applied/config), so the next update knows exactly what
+--        ReaTooled installed.
 -- v2.2.7 Shortcut clashes are shown together in one window instead of Yes/No/Cancel
 --        boxes: each row says "Keep yours" or "Update to ReaTooled's" (Keep yours is
 --        the default), any row can be changed until Continue, and the shortcut that loses
@@ -109,7 +136,7 @@ local FOLDERS = {
 ------------------------------------------------------------
 
 local TITLE        = "Set up ReaTooled"
-local SETUP_VER    = "2.2.7"
+local SETUP_VER    = "2.3.3"
 local RES          = reaper.GetResourcePath():gsub("\\", "/")
 local CONFIG       = RES .. "/Data/ReaTooled/Config"
 local PENDING      = RES .. "/Data/ReaTooled/Pending"
@@ -646,6 +673,86 @@ end
 
 local first_run = not exists(FIRST_BACKUP .. "/backup_info.txt")
 
+------------------------------------------------------------
+-- 1a. Already set up? The record of the last setup or update is the baseline:
+-- what ReaTooled installed then. Update mode compares against it.
+------------------------------------------------------------
+
+local function latest_record()
+  local best_key, best_dir
+  reaper.EnumerateSubdirectories(BACKUP_ROOT, -1)
+  local i = 0
+  while true do
+    local d = reaper.EnumerateSubdirectories(BACKUP_ROOT, i)
+    if not d then break end
+    if exists(BACKUP_ROOT .. "/" .. d .. "/applied/record.txt") then
+      local key = (d == "Before ReaTooled") and "0000" or d   -- (the others are dated)
+      if not best_key or key > best_key then best_key, best_dir = key, BACKUP_ROOT .. "/" .. d .. "/applied" end
+    end
+    i = i + 1
+  end
+  return best_dir
+end
+
+local BASE_REC = latest_record()
+local BASE_VER = BASE_REC and ((read_file(BASE_REC .. "/record.txt") or ""):match("\nConfig ([%d%.]+)") or "") or ""
+
+-- A configuration file as the last setup/update applied it (nil if unknown). Records
+-- from 2.3 on keep a full copy (config/); earlier ones kept the parts Restore needs.
+local BASE_MAP = {
+  ["menus.ini"] = "sections/reaper-menu.ini", ["themeconfig.ini"] = "sections/reaper-themeconfig.ini",
+  ["mouse.ini"] = "keys/reaper-mouse.ini", ["extstate.ini"] = "keys/reaper-extstate.ini",
+}
+local function base_file(name)
+  if not BASE_REC then return nil end
+  local full = read_file(BASE_REC .. "/config/" .. name)
+  if full then return full end
+  if BASE_MAP[name] then return read_file(BASE_REC .. "/" .. BASE_MAP[name]) end
+  local sws = name:match("^sws/(.+)$")
+  if sws then return read_file(BASE_REC .. "/keys/" .. sws) end
+  return nil
+end
+-- reaper.ini as applied: the record's merged preferences, with the full preference
+-- files where the record has them (an update records only what it changed)
+local function base_prefs()
+  if not BASE_REC then return nil end
+  local out = { read_file(BASE_REC .. "/keys/reaper.ini") or "" }
+  for _, name in ipairs({ "prefs.ini", "prefs_offline.ini" }) do
+    local t = read_file(BASE_REC .. "/config/" .. name)
+    if t then out[#out + 1] = t end
+  end
+  return table.concat(out, "\n")
+end
+-- Shortcuts as applied: the full keymap, or the KEY lines the record says were added
+local function base_keymap()
+  if not BASE_REC then return nil end
+  local full = read_file(BASE_REC .. "/config/keymap.ini")
+  if full then return full end
+  local out = {}
+  for _, l in ipairs(lines_of(read_file(BASE_REC .. "/kb.txt") or "")) do
+    local k = l:match("^[+=] (KEY .*)$")
+    if k then out[#out + 1] = k end
+  end
+  return table.concat(out, "\n")
+end
+
+local UPDATE = false
+local CONFIRMED = _G.REATOOLED_UPDATE == "confirmed"   -- (Update ReaTooled asked already)
+if BASE_REC then
+  if _G.REATOOLED_UPDATE then
+    UPDATE = true
+  else
+    local a = msg("ReaTooled is already set up" .. (BASE_VER ~= "" and (" (v" .. BASE_VER .. ")") or "") .. ".\n\n" ..
+      "Yes: Update to v" .. CONFIG_VER .. ". Your own changes (shortcuts, toolbars, settings) and your " ..
+      "window layout and screensets are kept.\n\n" ..
+      "No: Set up again from scratch. ReaTooled's settings, toolbars and window layout are applied " ..
+      "again (your shortcut clashes are still asked about).", 3)   -- Yes / No / Cancel
+    if a == 2 then return end
+    UPDATE = (a == 6)
+  end
+end
+_G.REATOOLED_UPDATE = nil
+
 local intro = "Set up ReaTooled" .. (CONFIG_VER ~= "" and (" v" .. CONFIG_VER) or "") .. " now?\n\n" ..
   "Your current settings are backed up first. If any ReaTooled shortcuts clash with " ..
   "yours, you choose which to keep, then REAPER restarts."
@@ -657,7 +764,14 @@ if #missing > 0 then
     "(the ReaBoot link from the guide adds them all).\n\n" .. intro
 end
 
-if msg(intro, 1) ~= 1 then return end   -- OK / Cancel
+if UPDATE then
+  intro = (#missing > 0 and ("Some things ReaTooled uses are not installed:\n\n" .. table.concat(missing, "\n") ..
+    "\n\nThe tools that use them won't work until they're installed.\n\n") or "") ..
+    "Update ReaTooled" .. (BASE_VER ~= "" and (" from v" .. BASE_VER) or "") .. " to v" .. CONFIG_VER .. " now?\n\n" ..
+    "Your current settings are backed up first. Your own changes and your window layout are kept. " ..
+    "If any new ReaTooled shortcuts clash with yours, you choose which to keep, then REAPER restarts."
+end
+if not (UPDATE and CONFIRMED) and msg(intro, 1) ~= 1 then return end   -- OK / Cancel
 
 ------------------------------------------------------------
 -- 1b. Mousewheel direction for ReaTooled's wheel scripts (zoom, pitch,
@@ -692,7 +806,7 @@ end
 -- 2. Backup
 ------------------------------------------------------------
 
-local backup_dir = first_run and FIRST_BACKUP or (BACKUP_ROOT .. "/" .. os.date("%Y-%m-%d_%H%M%S"))
+local backup_dir = (first_run and not UPDATE) and FIRST_BACKUP or (BACKUP_ROOT .. "/" .. os.date("%Y-%m-%d_%H%M%S"))
 local backup_failed = {}
 
 local function backup_file(rel)
@@ -792,6 +906,66 @@ for _, line in ipairs(lines_of(keymap_text)) do
   end
 end
 
+------------------------------------------------------------
+-- 3a. Renamed and removed scripts. Startup/ReaTooled_Renamed scripts.lua lists them:
+-- { ["Folder/Old name.lua"] = "Folder/New name.lua", ["Folder/Gone.lua"] = false }
+-- (paths within Scripts/ReaTooled/). The old command ID (from the user's Actions list)
+-- becomes the new one (from the configuration) in shortcuts, toolbars, menus and
+-- mouse modifiers.
+------------------------------------------------------------
+
+local ID_MAP, ID_GONE = {}, {}   -- old command ID (no "_") -> new ID / true
+do
+  local RENAMES = {}
+  local path = RES .. "/Scripts/ReaTooled/Startup/ReaTooled_Renamed scripts.lua"
+  if exists(path) then
+    local ok, t = pcall(dofile, path)
+    if ok and type(t) == "table" then RENAMES = t end
+  end
+  if next(RENAMES) then
+    local function script_path(f) return (f[#f] or ""):gsub("\\", "/") end
+    local new_id = {}
+    for _, s in ipairs(our_scr) do
+      local f = kb_fields(s.line)
+      new_id[script_path(f)] = (s.id or ""):gsub("^_", "")
+    end
+    local keep = {}
+    for _, line in ipairs(user_lines) do
+      local f = kb_fields(line)
+      local drop = false
+      if f[1] == "SCR" then
+        local rel = script_path(f):match("^ReaTooled/(.+)$")
+        local to = rel and RENAMES[rel]
+        local old = (f[4] or ""):gsub("^_", "")
+        if to == false then
+          ID_GONE[old] = true; drop = true
+        elseif to and new_id["ReaTooled/" .. to] and new_id["ReaTooled/" .. to] ~= old then
+          ID_MAP[old] = new_id["ReaTooled/" .. to]; drop = true   -- (the new script's line is added)
+        end
+      end
+      if not drop then keep[#keep + 1] = line end
+    end
+    user_lines = keep
+  end
+end
+
+-- Command IDs in a text (keymap, menus, mouse modifiers) with the renames applied
+local function renamed(text)
+  if not text or not next(ID_MAP) then return text end
+  for old, new in pairs(ID_MAP) do
+    text = text:gsub("_" .. old .. "%f[^%w]", "_" .. new)
+  end
+  return text
+end
+do  -- the user's shortcuts: renamed ones point at the new script, removed ones go
+  local keep = {}
+  for _, line in ipairs(user_lines) do
+    local f = kb_fields(line)
+    if not (f[1] == "KEY" and ID_GONE[(f[4] or ""):gsub("^_", "")]) then keep[#keep + 1] = renamed(line) end
+  end
+  user_lines = keep
+end
+
 local user_scr, user_act, user_key = {}, {}, {}
 for i, line in ipairs(user_lines) do
   local f = kb_fields(line)
@@ -831,6 +1005,17 @@ do
   if exists(path) then
     local ok, t = pcall(dofile, path)
     if ok and type(t) == "table" then LEGACY = t end
+  end
+end
+-- (and the ones the last setup or update installed)
+do
+  for _, line in ipairs(lines_of(renamed(base_keymap()) or "")) do
+    local f = kb_fields(line)
+    if f[1] == "KEY" and f[4] then
+      local key = f[2] .. "|" .. f[3] .. "|" .. f[5]
+      LEGACY[key] = LEGACY[key] or {}
+      LEGACY[key][norm_id(f[4])] = true
+    end
   end
 end
 local function from_earlier_release(key, cmd)
@@ -947,6 +1132,191 @@ local function apply_choices()
     end
     if alt then rekeyed = rekeyed + 1 end
   end
+end
+
+------------------------------------------------------------
+-- Update mode: three-way merges (last applied / yours now / new release)
+------------------------------------------------------------
+
+local upd = { menus_updated = {}, menus_kept = {}, menus_merged = {}, keys_updated = 0, keys_kept = 0, kept_names = {},
+              files_kept = 0, ext_added = 0 }
+
+local function same_value(a, b)
+  if a == b then return true end
+  if a == nil or b == nil then return false end
+  local na, nb = tonumber(a), tonumber(b)
+  if na and nb then return math.abs(na - nb) < 1e-9 * math.max(1, math.abs(na)) end
+  return false
+end
+
+local function sorted_lines(lines)
+  local t = {}
+  for _, l in ipairs(lines or {}) do t[#t + 1] = l end
+  table.sort(t)
+  return table.concat(t, "\n")
+end
+
+-- key=value lines of an ini section, as a table
+local function kv(lines)
+  local t = {}
+  for _, l in ipairs(lines or {}) do
+    local k, v = l:match("^([^=]+)=(.*)$")
+    if k then t[k] = v end
+  end
+  return t
+end
+
+-- The patch to merge (key by key) into the user's file: a key is set where the user
+-- still has what ReaTooled installed last time (or doesn't have it); kept where the
+-- user changed it. 'label' names the file in the report.
+local function three_way_patch(user_text, new_text, base_text, label)
+  local u, n, b = ini_parse(user_text or ""), ini_parse(new_text or ""), ini_parse(base_text or "")
+  local out = { pre = {}, order = {}, sec = {} }
+  for _, name in ipairs(n.order) do
+    local uk, bk = kv(u.sec[name]), kv(b.sec[name])
+    local lines = {}
+    for _, l in ipairs(n.sec[name]) do
+      local k, v = l:match("^([^=]+)=(.*)$")
+      if k then
+        local cur = uk[k]
+        if same_value(cur, v) then
+          -- already so
+        elseif cur == nil or (bk[k] ~= nil and same_value(cur, bk[k])) then
+          lines[#lines + 1] = l
+          upd.keys_updated = upd.keys_updated + 1
+        else
+          upd.keys_kept = upd.keys_kept + 1
+          if #upd.kept_names < 40 then upd.kept_names[#upd.kept_names + 1] = label .. " [" .. name .. "] " .. k end
+        end
+      end
+    end
+    if #lines > 0 then out.sec[name] = lines; out.order[#out.order + 1] = name end
+  end
+  if #out.order == 0 then return nil end
+  return ini_text(out)
+end
+
+-- A toolbar or menu section: its buttons in order ({ v = "command label", icon, id }),
+-- and its other keys (title, default ...). id = the button plus which occurrence of it
+-- (separators repeat).
+local function parse_menu(lines)
+  local items, icons, other, max = {}, {}, {}, -1
+  for _, l in ipairs(lines or {}) do
+    local n, v = l:match("^item_(%d+)=(.*)$")
+    if n then
+      items[tonumber(n)] = v; max = math.max(max, tonumber(n))
+    else
+      local m, iv = l:match("^icon_(%d+)=(.*)$")
+      if m then icons[tonumber(m)] = iv
+      else
+        local k, ov = l:match("^([^=]+)=(.*)$")
+        if k then other[#other + 1] = { k = k, v = ov } end
+      end
+    end
+  end
+  local list, seen = {}, {}
+  for i = 0, max do
+    if items[i] then
+      local v = items[i]
+      seen[v] = (seen[v] or 0) + 1
+      list[#list + 1] = { v = v, icon = icons[i], id = v .. "#" .. seen[v] }
+    end
+  end
+  return list, other
+end
+
+-- The user's version with ReaTooled's changes since the baseline merged in
+local function menu_merge(ul, nl, bl)
+  local U, uo = parse_menu(ul)
+  local N, no = parse_menu(nl)
+  local B, bo = parse_menu(bl)
+  local inN, inB = {}, {}
+  for _, e in ipairs(N) do inN[e.id] = e end
+  for _, e in ipairs(B) do inB[e.id] = e end
+  local res, added, removed = {}, 0, 0
+  for _, e in ipairs(U) do
+    if inB[e.id] and not inN[e.id] then
+      removed = removed + 1                        -- ReaTooled took it out
+    else
+      local c = { v = e.v, icon = e.icon, id = e.id }
+      local b, n = inB[e.id], inN[e.id]
+      if b and n and n.icon ~= b.icon and e.icon == b.icon then c.icon = n.icon end   -- icon changed by ReaTooled
+      res[#res + 1] = c
+    end
+  end
+  local pos
+  local function reindex() pos = {}; for i, e in ipairs(res) do pos[e.id] = i end end
+  reindex()
+  for i, e in ipairs(N) do
+    if not inB[e.id] and not pos[e.id] then        -- new in this release
+      local at = 0
+      for j = i - 1, 1, -1 do
+        if pos[N[j].id] then at = pos[N[j].id]; break end
+      end
+      table.insert(res, at + 1, { v = e.v, icon = e.icon, id = e.id })
+      added = added + 1
+      reindex()
+    end
+  end
+  -- other keys: ReaTooled's where the user still has the baseline's
+  local uk, bk, out, done = {}, {}, {}, {}
+  for _, o in ipairs(uo) do uk[o.k] = o.v end
+  for _, o in ipairs(bo) do bk[o.k] = o.v end
+  for _, o in ipairs(uo) do
+    local v = o.v
+    for _, n in ipairs(no) do
+      if n.k == o.k and v == bk[o.k] then v = n.v end
+    end
+    out[#out + 1] = o.k .. "=" .. v; done[o.k] = true
+  end
+  for _, n in ipairs(no) do
+    if not done[n.k] and bk[n.k] == nil then out[#out + 1] = n.k .. "=" .. n.v end
+  end
+  for i, e in ipairs(res) do
+    if e.icon then out[#out + 1] = "icon_" .. (i - 1) .. "=" .. e.icon end
+  end
+  for i, e in ipairs(res) do out[#out + 1] = "item_" .. (i - 1) .. "=" .. e.v end
+  return out, added, removed
+end
+
+-- Toolbars and menus: replaced where the user hasn't changed them; merged where both
+-- the user and ReaTooled changed them
+local function menus_patch(user_text, new_text, base_text)
+  local u, n, b = ini_parse(user_text or ""), ini_parse(new_text or ""), ini_parse(base_text or "")
+  local out = { pre = {}, order = {}, sec = {} }
+  for _, name in ipairs(n.order) do
+    local nu, nn, nb = u.sec[name], n.sec[name], b.sec[name]
+    if nu and sorted_lines(nu) == sorted_lines(nn) then
+      -- already the new version
+    elseif not nu or (nb and sorted_lines(nu) == sorted_lines(nb)) then
+      out.sec[name] = nn; out.order[#out.order + 1] = name
+      upd.menus_updated[#upd.menus_updated + 1] = name
+    elseif nb and sorted_lines(nn) == sorted_lines(nb) then
+      -- ReaTooled didn't change it: the user's own version stays
+    elseif nb then
+      local merged, a, r = menu_merge(nu, nn, nb)
+      out.sec[name] = merged; out.order[#out.order + 1] = name
+      upd.menus_merged[#upd.menus_merged + 1] = name .. " (" .. a .. " added, " .. r .. " removed)"
+    else
+      upd.menus_kept[#upd.menus_kept + 1] = name   -- (no record of what ReaTooled installed: left alone)
+    end
+  end
+  return ini_text(out)
+end
+
+-- reaper.ini's [REAPER] keys: the user's current value (live where REAPER has it)
+local user_ini_cache
+local function user_pref(k)
+  local ok, v = reaper.get_config_var_string(k)
+  if ok then return v end
+  if not user_ini_cache then
+    user_ini_cache = {}
+    local ini = ini_parse(read_file(RES .. "/reaper.ini") or "")
+    for name, lines in pairs(ini.sec) do
+      if name:lower() == "reaper" then user_ini_cache = kv(lines) end
+    end
+  end
+  return user_ini_cache[k]
 end
 
 -- The rest of the setup (defined below), run after the clashes are settled
@@ -1259,17 +1629,31 @@ finish_setup = function()
   local function staged_section_merge(target, config_file, key_merge)
     local patch = read_file(CONFIG .. "/" .. config_file)
     if patch then
-      stage_copy(target, ini_merge(read_file(RES .. "/" .. target) or "", patch, key_merge))
+      stage_copy(target, ini_merge(renamed(read_file(RES .. "/" .. target) or ""), patch, key_merge))
     end
   end
+  if UPDATE then
+    local user_menu = renamed(read_file(RES .. "/reaper-menu.ini") or "")
+    local mp = menus_patch(user_menu, read_file(CONFIG .. "/menus.ini"), renamed(base_file("menus.ini")))
+    if #upd.menus_updated > 0 or #upd.menus_merged > 0 or next(ID_MAP) then stage_copy("reaper-menu.ini", ini_merge(user_menu, mp)) end
+    local user_mouse_raw = read_file(RES .. "/reaper-mouse.ini") or ""
+    local user_mouse = renamed(user_mouse_raw)
+    local mo = three_way_patch(user_mouse, read_file(CONFIG .. "/mouse.ini"), renamed(base_file("mouse.ini")), "Mouse modifiers")
+    if mo or user_mouse ~= user_mouse_raw then
+      local all = {}
+      for _, name in ipairs(ini_parse(mo or "").order) do all[name] = true end
+      stage_copy("reaper-mouse.ini", ini_merge(user_mouse, mo or "", all))
+    end
+  else
   staged_section_merge("reaper-menu.ini",        "menus.ini")
   staged_section_merge("reaper-mouse.ini",       "mouse.ini", { hasimported = true })
+  end
   -- Screensets. The ReaTooled screenset ships without a main window size and
   -- position (they'd be the developer's screen). REAPER needs one, so this
   -- writes the user's own, from REAPER's own record of its window (wnd_x,
   -- wnd_y, wnd_w, wnd_h in reaper.ini), in the screenset's format: left, top,
   -- right, bottom as 4-byte numbers, then a check byte (the sum of the others).
-  local screensets_patch = read_file(CONFIG .. "/screensets.ini")
+  local screensets_patch = (not UPDATE) and read_file(CONFIG .. "/screensets.ini") or nil   -- (an update keeps the user's)
   local screenset_needs_window = false
   do
     local function cfg(key)
@@ -1324,10 +1708,20 @@ finish_setup = function()
   if screensets_patch then
     stage_copy("reaper-screensets.ini", ini_merge(read_file(RES .. "/reaper-screensets.ini") or "", screensets_patch))
   end
+  if UPDATE then
+    local user_tc = read_file(RES .. "/reaper-themeconfig.ini") or ""
+    local tc = three_way_patch(user_tc, read_file(CONFIG .. "/themeconfig.ini"), base_file("themeconfig.ini"), "Theme settings")
+    if tc then
+      local all = {}
+      for _, name in ipairs(ini_parse(tc).order) do all[name] = true end
+      stage_copy("reaper-themeconfig.ini", ini_merge(user_tc, tc, all))
+    end
+  else
   staged_section_merge("reaper-themeconfig.ini", "themeconfig.ini")
+  end
 
-  -- ReaImGui window settings (docked script windows)
-  for _, rel in ipairs(list_files(CONFIG .. "/files/ReaImGui")) do
+  -- ReaImGui window settings (docked script windows): not in an update (the user's layout)
+  for _, rel in ipairs(UPDATE and {} or list_files(CONFIG .. "/files/ReaImGui")) do
     local data = read_file(CONFIG .. "/files/ReaImGui/" .. rel)
     if data then stage_copy("ReaImGui/" .. rel, data) end
   end
@@ -1355,20 +1749,51 @@ finish_setup = function()
       for _, k in ipairs(THEME_FONT_KEYS) do prefs[#prefs + 1] = "!delete " .. k end
     end
     -- Whole reaper.ini sections (floating toolbar windows), merged key by key too
-    local extra = read_file(CONFIG .. "/reaper_sections.ini")
+    -- (not in an update: they're where the user's windows are)
+    local extra = (not UPDATE) and read_file(CONFIG .. "/reaper_sections.ini") or nil
     if extra then
       for _, l in ipairs(lines_of(extra)) do
         if not l:match("^;") then prefs[#prefs + 1] = l end
       end
     end
+    if UPDATE then
+      -- setting by setting: only where the user still has what ReaTooled set last time
+      local base = kv(lines_of(base_prefs() or ""))
+      local keep, theme_kept = { "[REAPER]" }, false
+      for i = 2, #prefs do
+        local l = prefs[i]
+        local k, v = l:match("^([^=!]+)=(.*)$")
+        if k then
+          local cur = user_pref(k)
+          if same_value(cur, v) then
+            if k == "lastthemefn5" then theme_kept = true end
+          elseif cur == nil or (base[k] ~= nil and same_value(cur, base[k])) then
+            keep[#keep + 1] = l
+            upd.keys_updated = upd.keys_updated + 1
+            if k == "lastthemefn5" then theme_kept = true end
+          else
+            upd.keys_kept = upd.keys_kept + 1
+            if #upd.kept_names < 40 then upd.kept_names[#upd.kept_names + 1] = "Preferences " .. k end
+          end
+        end
+      end
+      -- (the theme's fonts only go if the theme is ReaTooled's)
+      if theme_kept then
+        for i = 2, #prefs do if prefs[i]:match("^!delete ") then keep[#keep + 1] = prefs[i] end end
+      end
+      prefs = keep
+    end
     prefs_patch = table.concat(prefs, "\n") .. "\n"
-    stage_merge("reaper.ini", prefs_patch)
+    if #prefs > 1 then stage_merge("reaper.ini", prefs_patch) end
   end
 
   -- Extension settings (SWS etc.), merged key by key
   local sws_patches = {}
   for _, rel in ipairs(list_files(CONFIG .. "/sws")) do
     local data = read_file(CONFIG .. "/sws/" .. rel)
+    if data and UPDATE then
+      data = three_way_patch(read_file(RES .. "/" .. rel) or "", data, base_file("sws/" .. rel), rel)
+    end
     if data then
       stage_merge(rel, data)
       sws_patches[rel] = data
@@ -1396,8 +1821,10 @@ finish_setup = function()
         local k, v = l:match("^([^=]+)=(.*)$")
         if k then
           if section == "ReaTooled" and k == "WheelInvert" then v = wheel_invert end
-          reaper.SetExtState(section, k, v, true)
-          ext_count = ext_count + 1
+          if not UPDATE or not reaper.HasExtState(section, k) then   -- (an update only adds new ones)
+            reaper.SetExtState(section, k, v, true)
+            ext_count = ext_count + 1
+          end
         end
       end
     end
@@ -1409,7 +1836,16 @@ finish_setup = function()
   for _, f in ipairs(FOLDERS) do
     for _, rel in ipairs(list_files(CONFIG .. "/files/" .. f.name)) do
       local dst = RES .. "/" .. f.name .. "/" .. rel
-      if exists(dst) and not f.overwrite then
+      local changed_by_user = false
+      if UPDATE and exists(dst) then
+        local mine, was = read_file(dst), BASE_REC and read_file(BASE_REC .. "/files/" .. f.name .. "/" .. rel)
+        local new = read_file(CONFIG .. "/files/" .. f.name .. "/" .. rel)
+        changed_by_user = mine ~= new and mine ~= was
+      end
+      if changed_by_user then
+        kept_files = kept_files + 1
+        upd.files_kept = upd.files_kept + 1
+      elseif exists(dst) and not f.overwrite then
         kept_files = kept_files + 1
       elseif copy_file(CONFIG .. "/files/" .. f.name .. "/" .. rel, dst) then
         copied = copied + 1
@@ -1461,7 +1897,7 @@ finish_setup = function()
   os.remove(RES .. "/Data/ReaTooled/starter_off.txt")   -- the ReaTooled Starter may start Set up again after a restore
   if screensets_patch then reaper.SetExtState("ReaTooled", "LoadScreensetOnce", "1", true) end
   if repo_ok then reaper.SetExtState("ReaTooled", "SyncOnce", "1", true) end
-  reaper.SetExtState("ReaTooled", "ScrollingWindowOnce", "1", true)   -- "Scrolling and zooming" on the first start
+  if not UPDATE then reaper.SetExtState("ReaTooled", "ScrollingWindowOnce", "1", true) end   -- "Scrolling and zooming" on the first start
 
   ------------------------------------------------------------
   -- 5b. The record of exactly what this setup changed, kept with the backup.
@@ -1516,8 +1952,15 @@ finish_setup = function()
       copy_file(src, REC .. "/files/" .. rel)
     end
     write_file(REC .. "/files.txt", table.concat(files, "\n") .. "\n")
+    -- The whole configuration as applied: the next update's baseline
+    for _, rel in ipairs(list_files(CONFIG)) do
+      if not rel:match("^files/") and not rel:match("report") and not rel:match("_found%.txt$") then
+        copy_file(CONFIG .. "/" .. rel, REC .. "/config/" .. rel)
+      end
+    end
     write_file(REC .. "/record.txt", "ReaTooled setup record 1\nSet up " .. SETUP_VER ..
-      "\nConfig " .. CONFIG_VER .. "\nDate: " .. os.date("%Y-%m-%d %H:%M:%S") .. "\n")
+      "\nConfig " .. CONFIG_VER .. "\nDate: " .. os.date("%Y-%m-%d %H:%M:%S") ..
+      "\nMode: " .. (UPDATE and ("update from " .. (BASE_VER ~= "" and BASE_VER or "?")) or "setup") .. "\n")
   end
 
   ------------------------------------------------------------
@@ -1537,11 +1980,36 @@ finish_setup = function()
     "Script settings: " .. ext_count .. ". Files: " .. copied .. " copied" ..
       (kept_files > 0 and (", " .. kept_files .. " of your own templates/FX chains kept") or "") .. ".",
     theme_note,
-    "Screenset: the ReaTooled layout opens on the first start (your REAPER window keeps its size and place)" ..
-      (screenset_needs_window and "; the window size is added when REAPER quits." or "."),
+    UPDATE and "Screensets, docked windows and floating toolbar windows: kept as you have them (update)." or
+    ("Screenset: the ReaTooled layout opens on the first start (your REAPER window keeps its size and place)" ..
+      (screenset_needs_window and "; the window size is added when REAPER quits." or ".")),
     hook_note,
-    "Mousewheel: ReaTooled's wheel scripts set to " .. (wheel_invert == "1" and "Reversed" or "Standard") .. " (" .. wheel_note .. "); \"Scrolling and zooming\" opens on the first start.",
+    "Mousewheel: ReaTooled's wheel scripts set to " .. (wheel_invert == "1" and "Reversed" or "Standard") .. " (" .. wheel_note .. ")" ..
+      (UPDATE and "." or "; \"Scrolling and zooming\" opens on the first start."),
   }
+  if next(ID_MAP) or next(ID_GONE) then
+    local n1, n2 = 0, 0
+    for _ in pairs(ID_MAP) do n1 = n1 + 1 end
+    for _ in pairs(ID_GONE) do n2 = n2 + 1 end
+    details[#details + 1] = "Renamed scripts: " .. n1 .. " (their shortcuts, buttons and mouse modifiers follow); removed scripts: " .. n2 .. " (their shortcuts removed)."
+  end
+  if UPDATE then
+    table.insert(details, 2, "Update from v" .. (BASE_VER ~= "" and BASE_VER or "?") .. " to v" .. CONFIG_VER ..
+      " (baseline: " .. BASE_REC .. ")")
+    details[#details + 1] = "Toolbars and menus updated: " .. (#upd.menus_updated > 0 and table.concat(upd.menus_updated, "; ") or "none")
+    if #upd.menus_merged > 0 then
+      details[#details + 1] = "Toolbars and menus you changed, with ReaTooled's changes merged in: " ..
+        table.concat(upd.menus_merged, "; ")
+    end
+    if #upd.menus_kept > 0 then
+      details[#details + 1] = "Toolbars and menus you changed, kept as yours (no record of ReaTooled's earlier version): " ..
+        table.concat(upd.menus_kept, "; ")
+    end
+    details[#details + 1] = "Settings updated: " .. upd.keys_updated .. ", kept as you changed them: " .. upd.keys_kept ..
+      (#upd.kept_names > 0 and (" (" .. table.concat(upd.kept_names, "; ") .. (upd.keys_kept > #upd.kept_names and "; ..." or "") .. ")") or "")
+    details[#details + 1] = "Script settings: only new ones added (" .. ext_count .. ")." ..
+      (upd.files_kept > 0 and (" Your changed cursors/menu sets kept: " .. upd.files_kept .. ".") or "")
+  end
   if #left_without > 0 then
     details[#details + 1] = "ReaTooled actions without a shortcut (you kept your own key): " .. table.concat(left_without, "; ")
   end
@@ -1577,8 +2045,18 @@ finish_setup = function()
   local quit_cmd = find_cmd("File: Quit REAPER", 40004)
   local restart_now = false
   if quit_cmd then
-    restart_now = (msg("ReaTooled is set up. Click OK to restart REAPER and finish." ..
-      "\n\nWhen REAPER reopens, a small window lets you try scrolling and zooming, and adjust them if you like." ..
+    local kept_text = ""
+    if UPDATE and #upd.menus_merged > 0 then
+      kept_text = "\n\nToolbars you changed got ReaTooled's new buttons merged in; your own buttons were kept."
+    end
+    if UPDATE and #upd.menus_kept > 0 then
+      kept_text = kept_text .. "\n\nToolbars you changed were kept as yours (" .. table.concat(upd.menus_kept, ", ") ..
+        "): ReaTooled's new versions of them weren't applied."
+    end
+    if kept_text ~= "" then kept_text = kept_text .. " Details in Data/ReaTooled/setup_report.txt." end
+    restart_now = (msg((UPDATE and ("ReaTooled is updated to v" .. CONFIG_VER .. ". Click OK to restart REAPER and finish." .. kept_text)
+      or ("ReaTooled is set up. Click OK to restart REAPER and finish." ..
+      "\n\nWhen REAPER reopens, a small window lets you try scrolling and zooming, and adjust them if you like.")) ..
       problem_text .. skipped_text ..
       "\n\nYour old settings were backed up to:\n" .. backup_dir ..
       "\n\nTo undo, run \"Restore settings from a backup\".", 1) == 1)

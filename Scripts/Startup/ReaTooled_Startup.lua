@@ -1,6 +1,6 @@
 --[[
 -- @description ReaTooled - Startup
--- @version 2.2.3
+-- @version 2.2.4
 -- @author Brendan Baker
 -- @link http://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -9,6 +9,9 @@
     ReaTooled installer adds. Edit the SCRIPTS list below to change
     what runs at startup; ReaPack updates this file like any other.
     CHANGELOG
+    v 2.2.4 - Once a day, checks quietly for a newer ReaTooled (Update ReaTooled); if there
+              is one, asks whether to update now. ExtState ReaTooled/UpdateCheck = "off"
+              turns the check off.
     v 2.2.3 - On the first start after setup, also opens "Scrolling and zooming".
     v 2.2.2 - Loads the ReaTooled screenset only once it has a window size.
     v 2.2.1 - Also finishes an unfinished restore from a backup, and keeps
@@ -105,6 +108,23 @@ if not pending() and reaper.GetExtState("ReaTooled", "ScrollingWindowOnce") == "
   if reaper.file_exists(path) then
     local id = reaper.AddRemoveReaScript(true, 0, path, true)
     if id and id ~= 0 then reaper.Main_OnCommand(id, 0) end
+  end
+end
+-- Once a day: a newer ReaTooled? (in the background; asks only if there is one)
+if not pending() and reaper.GetExtState("ReaTooled", "UpdateCheck") ~= "off" then
+  local today = os.date("%Y-%m-%d")
+  local path = RES .. "/Scripts/ReaTooled/Startup/ReaTooled_Update ReaTooled.lua"
+  if reaper.GetExtState("ReaTooled", "UpdateCheckDay") ~= today and reaper.file_exists(path) then
+    reaper.SetExtState("ReaTooled", "UpdateCheckDay", today, true)
+    reaper.AddRemoveReaScript(true, 0, path, true)   -- (in the Actions list too)
+    -- a few seconds after startup, so REAPER is ready
+    local t0 = reaper.time_precise()
+    local function later()
+      if reaper.time_precise() - t0 < 5 then reaper.defer(later) return end
+      _G.REATOOLED_UPDATE_CHECK = true
+      pcall(dofile, path)
+    end
+    reaper.defer(later)
   end
 end
 if not pending() and reaper.GetExtState("ReaTooled", "LoadScreensetOnce") == "1" then
