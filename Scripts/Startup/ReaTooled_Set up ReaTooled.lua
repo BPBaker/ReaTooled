@@ -19,6 +19,14 @@
     When you click OK at the end, REAPER quits, the helper writes those files,
     and the same copy of REAPER opens again by itself.
 -- CHANGELOG
+-- v2.3.5 Update: a toolbar or menu that matches ANY version a ReaTooled release has shipped
+--        (Startup/ReaTooled_Earlier toolbars.lua, plus every setup record on this
+--        computer) counts as untouched and gets the new version - even when an earlier
+--        update didn't reach it (the last record said it was current, so 2.3.3 kept it).
+-- v2.3.4 Toolbar merge: a button's own settings (icon_N, tbf_N display flags, any name_N)
+--        go with the button (they were left at the old numbers, so after a merge they
+--        could land on the wrong button), and ReaTooled's changes to them are applied
+--        unless the user changed that setting.
 -- v2.3.3 Renamed and removed scripts (Startup/ReaTooled_Renamed scripts.lua): a renamed
 --        script keeps its shortcuts, toolbar and menu buttons and mouse modifiers (its
 --        old command ID is replaced by the new one everywhere, and its old Actions-list
@@ -136,7 +144,7 @@ local FOLDERS = {
 ------------------------------------------------------------
 
 local TITLE        = "Set up ReaTooled"
-local SETUP_VER    = "2.3.3"
+local SETUP_VER    = "2.3.5"
 local RES          = reaper.GetResourcePath():gsub("\\", "/")
 local CONFIG       = RES .. "/Data/ReaTooled/Config"
 local PENDING      = RES .. "/Data/ReaTooled/Pending"
@@ -1196,18 +1204,22 @@ local function three_way_patch(user_text, new_text, base_text, label)
   return ini_text(out)
 end
 
--- A toolbar or menu section: its buttons in order ({ v = "command label", icon, id }),
--- and its other keys (title, default ...). id = the button plus which occurrence of it
--- (separators repeat).
+-- A toolbar or menu section: its buttons in order ({ v = "command label", attr = {
+-- icon = ..., tbf = ... }, id }), and its other keys (title, default ...). Per-button
+-- keys (icon_N, tbf_N - a button's display flags - and any other name_N) travel with
+-- their button. id = the button plus which occurrence of it (separators repeat).
 local function parse_menu(lines)
-  local items, icons, other, max = {}, {}, {}, -1
+  local items, attrs, other, max = {}, {}, {}, -1
   for _, l in ipairs(lines or {}) do
     local n, v = l:match("^item_(%d+)=(.*)$")
     if n then
       items[tonumber(n)] = v; max = math.max(max, tonumber(n))
     else
-      local m, iv = l:match("^icon_(%d+)=(.*)$")
-      if m then icons[tonumber(m)] = iv
+      local a, m, av = l:match("^(%a+)_(%d+)=(.*)$")
+      if a then
+        m = tonumber(m)
+        attrs[m] = attrs[m] or {}
+        attrs[m][a] = av
       else
         local k, ov = l:match("^([^=]+)=(.*)$")
         if k then other[#other + 1] = { k = k, v = ov } end
@@ -1219,11 +1231,13 @@ local function parse_menu(lines)
     if items[i] then
       local v = items[i]
       seen[v] = (seen[v] or 0) + 1
-      list[#list + 1] = { v = v, icon = icons[i], id = v .. "#" .. seen[v] }
+      list[#list + 1] = { v = v, attr = attrs[i] or {}, id = v .. "#" .. seen[v] }
     end
   end
   return list, other
 end
+
+local function copy_attr(t) local c = {} for k, v in pairs(t or {}) do c[k] = v end return c end
 
 -- The user's version with ReaTooled's changes since the baseline merged in
 local function menu_merge(ul, nl, bl)
@@ -1238,9 +1252,17 @@ local function menu_merge(ul, nl, bl)
     if inB[e.id] and not inN[e.id] then
       removed = removed + 1                        -- ReaTooled took it out
     else
-      local c = { v = e.v, icon = e.icon, id = e.id }
+      local c = { v = e.v, attr = copy_attr(e.attr), id = e.id }
       local b, n = inB[e.id], inN[e.id]
-      if b and n and n.icon ~= b.icon and e.icon == b.icon then c.icon = n.icon end   -- icon changed by ReaTooled
+      if b and n then
+        -- a button setting (icon, display flags) ReaTooled changed, that the user hadn't
+        local names = {}
+        for k in pairs(n.attr) do names[k] = true end
+        for k in pairs(b.attr) do names[k] = true end
+        for k in pairs(names) do
+          if n.attr[k] ~= b.attr[k] and e.attr[k] == b.attr[k] then c.attr[k] = n.attr[k] end
+        end
+      end
       res[#res + 1] = c
     end
   end
@@ -1253,14 +1275,13 @@ local function menu_merge(ul, nl, bl)
       for j = i - 1, 1, -1 do
         if pos[N[j].id] then at = pos[N[j].id]; break end
       end
-      table.insert(res, at + 1, { v = e.v, icon = e.icon, id = e.id })
+      table.insert(res, at + 1, { v = e.v, attr = copy_attr(e.attr), id = e.id })
       added = added + 1
       reindex()
     end
   end
   -- other keys: ReaTooled's where the user still has the baseline's
-  local uk, bk, out, done = {}, {}, {}, {}
-  for _, o in ipairs(uo) do uk[o.k] = o.v end
+  local bk, out, done = {}, {}, {}
   for _, o in ipairs(bo) do bk[o.k] = o.v end
   for _, o in ipairs(uo) do
     local v = o.v
@@ -1273,10 +1294,58 @@ local function menu_merge(ul, nl, bl)
     if not done[n.k] and bk[n.k] == nil then out[#out + 1] = n.k .. "=" .. n.v end
   end
   for i, e in ipairs(res) do
-    if e.icon then out[#out + 1] = "icon_" .. (i - 1) .. "=" .. e.icon end
+    local names = {}
+    for k in pairs(e.attr) do names[#names + 1] = k end
+    table.sort(names)
+    for _, k in ipairs(names) do out[#out + 1] = k .. "_" .. (i - 1) .. "=" .. e.attr[k] end
   end
   for i, e in ipairs(res) do out[#out + 1] = "item_" .. (i - 1) .. "=" .. e.v end
   return out, added, removed
+end
+
+-- Fingerprint of a section: its lines sorted (FNV-1a, as the build script makes them)
+local function section_hash(lines)
+  local t = {}
+  for _, l in ipairs(lines or {}) do t[#t + 1] = l end
+  table.sort(t)
+  local str, h = table.concat(t, "\n"), 2166136261
+  for i = 1, #str do h = ((h ~ str:byte(i)) * 16777619) & 0xFFFFFFFF end
+  return string.format("%08x", h)
+end
+
+-- Every version of each toolbar/menu a ReaTooled release has shipped: the list that
+-- comes with ReaTooled, and what every setup or update on this computer applied
+local SHIPPED
+local function shipped()
+  if SHIPPED then return SHIPPED end
+  SHIPPED = {}
+  local path = RES .. "/Scripts/ReaTooled/Startup/ReaTooled_Earlier toolbars.lua"
+  if exists(path) then
+    local ok, t = pcall(dofile, path)
+    if ok and type(t) == "table" then
+      for name, list in pairs(t) do
+        SHIPPED[name] = SHIPPED[name] or {}
+        for _, h in ipairs(list) do SHIPPED[name][h] = true end
+      end
+    end
+  end
+  reaper.EnumerateSubdirectories(BACKUP_ROOT, -1)
+  local i = 0
+  while true do
+    local d = reaper.EnumerateSubdirectories(BACKUP_ROOT, i)
+    if not d then break end
+    local rec = BACKUP_ROOT .. "/" .. d .. "/applied/"
+    local text = read_file(rec .. "config/menus.ini") or read_file(rec .. "sections/reaper-menu.ini")
+    if text then
+      local ini = ini_parse(text)
+      for _, name in ipairs(ini.order) do
+        SHIPPED[name] = SHIPPED[name] or {}
+        SHIPPED[name][section_hash(ini.sec[name])] = true
+      end
+    end
+    i = i + 1
+  end
+  return SHIPPED
 end
 
 -- Toolbars and menus: replaced where the user hasn't changed them; merged where both
@@ -1288,7 +1357,8 @@ local function menus_patch(user_text, new_text, base_text)
     local nu, nn, nb = u.sec[name], n.sec[name], b.sec[name]
     if nu and sorted_lines(nu) == sorted_lines(nn) then
       -- already the new version
-    elseif not nu or (nb and sorted_lines(nu) == sorted_lines(nb)) then
+    elseif not nu or (nb and sorted_lines(nu) == sorted_lines(nb))
+        or (shipped()[name] and shipped()[name][section_hash(nu)]) then   -- (a version ReaTooled shipped)
       out.sec[name] = nn; out.order[#out.order + 1] = name
       upd.menus_updated[#upd.menus_updated + 1] = name
     elseif nb and sorted_lines(nn) == sorted_lines(nb) then
