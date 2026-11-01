@@ -1,6 +1,6 @@
 --[[
 -- @description ReaTooled - Update ReaTooled
--- @version 1.0
+-- @version 1.0.1
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -13,6 +13,9 @@
     Also run by ReaTooled's startup once a day (quietly): if a newer release is out, it
     asks whether to update now.
     CHANGELOG
+    v1.0.1 curl is called by its full path, without quotes around the web address (on macOS
+           REAPER passed the quotes on to curl, so the check always failed); the message
+           says why when it fails
     v1.0 Initial version
 --]]
 
@@ -80,13 +83,21 @@ local function applied()
 end
 
 -- curl ships with macOS and Windows 10/11 (and nearly every Linux)
+-- (REAPER passes quotes on to the program on macOS/Linux, so nothing is quoted there:
+-- the address has no spaces, and the temporary file's path is checked for them)
+local CURL = IS_WIN and "curl.exe" or (reaper.file_exists("/usr/bin/curl") and "/usr/bin/curl" or "curl")
+local function q(s) return IS_WIN and ('"' .. s .. '"') or s end
 local function curl_cmd()
-  return (IS_WIN and "curl.exe" or "curl") .. ' -sL -m 10 "' .. VERSION_URL .. '"'
+  return CURL .. " -sL -m 10 " .. q(VERSION_URL)
 end
+local last_error = nil
 local function parse_remote(out)
   -- ExecProcess: the exit code, a newline, then the output
   local code, body = (out or ""):match("^(%-?%d+)\n(.*)$")
-  if code ~= "0" then return nil end
+  if code ~= "0" then
+    last_error = out and ("curl said: " .. (out:gsub("\n", " "):sub(1, 120))) or "curl couldn't be started"
+    return nil
+  end
   return (body or ""):match("^%s*(%d+%.[%d%.]+)%s*$")
 end
 
@@ -156,7 +167,7 @@ local function decide(remote)
       msg("ReaTooled is up to date (v" .. current .. ").")
     else
       msg("Couldn't reach GitHub to check for a newer ReaTooled (no internet connection?).\n\n" ..
-          "You have v" .. current .. ".")
+          "You have v" .. current .. "." .. (last_error and ("\n\n(" .. last_error .. ")") or ""))
     end
   end
 end
@@ -165,8 +176,9 @@ if QUIET then
   -- In the background: curl runs without REAPER waiting; its answer is read when it's done
   local tmp = (os.getenv(IS_WIN and "TEMP" or "TMPDIR") or "/tmp"):gsub("\\", "/"):gsub("/$", "") ..
               "/reatooled_latest_version.txt"
+  if not IS_WIN and tmp:find(" ") then tmp = "/tmp/reatooled_latest_version.txt" end
   os.remove(tmp)
-  local cmd = (IS_WIN and "curl.exe" or "curl") .. ' -sL -m 10 -o "' .. tmp .. '" "' .. VERSION_URL .. '"'
+  local cmd = CURL .. " -sL -m 10 -o " .. q(tmp) .. " " .. q(VERSION_URL)
   reaper.ExecProcess(cmd, -1)
   local start, last = reaper.time_precise(), nil
   local function poll()
