@@ -19,6 +19,8 @@
     When you click OK at the end, REAPER quits, the helper writes those files,
     and the same copy of REAPER opens again by itself.
 -- CHANGELOG
+-- v2.3.6 ReaSmoothPlayhead is no longer part of ReaTooled: its ReaPack repository isn't added
+--        any more (an existing install of it is left alone).
 -- v2.3.5 Update: a toolbar or menu that matches ANY version a ReaTooled release has shipped
 --        (Startup/ReaTooled_Earlier toolbars.lua, plus every setup record on this
 --        computer) counts as untouched and gets the new version - even when an earlier
@@ -114,11 +116,6 @@ local REPO_URL  = "https://raw.githubusercontent.com/BPBaker/ReaTooled/main/inde
 local THEME_FONT_KEYS = { "lb_font", "lb_font2", "mi_font", "tl_font", "trans_font" }
 for i = 0, 15 do THEME_FONT_KEYS[#THEME_FONT_KEYS + 1] = "user_font" .. i end
 
--- ReaSmoothPlayhead: installed through ReaPack after setup instead of by ReaBoot, so it
--- first starts with the ReaTooled theme in place (with an unsaved theme it turns itself off)
-local SMOOTH_REPO_NAME = "ReaSmoothPlayhead"   -- the repository's index name
-local SMOOTH_REPO_URL  = "https://raw.githubusercontent.com/Sakhnovkrg/ReaSmoothPlayheadReapack/main/index.xml"
-
 -- The ReaTooled keymap section (Main (alt-16) = 16)
 local KEY_SECTION = 16
 
@@ -144,7 +141,7 @@ local FOLDERS = {
 ------------------------------------------------------------
 
 local TITLE        = "Set up ReaTooled"
-local SETUP_VER    = "2.3.5"
+local SETUP_VER    = "2.3.6"
 local RES          = reaper.GetResourcePath():gsub("\\", "/")
 local CONFIG       = RES .. "/Data/ReaTooled/Config"
 local PENDING      = RES .. "/Data/ReaTooled/Pending"
@@ -1958,9 +1955,6 @@ finish_setup = function()
 
   -- ReaPack: install every ReaTooled package, now and when new ones are added
   local repo_ok = reaper.ReaPack_AddSetRepository(REPO_NAME, REPO_URL, true, 1, "")
-  -- ReaSmoothPlayhead too (installed on the next ReaPack sync, after the restart).
-  -- Already installed some other way: adding its repository again changes nothing.
-  reaper.ReaPack_AddSetRepository(SMOOTH_REPO_NAME, SMOOTH_REPO_URL, true, 1, "")
   if repo_ok then reaper.ReaPack_ProcessQueue(true) end
 
   reaper.SetExtState("ReaTooled", "SetupVersion", SETUP_VER, true)
