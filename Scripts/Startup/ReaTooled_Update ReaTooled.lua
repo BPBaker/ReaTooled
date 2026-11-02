@@ -1,6 +1,6 @@
 --[[
 -- @description ReaTooled - Update ReaTooled
--- @version 1.0.1
+-- @version 1.0.2
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -13,6 +13,9 @@
     Also run by ReaTooled's startup once a day (quietly): if a newer release is out, it
     asks whether to update now.
     CHANGELOG
+    v1.0.2 Waits until ReaPack has completely finished (its windows closed) before Set up
+           applies the update. Starting it while ReaPack was still installing crashed
+           REAPER on Windows.
     v1.0.1 curl is called by its full path, without quotes around the web address (on macOS
            REAPER passed the quotes on to curl, so the check always failed); the message
            says why when it fails
@@ -128,10 +131,41 @@ local function download_then_apply(remote)
   if sync == 0 then msg("ReaPack's \"Synchronize packages\" wasn't found.") return end
   reaper.Main_OnCommand(sync, 0)
   local start = reaper.time_precise()
+  -- Is a ReaPack window still open (its progress, or its report when it's done)?
+  local function reapack_busy()
+    if not reaper.JS_Window_ListFind then return false end
+    local main = reaper.GetMainHwnd()
+    local n, list = reaper.JS_Window_ListFind("ReaPack", false)
+    for addr in ((list or "") .. ","):gmatch("(.-),") do
+      local h = addr ~= "" and reaper.JS_Window_HandleFromAddress(addr)
+      if h and reaper.JS_Window_IsVisible(h) and (reaper.JS_Window_GetTitle(h) or ""):find("^ReaPack") then
+        local c, i = h, 0
+        while c and i < 50 do
+          if c == main then return true end
+          c = reaper.JS_Window_GetParent(c); i = i + 1
+        end
+      end
+    end
+    return false
+  end
+  local arrived, told = nil, false
   local function wait()
     local have = downloaded()
     if have and not newer(remote, have) then
-      reaper.defer(apply_update)   -- (after ReaPack's window has had a moment to finish)
+      -- downloaded: Set up starts once ReaPack has completely finished (it may still be
+      -- installing other files, and Set up uses ReaPack too)
+      arrived = arrived or reaper.time_precise()
+      local settle = reaper.time_precise() - arrived > 2
+      if settle and not reapack_busy() then
+        reaper.defer(apply_update)
+        return
+      end
+      if settle and not told and reaper.time_precise() - arrived > 4 then
+        told = true
+        msg("ReaTooled v" .. remote .. " has been downloaded.\n\n" ..
+            "Close ReaPack's window when it has finished, and the update will be applied.")
+      end
+      reaper.defer(wait)
       return
     end
     if reaper.time_precise() - start > SYNC_WAIT then

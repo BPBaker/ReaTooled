@@ -19,6 +19,9 @@
     When you click OK at the end, REAPER quits, the helper writes those files,
     and the same copy of REAPER opens again by itself.
 -- CHANGELOG
+-- v2.3.9 An update doesn't call ReaPack (Update ReaTooled has just used it: calling it again
+--        while it might still be busy crashed REAPER on Windows); a full setup still sets
+--        up the ReaTooled repository.
 -- v2.3.8 macOS: when the process number the helper is given isn't REAPER's (seen on an
 --        Intel Mac with Sequoia: "could not tell which REAPER to reopen ()"), the helper
 --        finds REAPER from its own path instead, and waits for THAT to quit before
@@ -148,7 +151,7 @@ local FOLDERS = {
 ------------------------------------------------------------
 
 local TITLE        = "Set up ReaTooled"
-local SETUP_VER    = "2.3.8"
+local SETUP_VER    = "2.3.9"
 local RES          = reaper.GetResourcePath():gsub("\\", "/")
 local CONFIG       = RES .. "/Data/ReaTooled/Config"
 local PENDING      = RES .. "/Data/ReaTooled/Pending"
@@ -1997,7 +2000,8 @@ finish_setup = function()
   end
 
   -- ReaPack: install every ReaTooled package, now and when new ones are added
-  local repo_ok = reaper.ReaPack_AddSetRepository(REPO_NAME, REPO_URL, true, 1, "")
+  local repo_ok = false
+  if not UPDATE then repo_ok = reaper.ReaPack_AddSetRepository(REPO_NAME, REPO_URL, true, 1, "") end
   if repo_ok then reaper.ReaPack_ProcessQueue(true) end
 
   reaper.SetExtState("ReaTooled", "SetupVersion", SETUP_VER, true)
