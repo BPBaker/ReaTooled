@@ -11,7 +11,7 @@
 --]]
 return {
   ["Floating MIDI toolbar 16"] = { "4925066a" },
-  ["Floating toolbar 1"] = { "34e3f381", "46b5b4ff", "770a34f3", "8692d399", "9b06062b", "bfb07c0e", "e3786aea" },
+  ["Floating toolbar 1"] = { "34e3f381", "46b5b4ff", "770a34f3", "8692d399", "91ddd787", "9b06062b", "bfb07c0e", "e3786aea" },
   ["Floating toolbar 2"] = { "359f97d3" },
   ["Floating toolbar 3"] = { "e4a877dd" },
   ["Floating toolbar 32"] = { "bdfe62e5" },

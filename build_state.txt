@@ -23,7 +23,7 @@ Edit/ReaTooled_Fade In to Edit Cursor Or Mouse (Hover Mode Dependent).lua	1.2	a5
 Edit/ReaTooled_Fade Out From Edit Cursor Or Mouse (Hover Mode Dependent).lua	1.2	7730e49d
 Edit/ReaTooled_Glide Envelope Points.lua	3.0	5a04e65f
 Edit/ReaTooled_Glue items with handles.lua	1.1	12b11d72
-Edit/ReaTooled_Grid and Nudge Settings.lua	3.2.5	b67888aa
+Edit/ReaTooled_Grid and Nudge Settings.lua	3.3.2	f39ce259
 Edit/ReaTooled_Magic Zero Crossing Loop Copy Buffer Maker.lua	1.0	12cca528
 Edit/ReaTooled_Move Tool Left Click (Select item under mouse cursor, move cursor to start of items).lua	5.10	9f9922ed
 Edit/ReaTooled_Move Tool Left Shift-Click (Select item and extend razor edit).lua	6.3	f06929f3
@@ -62,7 +62,7 @@ Helpers/ReaTooled_Show Spectrogram on Selected Track(s).lua	1.4	d02c6905
 Mouse Actions/ReaTooled_Mousewheel adjust pitch of item under cursor.lua	1.1	7c4881e5
 Mouse Actions/ReaTooled_Mousewheel to change take volume for selected items.lua	1.1	b7729828
 Mouse Actions/ReaTooled_Mousewheel to zoom items peaks view gain.lua	1.1	e6939720
-Startup/ReaTooled Startup	2.4.16	ce0b98d8
+Startup/ReaTooled Startup	2.4.17	04e0b767
 Toggles/ReaTooled - Ripple Off (Slip).lua	1.2	55e703da
 Toggles/ReaTooled MULTI Icon toggle.lua	1.0	e80a68cc
 Toggles/ReaTooled_At loop end, move cursor to loop end and clear selection (only when loop button is off).lua	2.8	ab09eee2

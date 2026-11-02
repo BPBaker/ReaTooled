@@ -1,6 +1,6 @@
 -- @description ReaTooled - Grid & Nudge Settings (Dockable GUI)
--- @version 3.2.5
--- @date 2026.11.01
+-- @version 3.3.2
+-- @date 2026.11.02
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -25,6 +25,26 @@
 --     the label shown when the project's grid can't be matched to a menu entry.
 --
 -- @changelog
+--   v3.3.2 (2026-11-02)
+--     • Transport: only the transport buttons (rewind, forward, record, play, repeat, stop,
+--       pause) and the time display are protected; the box may cover everything else the
+--       same way: selection, time signature, tempo, timebase, global automation, play
+--       rate. (It used to hide over some of those and cover others.) By REAPER's names
+--       for them, so themes and the Theme Adjuster's centred layout are covered too.
+--   v3.3.1 (2026-11-02)
+--     • Transport: the box keeps the size you gave it (no more shrinking text as the
+--       window narrows): it stays at its spot, moves to clear space if it must, or hides.
+--     • Transport: its background always fills the Transport's full height, whatever its
+--       size, so it sits in the Transport like one of its own parts.
+--   v3.3  (2026-11-02)
+--     • Transport: never covers the transport buttons or the time display. As REAPER's
+--       window shrinks and its Transport folds up, the box stays where you put it while
+--       that spot is clear; otherwise it moves to the nearest clear space anywhere in
+--       the Transport (it may cover the selection display, BPM and play rate); if none
+--       is wide enough it gets smaller (smaller text, then "G"/"N" instead of
+--       "Grid"/"Nudge"); if it still doesn't fit it hides until there's room. Works with
+--       centred and uncentred transport controls (what's where is read from REAPER).
+--     • "Left of the selection display" leaves a few more points of space.
 --   v3.2.5 (2026-11-01)
 --     • Fixed: after the computer slept, "expected a valid ImGui_Context*" and the script
 --       stopping. In the Transport the window's ImGui context sits unused, so ReaImGui
@@ -943,6 +963,7 @@ local TR = {
   x = 0, y = 0, w = 0, h = 0, segs = {}, key = nil, linked = false,
   intercept = false, stamps = {}, drag = nil, menu_time = 0, last_find = 0,
   hover = nil, ratio = 1, measure = 1,
+  shrink = 1, compact = false, hidden = false, variant = 1, ww = 0, wh = 0,
 }
 local edit = nil   -- the typed-value field while it's open
 
@@ -1234,7 +1255,8 @@ local function anchor_base(a)
   if a == 2 then return ww end
   if a == 5 or a == 6 then
     local l, r = selection_edges()
-    if l then return a == 5 and l or math.min(ww, r) end
+    -- (a few points clear of it: its drawn box starts a little left of where it reacts)
+    if l then return a == 5 and (l - math.floor(4 * (TR.measure or 1) + 0.5)) or math.min(ww, r) end
     a = (a == 5) and 3 or 4   -- (no selection display in this layout: the time display's edge)
   end
   local st = reaper.JS_Window_FindChildByID(TR.hwnd, 1010)
@@ -1296,7 +1318,8 @@ local function layout()
   local measure, draw = transport_scale()
   -- (the sizes only change with these: skip the text measuring otherwise)
   local sig = table.concat({ ww, wh, measure, draw, T.rows, tostring(T.size), grid_index,
-                             nudge_text(nudge_val, unit_index) }, "|")
+                             nudge_text(nudge_val, unit_index), TR.shrink, tostring(TR.compact) }, "|")
+  TR.ww, TR.wh = ww, wh
   if sig == layout_sig and TR.font then
     local bx = anchor_base(T.anchor) + (T.offset or 0)
     TR.x = math.max(0, math.min(ww - TR.w, bx))
@@ -1309,6 +1332,7 @@ local function layout()
   local fit = math.floor(wh / rows)
   local row_h = T.size and math.floor(T.size * measure + 0.5) or fit
   row_h = math.max(math.floor(9 * measure + 0.5), math.min(row_h, fit))
+  row_h = math.max(math.floor(9 * measure + 0.5), math.floor(row_h * TR.shrink + 0.5))   -- (made smaller to fit)
   local rb = math.floor(row_h * TR.ratio + 0.5)   -- row height in bitmap pixels
   local font_px = math.max(6, math.floor(rb * 0.8 + 0.5))   -- (about the Transport's own text size)
   if font_px ~= TR.font_px or not TR.font then
@@ -1324,7 +1348,8 @@ local function layout()
   local pad = math.floor(rb * 0.3 + 0.5)
   local arrow = math.floor(rb * 0.55 + 0.5)
   local grip = math.floor(rb * 0.45 + 0.5)
-  local label_w = math.max(text_w("Grid"), text_w("Nudge")) + pad * 2
+  local GL, NL = TR.compact and "G" or "Grid", TR.compact and "N" or "Nudge"   -- (compact: short labels)
+  local label_w = math.max(text_w(GL), text_w(NL)) + pad * 2
   local div_w = math.max(text_w("Measure"), text_w(grid_options[grid_index] or "1/16")) + pad
   local val_w = math.max(text_w("000000000"), text_w(nudge_text(nudge_val, unit_index))) + pad
   local segs = {}
@@ -1333,9 +1358,9 @@ local function layout()
   if rows == 1 then
     local x = 0
     local function nxt(id, w) add(id, x, 0, w, rb); x = x + w end
-    nxt("grip", grip); nxt("grid", text_w("Grid") + pad * 2)
+    nxt("grip", grip); nxt("grid", text_w(GL) + pad * 2)
     nxt("div", text_w(grid_options[grid_index] or "1/16") + pad); nxt("divarrow", arrow)
-    nxt("sep", math.floor(pad * 0.8)); nxt("nudge", text_w("Nudge") + pad * 2)
+    nxt("sep", math.floor(pad * 0.8)); nxt("nudge", text_w(NL) + pad * 2)
     nxt("value", val_w); nxt("arrow", arrow + math.floor(pad / 2))
     bm_w = x
   else
@@ -1351,12 +1376,16 @@ local function layout()
     add("sep", x0, rb - 1, label_w + field_w + arrow, 1)
     bm_w = x1 + field_w + arrow + math.floor(pad / 2)
   end
-  local bm_h = rb * rows
+  -- The background fills the Transport's full height; the rows sit in the middle
+  local content_h = rb * rows
+  local bm_h = math.floor(wh * TR.ratio + 0.5)
+  local top = math.max(0, math.floor((bm_h - content_h) / 2))
+  for _, sg in ipairs(segs) do sg.y = sg.y + top end
   TR.segs = segs
   -- The bitmap must be exactly (size on screen) x (pixel density): any other size is
   -- stretched when it's shown, which is what made it look pixelated (3.1.1-3.1.3)
   TR.w = math.ceil(bm_w / TR.ratio - 0.001)
-  TR.h = math.ceil(bm_h / TR.ratio - 0.001)
+  TR.h = wh
   bm_w = math.floor(TR.w * TR.ratio + 0.5)
   bm_h = math.floor(TR.h * TR.ratio + 0.5)
   TR.bm_w, TR.bm_h = bm_w, bm_h
@@ -1364,7 +1393,7 @@ local function layout()
   if not T.offset then T.offset = -(TR.w + math.floor(8 * measure + 0.5)); T.anchor = 2 end
   local bx = anchor_base(T.anchor) + T.offset
   TR.x = math.max(0, math.min(ww - TR.w, bx))
-  TR.y = math.max(0, math.floor((wh - TR.h) / 2))
+  TR.y = 0
 end
 
 local function seg_at(cx, cy)
@@ -1422,7 +1451,7 @@ local function draw()
       end
     elseif s.id == "grid" then
       if grid_on then box(s, COL.on_bg) elseif hovered("grid") then box(s, COL.hover) end
-      text("Grid", s, grid_on and COL.accent or COL.text, true)
+      text(TR.compact and "G" or "Grid", s, grid_on and COL.accent or COL.text, true)
     elseif s.id == "div" then
       if hovered("div") then box(s, COL.hover) end
       text(grid_options[grid_index] or "1/16", s, COL.accent)
@@ -1431,13 +1460,13 @@ local function draw()
       tri(s, COL.text)
     elseif s.id == "sep" then
       if T.rows == 1 then
-        FR(bm, s.x + math.floor(s.w / 2), math.floor(h * 0.2), math.max(1, math.floor(TR.ratio)), h - math.floor(h * 0.4), COL.sep, 1, "COPY")
+        FR(bm, s.x + math.floor(s.w / 2), s.y + math.floor(s.h * 0.2), math.max(1, math.floor(TR.ratio)), s.h - math.floor(s.h * 0.4), COL.sep, 1, "COPY")
       else
         FR(bm, s.x, s.y, s.w, math.max(1, math.floor(TR.ratio)), COL.sep, 1, "COPY")
       end
     elseif s.id == "nudge" then
       if hovered("nudge") then box(s, COL.hover) end
-      text("Nudge", s, COL.white, true)
+      text(TR.compact and "N" or "Nudge", s, COL.white, true)
     elseif s.id == "value" then
       box(s, hovered("value") and COL.hover or COL.field)
       if not edit then text(nudge_text(nudge_val, unit_index), s, COL.accent) end
@@ -1507,6 +1536,112 @@ local function draw_edit()
   if done then end_edit(result) end
 end
 
+-- ----- room in the Transport --------------------------------------------
+-- What REAPER has under each point of the Transport (GetThingFromPoint), read across
+-- the box's rows: the transport buttons and the time display are protected (never
+-- covered); the selection display, BPM and play rate may be covered; the rest is
+-- free. Measured again when the Transport's size or layout changes: coarsely while
+-- it's changing, finely once it has settled.
+-- (REAPER's names for the transport buttons; themes move them, never rename them)
+local PROTECTED = { rew = true, fwd = true, rec = true, play = true, ["repeat"] = true,
+                    stop = true, pause = true }
+local function is_protected(thing)
+  local name = thing and thing:match("^trans%.([%a_]+)")
+  return name ~= nil and PROTECTED[name] == true
+end
+
+local room = { key = nil, spans = {}, fine = false, changed = 0 }
+local function protected_spans()
+  local ww, wh = TR.ww, TR.wh
+  local centred = reaper.GetToggleCommandState(40533)
+  local key = table.concat({ ww, wh, centred }, "|")
+  local now = reaper.time_precise()
+  if key ~= room.key then room.key, room.fine, room.changed = key, false, now
+  elseif room.fine or now - room.changed < 0.25 then return room.spans end
+  local fine = room.key == key and now - room.changed >= 0.25
+  local step = math.max(1, math.floor((fine and 2 or 6) * TR.measure))
+  local hit = {}
+  local ys = { math.floor(wh * 0.3), math.floor(wh * 0.7) }   -- (the box is centred, about full height)
+  for _, cy in ipairs(ys) do
+    for cx = 0, ww - 1, step do
+      local sx, sy = reaper.JS_Window_ClientToScreen(TR.hwnd, cx, cy)
+      local _, thing = reaper.GetThingFromPoint(sx, sy)
+      if is_protected(thing) then hit[cx] = true end
+    end
+  end
+  local spans, cur = {}, nil
+  for cx = 0, ww - 1, step do
+    if hit[cx] then
+      if cur and cx <= cur[2] + step then cur[2] = cx + step
+      else cur = { cx, cx + step }; spans[#spans + 1] = cur end
+    end
+  end
+  -- the time display: its own window
+  local st = reaper.JS_Window_FindChildByID(TR.hwnd, 1010)
+  if st and reaper.JS_Window_IsVisible(st) then
+    local _, l, t, r, b = reaper.JS_Window_GetRect(st)
+    local cl = reaper.JS_Window_ScreenToClient(TR.hwnd, l, t)
+    local cr = reaper.JS_Window_ScreenToClient(TR.hwnd, r, b)
+    spans[#spans + 1] = { math.min(cl, cr), math.max(cl, cr) }
+  end
+  -- a little clearance around each, coarse ones a bit more
+  local m = math.floor((fine and 3 or 6) * TR.measure + 0.5)
+  for _, sp in ipairs(spans) do sp[1], sp[2] = sp[1] - m, sp[2] + m end
+  table.sort(spans, function(a, b) return a[1] < b[1] end)
+  room.spans, room.fine = spans, fine
+  return spans
+end
+
+-- Where the box (w wide, plus 'extra' room) can go: its own spot if that's clear,
+-- else the nearest clear space anywhere in the Transport; nil if there's none
+local function find_spot(want, w, extra)
+  local spans, ww = protected_spans(), TR.ww
+  local need = w + (extra or 0)
+  local function clear(x)
+    if x < 0 or x + w > ww then return false end
+    for _, sp in ipairs(spans) do
+      if x < sp[2] + (extra or 0) and x + w > sp[1] - (extra or 0) then return false end
+    end
+    return true
+  end
+  want = math.max(0, math.min(ww - w, want))
+  if clear(want) then return want end
+  -- the clear stretches between protected ones
+  local best, bestd, left = nil, math.huge, 0
+  local function try(l, r)
+    if r - l >= need then
+      local x = math.max(l + (extra or 0), math.min(r - w - (extra or 0), want))
+      x = math.max(l, math.min(r - w, x))
+      if clear(x) and math.abs(x - want) < bestd then best, bestd = x, math.abs(x - want) end
+    end
+  end
+  for _, sp in ipairs(spans) do
+    try(left, sp[1]); left = math.max(left, sp[2])
+  end
+  try(left, ww)
+  return best
+end
+
+-- The largest form of the box that has room (variants in order), and where
+local VARIANTS = { { 1, false } }   -- (3.3 also tried smaller versions; that looked unsteady)
+local function fit_box()
+  local cur = TR.variant or 1
+  for i, v in ipairs(VARIANTS) do
+    TR.shrink, TR.compact = v[1], v[2]
+    layout()
+    local want = TR.x
+    -- (growing back takes a few points more than it needs, so it doesn't flicker)
+    local extra = (i < cur) and math.floor(6 * TR.measure + 0.5) or 0
+    local x = find_spot(want, TR.w, extra)
+    if x then
+      TR.x, TR.variant, TR.hidden = x, i, false
+      return true
+    end
+  end
+  TR.variant, TR.hidden = #VARIANTS + 1, true
+  return false
+end
+
 -- ----- clicks ----------------------------------------------------------
 local function click(id, right)
   if reaper.time_precise() < TR.menu_time + 0.15 then return end   -- (the click that closed a menu)
@@ -1545,7 +1680,20 @@ local function transport_frame()
 
   if palette_changed() then load_col(); TR.key = nil end
   local old_x, old_y, old_w, old_h = TR.x, TR.y, TR.w, TR.h
-  layout()
+  local was_hidden = TR.hidden
+  if TR.drag then layout() else fit_box() end   -- (while you drag it, it goes where you put it)
+  if TR.hidden then
+    -- no room anywhere: out of the way until there is
+    if not was_hidden then
+      intercepts(false)
+      if TR.bm and TR.linked then
+        reaper.JS_Composite_Unlink(TR.hwnd, TR.bm)
+        invalidate(old_x, old_y, old_w, old_h)
+      end
+      TR.linked, TR.hover = false, nil
+    end
+    return true
+  end
 
   -- mouse
   local mx, my = reaper.GetMousePosition()
