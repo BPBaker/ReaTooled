@@ -19,6 +19,13 @@
     When you click OK at the end, REAPER quits, the helper writes those files,
     and the same copy of REAPER opens again by itself.
 -- CHANGELOG
+-- v2.3.8 macOS: when the process number the helper is given isn't REAPER's (seen on an
+--        Intel Mac with Sequoia: "could not tell which REAPER to reopen ()"), the helper
+--        finds REAPER from its own path instead, and waits for THAT to quit before
+--        writing anything (before, it didn't wait at all in that case).
+-- v2.3.7 macOS/Linux restart: the helper is also told where REAPER is (REAPER's own
+--        GetExePath), and uses that when it can't tell from the running process; it
+--        logs what it found and how it reopened REAPER (Data/ReaTooled/setup_log.txt).
 -- v2.3.6 ReaSmoothPlayhead is no longer part of ReaTooled: its ReaPack repository isn't added
 --        any more (an existing install of it is left alone).
 -- v2.3.5 Update: a toolbar or menu that matches ANY version a ReaTooled release has shipped
@@ -141,7 +148,7 @@ local FOLDERS = {
 ------------------------------------------------------------
 
 local TITLE        = "Set up ReaTooled"
-local SETUP_VER    = "2.3.6"
+local SETUP_VER    = "2.3.8"
 local RES          = reaper.GetResourcePath():gsub("\\", "/")
 local CONFIG       = RES .. "/Data/ReaTooled/Config"
 local PENDING      = RES .. "/Data/ReaTooled/Pending"
@@ -297,6 +304,7 @@ local HELPER_SH = [=[
 RES="$1"
 PID="$2"
 RELAUNCH="$3"
+EXEDIR="$4"   # REAPER's own idea of where it is (GetExePath), as a fallback
 P="$RES/Data/ReaTooled/Pending"
 LOG="$RES/Data/ReaTooled/setup_log.txt"
 
@@ -308,7 +316,32 @@ else
   EXE="$(ps -o comm= -p "$PID" 2>/dev/null)"
 fi
 
-while kill -0 "$PID" 2>/dev/null; do sleep 1; done
+# (a process that isn't REAPER - a shell in between - doesn't count)
+case "$EXE" in *[Rr][Ee][Aa][Pp][Ee][Rr]*) ;; *) EXE="" ;; esac
+# The process number isn't REAPER's (some Macs start os.execute's shell another way):
+# REAPER is found by its path instead (REAPER's own exe folder)
+if [ -z "$EXE" ]; then
+  case "$EXEDIR" in
+    *.app/Contents/MacOS*) EXE="${EXEDIR%/}/REAPER" ;;
+    *.app) EXE="$EXEDIR/Contents/MacOS/REAPER" ;;
+    /*) [ -x "$EXEDIR/reaper" ] && EXE="$EXEDIR/reaper" ;;
+  esac
+  PID=""
+  if [ -n "$EXE" ]; then
+    # (the process whose command line starts with REAPER's path)
+    PID="$(ps -axo pid=,args= 2>/dev/null | awk -v e="$EXE" '{ p = $1; sub(/^ *[0-9]+ /, ""); if ($0 == e || index($0, e " ") == 1) { print p; exit } }')"
+  fi
+fi
+echo "=== helper started $(date): pid '$PID', process '$EXE', exe dir '$EXEDIR'" >> "$LOG" 2>&1
+if [ -n "$PID" ]; then
+  while kill -0 "$PID" 2>/dev/null; do sleep 1; done
+elif [ -n "$EXE" ]; then
+  # (no process number at all: wait while anything runs from REAPER's path)
+  while ps -axo args= 2>/dev/null | awk -v e="$EXE" '$0 == e || index($0, e " ") == 1 { f = 1 } END { exit !f }'; do sleep 1; done
+else
+  echo "could not find REAPER's process: waiting 20 seconds for it to quit" >> "$LOG" 2>&1
+  sleep 20
+fi
 sleep 2
 
 MERGE_AWK='
@@ -441,11 +474,20 @@ END { add() }'
     echo "Some files failed. They will be tried again the next time REAPER starts and quits."
   fi
   if [ "$RELAUNCH" = 1 ]; then
+    # (the process path didn't say which app: REAPER's own exe folder does)
+    case "$EXE" in
+      *.app/Contents/MacOS/*|/*) ;;
+      *) case "$EXEDIR" in
+           *.app/Contents/MacOS*) EXE="$EXEDIR/REAPER" ;;
+           *.app) EXE="$EXEDIR/Contents/MacOS/REAPER" ;;
+           /*) [ -x "$EXEDIR/reaper" ] && EXE="$EXEDIR/reaper" ;;
+         esac ;;
+    esac
     case "$EXE" in
       *.app/Contents/MacOS/*)
         APP="${EXE%%.app/Contents/MacOS/*}.app"
         echo "reopening $APP"
-        open -n "$APP" ;;
+        open -n "$APP" || open "$APP" || echo "could not reopen $APP (open failed)" ;;
       /*)
         echo "reopening $EXE"
         nohup "$EXE" >/dev/null 2>&1 & ;;
@@ -619,7 +661,8 @@ local function launch_helper(relaunch)
     local sh = PENDING .. "/helper.sh"
     if not write_file(sh, HELPER_SH) then return false end
     -- $PPID is REAPER itself (the shell os.execute starts is REAPER's child)
-    os.execute('nohup /bin/sh "' .. sh .. '" "' .. RES .. '" "$PPID" ' .. r .. ' >/dev/null 2>&1 &')
+    local exedir = (reaper.GetExePath() or ""):gsub('"', '')
+    os.execute('nohup /bin/sh "' .. sh .. '" "' .. RES .. '" "$PPID" ' .. r .. ' "' .. exedir .. '" >/dev/null 2>&1 &')
   end
   return true
 end

@@ -1,6 +1,6 @@
 -- @description ReaTooled - Grid & Nudge Settings (Dockable GUI)
--- @version 3.2.4
--- @date 2026.10.31
+-- @version 3.2.5
+-- @date 2026.11.01
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -25,6 +25,12 @@
 --     the label shown when the project's grid can't be matched to a menu entry.
 --
 -- @changelog
+--   v3.2.5 (2026-11-01)
+--     • Fixed: after the computer slept, "expected a valid ImGui_Context*" and the script
+--       stopping. In the Transport the window's ImGui context sits unused, so ReaImGui
+--       can let it go; when the window was shown again (the Transport briefly missing
+--       on wake) it used the old one. It's now checked, and made again, right before
+--       the window is drawn, whatever the mode.
 --   v3.2.4 (2026-10-31)
 --     • Transport, attached to the selection display: it follows the display every frame
 --       while the Transport is resized (the edge is tracked from where it was, a few
@@ -1664,6 +1670,8 @@ local function Main()
   end
 
   palette_changed()   -- (theme colours, checked once a second)
+  -- (in Transport mode the context may have gone unused long enough to be released)
+  if not context_is_valid() then create_context() end
   local ok, result = pcall(DrawFrame)
   if window_menu_choice == "transport" then
     window_menu_choice = nil
