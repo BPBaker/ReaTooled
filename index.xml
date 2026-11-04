@@ -32,7 +32,7 @@
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="3.2026.1104.1217" author="Brendan Baker" time="2026-11-04T17:17:57Z">
+      <version name="3.2026.1104.1318" author="Brendan Baker" time="2026-11-04T18:19:06Z">
         <changelog><![CDATA[v3.0 - November 03, 2026
 
 HIGHLIGHTS
@@ -355,7 +355,7 @@ DETAILS
 {\pard \ql \f0 \sa180 \li0 \fi0 ReaTooled's themes, installed into REAPER's ColorThemes folder. "Default_7.0 ReaTooled v3 Dark" is the default.\par}
 }]]></description>
       </metadata>
-      <version name="3.2026.1104.1217" author="Brendan Baker" time="2026-11-04T17:17:57Z">
+      <version name="3.2026.1104.1318" author="Brendan Baker" time="2026-11-04T18:19:06Z">
         <source file="Assembled_ReaTooled v1.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Assembled_ReaTooled%20v1.ReaperThemeZip</source>
         <source file="Default_7.0 ReaTooled v2 Light.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Default_7.0%20ReaTooled%20v2%20Light.ReaperThemeZip</source>
         <source file="Default_7.0 ReaTooled v3 Dark.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Default_7.0%20ReaTooled%20v3%20Dark.ReaperThemeZip</source>
@@ -1365,7 +1365,8 @@ DETAILS
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="2.4.20" author="Brendan Baker" time="2026-11-04T17:17:57Z">
+      <version name="2.4.21" author="Brendan Baker" time="2026-11-04T18:19:06Z">
+        <changelog><![CDATA[ReaTooled_Set up ReaTooled: Shortcut clashes are shown together in one window instead of Yes/No/Cancel boxes: each row says "Keep yours" or "Update to ReaTooled's" (Keep yours is the default), any row can be changed until Continue, and the shortcut that loses its key can be given another one there. The final message lists ReaTooled actions left without a shortcut. Without ReaImGui every clashing key is kept as yours. ReaSmoothPlayhead is no longer installed by ReaBoot: Set up adds its ReaPack repository, so it's installed with the rest after the restart, once the ReaTooled theme is in place (an earlier unsaved theme made it report "unsaved changes"). Font settings left in reaper.ini by an earlier theme are removed, so the ReaTooled theme's own fonts apply (they're in the backup, and Restore puts them back)]]></changelog>
         <source file="ReaTooled_Earlier shortcuts.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Earlier%20shortcuts.lua</source>
         <source file="ReaTooled_Earlier toolbars.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Earlier%20toolbars.lua</source>
         <source file="ReaTooled_Enable Link Edit Cursor and Play Cursor.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Enable%20Link%20Edit%20Cursor%20and%20Play%20Cursor.lua</source>

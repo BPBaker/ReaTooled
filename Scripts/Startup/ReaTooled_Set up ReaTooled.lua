@@ -19,6 +19,8 @@
     When you click OK at the end, REAPER quits, the helper writes those files,
     and the same copy of REAPER opens again by itself.
 -- CHANGELOG
+-- v2.3.11 Started by the package installer (beta), it skips its "Set up ReaTooled now?" question:
+--         the installer's own message asked already
 -- v2.3.10 Toolbar merge: a button is matched by its action (command), not by its action
 --         plus label, so a relabelled button stays ONE button: ReaTooled's new label is
 --         applied unless the user relabelled it too (then the user's label stays). Before,
@@ -826,7 +828,9 @@ if UPDATE then
     "Your current settings are backed up first. Your own changes and your window layout are kept. " ..
     "If any new ReaTooled shortcuts clash with yours, you choose which to keep, then REAPER restarts."
 end
-if not (UPDATE and CONFIRMED) and msg(intro, 1) ~= 1 then return end   -- OK / Cancel
+-- (the package installer asked already)
+local FROM_PACKAGE = _G.REATOOLED_PACKAGE_CONFIRMED == true and not UPDATE
+if not ((UPDATE and CONFIRMED) or FROM_PACKAGE) and msg(intro, 1) ~= 1 then return end   -- OK / Cancel
 
 ------------------------------------------------------------
 -- 1b. Mousewheel direction for ReaTooled's wheel scripts (zoom, pitch,
