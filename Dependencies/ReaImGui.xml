@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<index version="1" name="ReaTooled extra - ReaImGui">
+  <category name="API">
+    <reapack name="reaper_imgui.ext" type="extension" desc="ReaImGui: ReaScript binding for Dear ImGui">
+      <metadata>
+        <link rel="website" href="https://github.com/ReaTeam/Extensions/raw/master/index.xml">Original repository</link>
+      </metadata>
+      <version name="0.10.0.5" author="cfillion" time="2026-04-16T01:22:41Z">
+        <source platform="darwin32" file="reaper_imgui-i386.dylib">https://codeberg.org/cfillion/reaimgui/releases/download/v0.10.0.5/reaper_imgui-i386.dylib</source>
+        <source platform="darwin64" file="reaper_imgui-x86_64.dylib">https://codeberg.org/cfillion/reaimgui/releases/download/v0.10.0.5/reaper_imgui-x86_64.dylib</source>
+        <source platform="darwin-arm64" file="reaper_imgui-arm64.dylib">https://codeberg.org/cfillion/reaimgui/releases/download/v0.10.0.5/reaper_imgui-arm64.dylib</source>
+        <source platform="linux32" file="reaper_imgui-i686.so">https://codeberg.org/cfillion/reaimgui/releases/download/v0.10.0.5/reaper_imgui-i686.so</source>
+        <source platform="linux64" file="reaper_imgui-x86_64.so">https://codeberg.org/cfillion/reaimgui/releases/download/v0.10.0.5/reaper_imgui-x86_64.so</source>
+        <source platform="linux-armv7l" file="reaper_imgui-armv7l.so">https://codeberg.org/cfillion/reaimgui/releases/download/v0.10.0.5/reaper_imgui-armv7l.so</source>
+        <source platform="linux-aarch64" file="reaper_imgui-aarch64.so">https://codeberg.org/cfillion/reaimgui/releases/download/v0.10.0.5/reaper_imgui-aarch64.so</source>
+        <source platform="win32" file="reaper_imgui-x86.dll">https://codeberg.org/cfillion/reaimgui/releases/download/v0.10.0.5/reaper_imgui-x86.dll</source>
+        <source platform="win64" file="reaper_imgui-x64.dll">https://codeberg.org/cfillion/reaimgui/releases/download/v0.10.0.5/reaper_imgui-x64.dll</source>
+        <source main="main" type="script" file="ReaImGui_Demo.lua">https://codeberg.org/cfillion/reaimgui/raw/v0.10.0.5/examples/demo.lua</source>
+        <source type="script" file="imgui.py">https://codeberg.org/cfillion/reaimgui/releases/download/v0.10.0.5/imgui.py</source>
+        <source type="data" file="reaper_imgui_doc.html">https://codeberg.org/cfillion/reaimgui/releases/download/v0.10.0.5/reaper_imgui_doc.html</source>
+        <source type="script" file="imgui.lua">https://codeberg.org/cfillion/reaimgui/raw/v0.10.0.5/shims/imgui.lua</source>
+        <source type="script" file="gfx2imgui.lua">https://codeberg.org/cfillion/reaimgui/releases/download/v0.10.0.5/gfx2imgui.lua</source>
+      </version>
+    </reapack>
+  </category>
+</index>
