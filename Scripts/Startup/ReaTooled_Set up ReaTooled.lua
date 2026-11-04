@@ -20,7 +20,10 @@
     and the same copy of REAPER opens again by itself.
 -- CHANGELOG
 -- v2.3.11 Started by the package installer (beta), it skips its "Set up ReaTooled now?" question:
---         the installer's own message asked already
+--         the installer's own message asked already. Scripts already in the Actions list
+--         (ReaPack registers them as it installs them) get ReaTooled's options too, so
+--         toggles that keep running end when run again instead of asking "Terminate
+--         instances / New instance"
 -- v2.3.10 Toolbar merge: a button is matched by its action (command), not by its action
 --         plus label, so a relabelled button stays ONE button: ReaTooled's new label is
 --         applied unless the user relabelled it too (then the user's label stays). Before,
@@ -1084,7 +1087,16 @@ end
 local replace_line, add_scr, add_act, add_key, conflicts = {}, {}, {}, {}, {}
 local remove_line, legacy_updated, legacy_removed = {}, 0, 0
 for _, s in ipairs(our_scr) do
-  if not user_scr[s.id] then add_scr[#add_scr + 1] = s.line end
+  if not user_scr[s.id] then
+    add_scr[#add_scr + 1] = s.line
+  else
+    -- Already in the Actions list (ReaPack or a package registers scripts as it installs
+    -- them), but without ReaTooled's options, e.g. "end the script when run again" for
+    -- toggles that keep running: use ReaTooled's line
+    local mine = kb_fields(user_lines[user_scr[s.id]])[2]
+    local ours = kb_fields(s.line)[2]
+    if ours ~= mine and tonumber(ours) and tonumber(ours) ~= 4 then replace_line[user_scr[s.id]] = s.line end
+  end
 end
 for _, a in ipairs(our_act) do
   if user_act[a.id] then replace_line[user_act[a.id]] = a.line else add_act[#add_act + 1] = a.line end

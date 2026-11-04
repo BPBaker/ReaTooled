@@ -1365,7 +1365,7 @@ DETAILS
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="2.4.21" author="Brendan Baker" time="2026-11-04T18:19:06Z">
+      <version name="2.4.22" author="Brendan Baker" time="2026-11-04T18:54:41Z">
         <changelog><![CDATA[ReaTooled_Set up ReaTooled: Shortcut clashes are shown together in one window instead of Yes/No/Cancel boxes: each row says "Keep yours" or "Update to ReaTooled's" (Keep yours is the default), any row can be changed until Continue, and the shortcut that loses its key can be given another one there. The final message lists ReaTooled actions left without a shortcut. Without ReaImGui every clashing key is kept as yours. ReaSmoothPlayhead is no longer installed by ReaBoot: Set up adds its ReaPack repository, so it's installed with the rest after the restart, once the ReaTooled theme is in place (an earlier unsaved theme made it report "unsaved changes"). Font settings left in reaper.ini by an earlier theme are removed, so the ReaTooled theme's own fonts apply (they're in the backup, and Restore puts them back)]]></changelog>
         <source file="ReaTooled_Earlier shortcuts.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Earlier%20shortcuts.lua</source>
         <source file="ReaTooled_Earlier toolbars.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Earlier%20toolbars.lua</source>
