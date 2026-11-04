@@ -1,15 +1,24 @@
 -- @description ReaTooled - Grid & Nudge Settings (Dockable GUI)
--- @version 3.3.2
--- @date 2026.11.02
+-- @version 3.3.3
+-- @date 2026.11.03
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
---   # Dockable Grid & Nudge controller for REAPER
---   • One-row, mouse-first UI for toggling Grid, selecting Grid mode/division, and editing Nudge amount/unit.
---   • Grid selector supports Frame rate, 1 Measure, and musical divisions; writes via GetSetProjectGrid.
---   • Nudge value edit field with unit-aware formatting (ms, seconds mm:ss.mmm, measures.beats, samples, frames, etc).
---   • Unit presets menu (with dotted/triplet modifiers for measures/beats) and persistent extstate storage.
---   • Focus-friendly popups and small-screen friendly layout; safe on older ReaImGui builds.
+--   # Grid and nudge settings, like Pro Tools' Edit window
+--   Turn the grid on and off, choose its division, and set the nudge amount and unit, in a
+--   dockable window or right inside REAPER's Transport bar.
+--   • Grid: click to toggle the grid; the division menu has frame rate, 1 measure and
+--     musical divisions.
+--   • Nudge: click the value to type one; the unit menu has milliseconds, seconds, measures
+--     and beats (with dotted and triplet), samples, frames and more.
+--   • In the Transport (right-click the window > Put in the Transport): Grid above Nudge
+--     (or one row), sharp on Retina/HiDPI screens and drawn in your theme's colors. Drag
+--     the grip to move it along the Transport and its right edge to resize it; the grip's menu attaches it to an edge
+--     of the Transport, either side of the time display or left of the selection display,
+--     locks it, or puts it back in a window.
+--   • It moves and resizes with the Transport, never covers the transport buttons or time
+--     display, moves to free space when it runs out of room, and hides when there is none.
+--   Mapped to M. Starts with REAPER, in the window or the Transport, whichever you used last.
 --
 -- @requires
 --   • ReaImGui v0.10.0.2+ (tested; forwards-compatible via feature detection)
@@ -25,6 +34,8 @@
 --     the label shown when the project's grid can't be matched to a menu entry.
 --
 -- @changelog
+--   v3.3.3 (2026-11-03)
+--     • ReaPack's About text describes the Transport mode.
 --   v3.3.2 (2026-11-02)
 --     • Transport: only the transport buttons (rewind, forward, record, play, repeat, stop,
 --       pause) and the time display are protected; the box may cover everything else the

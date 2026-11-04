@@ -2,6 +2,17 @@
 <index version="1" name="ReaTooled">
   <category name="Clipboard Manager">
     <reapack name="ReaTooled Clipboard Manager" type="script" desc="ReaTooled Clipboard Manager">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 Includes:\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab ReaTooled_Clipboard Manager - Capture selection\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab ReaTooled_Clipboard Manager - Copy and capture\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab ReaTooled_Clipboard Manager\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.0" author="Brendan Baker">
         <source file="ReaTooled_Clipboard Manager - Capture selection.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Clipboard%20Manager/ReaTooled_Clipboard%20Manager%20-%20Capture%20selection.lua</source>
         <source file="ReaTooled_Clipboard Manager - Copy and capture.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Clipboard%20Manager/ReaTooled_Clipboard%20Manager%20-%20Copy%20and%20capture.lua</source>
@@ -12,7 +23,190 @@
   </category>
   <category name="Config">
     <reapack name="ReaTooled Config" type="data" desc="ReaTooled configuration (applied by Set up ReaTooled)">
-      <version name="3.2026.1102.1131" author="Brendan Baker">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 ReaTooled's configuration: shortcuts, menus, toolbars, mouse modifiers, preferences and window layout. "Set up ReaTooled" applies it after backing up your settings, and "Update ReaTooled" applies new versions while keeping your own changes.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 The History tab lists what's new in each release.\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
+      <version name="3.2026.1103.2249" author="Brendan Baker" time="2026-11-04T03:49:38Z">
+        <changelog><![CDATA[v3.0 - November 03, 2026
+
+HIGHLIGHTS
+ * Installation: ReaTooled is now a ReaPack repository. One ReaBoot link installs REAPER, ReaPack, every extension and script ReaTooled uses, and the ReaTooled configuration and themes, and keeps them up to date through ReaPack
+ * Installation: New "ReaTooled Starter" extension starts "Set up ReaTooled" automatically the first time REAPER opens, so there's nothing to import
+ * Installation: New "Set up ReaTooled" merges ReaTooled into your existing REAPER instead of replacing it. Your current settings are backed up first, you're asked about any shortcuts that clash with your own, and everything else you've customized is kept
+ * Installation: New "Restore settings from a backup" puts back any earlier backup, either completely or while keeping the changes you made after setting up ReaTooled
+ * Theme: New default theme "Default_7.0 ReaTooled v3 Dark", plus an updated "ReaTooled v3 Light" (the v2 Light theme is still included)
+ * Clipboard Manager: New panel of saved clipboard states. Copy items, keep working, then click an earlier entry to put it back on REAPER's clipboard and paste as usual
+ * Smart Nudge: Nudging ("," and ".") now moves whatever you're working on: items, razor areas, envelope points or the edit cursor
+ * Linking: Overhauled "Link Timeline and Edit Selection" (loop points, razor areas and the edit cursor) to work much more like Pro Tools
+ * Shuffle mode: Like Pro Tools' Shuffle. Dragging an item with the Move Tool (or the Multi tool's lower half) reorders it: what came after it closes up, and it goes in at the item edge nearest where you drop it. Crossfades are kept, and grouped tracks and selections shuffle together
+ * Trim Tool: Rebuilt from scratch to trim like Pro Tools: click anywhere in an item to trim its nearest edge, the audio stays in place, and groups, selections, ripple and butt joints all follow
+ * Updating: New "Update ReaTooled" action updates ReaTooled in one step, and once a day ReaTooled tells you when a new release is out and asks whether to update now. Your own shortcuts, toolbar and menu changes and settings are kept, your window layout and screensets are left alone, and everything is backed up first
+ * Grid and Nudge: The Grid and Nudge Settings can now sit inside REAPER's Transport bar, like Pro Tools' Edit window grid and nudge displays
+ ^ Upgrading from v2? Your old setup is backed up before anything changes, and the Restore script can undo it at any time.
+
+DETAILS
+ + Installation: The ReaBoot recipe now installs reAAF (AAF import), Odedd's Project Archiver, 80icio's Perfect Timing! (audio quantizer), smandrap's Duplicate Tracks and the ReaTeam, X-Raym, MPL and TJF scripts ReaTooled uses, alongside SWS, ReaImGui and js_ReaScriptAPI
+ + Installation: Upgrading from an earlier ReaTooled: shortcuts it installed are updated to v3 without asking, and old ReaTooled shortcuts v3 no longer uses are removed. Only shortcuts you set up yourself are asked about
+ + Installation: Shortcut clashes are shown together in one window: for each key choose "Keep yours" (the default) or "Update to ReaTooled's", change your mind until you press Continue, and give the shortcut that loses its key a different one
+ + Installation: Upgrading from an earlier ReaTooled: old theme font settings left in REAPER's preferences are removed, so the v3 themes look as designed. "Restore settings from a backup" puts them back
+ + Installation: Set up keeps your REAPER window size and position, your audio device and your existing screensets
+ + Installation: After setup, a Scrolling window lets you try REAPER's scroll directions and ReaTooled's wheel zoom, see what each choice does, and change them. Reopen it any time with "ReaTooled_Scrolling settings"
+ + Installation: "Install ReaTooled.ReaperConfigZip" is still available as a manual fallback
+ + Updating: "ReaTooled_Update ReaTooled.lua" checks GitHub for a newer release, has ReaPack download it, waits until ReaPack has finished, then applies it and restarts REAPER
+ + Updating: Once a day, when REAPER starts, ReaTooled checks quietly for a newer release and only says something if there is one, with a Yes/No choice to update now
+ + Updating: Set up in update mode compares your files with the release you had and the new one: shortcuts, toolbar buttons, menu items and preferences you changed stay yours, and ReaTooled's own changes are added. Shortcut clashes are asked about as in a first setup
+ + Updating: Toolbar buttons are matched by their action, so a button ReaTooled relabels or gets a new icon for is updated in place (a label you changed yourself is kept), and a toolbar you never changed simply becomes the new one
+ + Updating: Scripts ReaTooled renames keep their shortcuts, toolbar buttons and menu items
+ + Installation: The ReaTooled toolbar button tooltip shows the installed ReaTooled version (v3.0)
+ + Installation: ReaTooled works with every REAPER project, made with or without ReaTooled, and "Restore settings from a backup" puts your previous theme, layout and screensets back
+ + Templates: New project template for video editing (3840x2160, 23.976 fps)
+ + Toolbar: Floating toolbar 4 is now "Zoom/Snapshot Presets" with buttons for zoom presets 1-5
+ + Toolbar: Added "Copy imported media to project media directory" toggle button
+ + Toolbar: Added "Spawn new instance of REAPER" button
+ + Toolbar: "Markers Follow Edit" now uses REAPER's native "Ripple all affects regions/markers" option
+ + Menus: New Pro Tools-style Edit menu (Duplicate, Trim start/end to edit cursor, Trim to item start/end/boundaries, Split at selection/transients, Mute item, Fade to start/end)
+ + Menus: New Track menu and Track control panel context menu
+ + Menus: View menu adds "Toggle show item volume envelope for all items" and SWS item display options (take name, gain, pitch/playrate)
+ + Menus: File, Options and Media item context menus updated with REAPER 7's new items (ripple, lane, grouping and peaks options, group names/colors, take markers and rankings, Phase Align Items, Duplicate project in new tab)
+ + Zoom: New Pro Tools-style zoom presets: CTRL+1 to CTRL+5 recall, with scripts to save each preset and reset them to default
+ + Zoom: New "Zoom Tool - Zoom in" and "Zoom Tool - Zoom out" scripts (used by the Zoom Tool)
+ + Zoom: New "Zoom Horizontally (Mousewheel)" script, mapped to OPT+mousewheel and OPT+SHIFT+mousewheel (follows the mousewheel invert toggle)
+ + Grid/Nudge: New dockable "Grid and Nudge Settings" window, mapped to M (replaces the nudge dialog and the Grid and Nudge toolbar buttons)
+ + Grid/Nudge: Transport mode: Grid and Nudge shows in REAPER's Transport bar as two rows (Grid above Nudge), drawn sharp on Retina/HiDPI screens in your theme's colors. Attach it to an edge of the Transport, either side of the time display or left of the selection display, lock it in place and set its size from its menu. It follows the Transport as you resize the window, never covers the transport buttons or time display, moves to free space when it runs out of room and hides when there is none
+ + Clipboard Manager: "Copy and capture" mapped to CMD+CTRL+C; "Capture selection" stores a selection without touching the clipboard (requires ReaImGui)
+ + Script: ReaTooled_Glue items with handles.lua, mapped to CMD+OPT+SHIFT+3. Glues like AudioSuite: one continuous file per track or individual files, with handles you choose (2 seconds by default, or the whole file), so you can still trim the edges back out
+ + Script: ReaTooled_Go to marker by number (keypad . number .).lua, mapped to keypad ".". Type a marker number and press "." or Enter to jump there (a region with that number is selected). "+" and "-" step to the next and previous marker or region
+ + Script: ReaTooled_Toggle selected tracks inactive.lua, mapped to OPT+CTRL+I. Like Pro Tools "Make Inactive": sets the track's FX offline, mutes it and turns it grey; run it again to put everything back exactly as it was
+ + Script: ReaTooled_Coalesce Clip Gain to Track Volume.lua and ReaTooled_Coalesce Track Volume to Clip Gain.lua (replace the TJF Coalesce scripts)
+ + Script: ReaTooled_Create razor area on empty track space.lua, set as the double-click on empty track space mouse modifier (works with pinned tracks)
+ + Script: ReaTooled_Create razor edit from edit cursor to end/start of project.lua, mapped to OPT+SHIFT+RETURN and SHIFT+CTRL+RETURN. Targets all tracks if none are selected, or the last touched track when "Link Track and Item Selection" is off
+ + Script: ReaTooled_Create razor edit and time selection from edit cursor to end/start of project.lua
+ + Script: ReaTooled_Create razor edit area on all tracks from time selection.lua
+ + Script: ReaTooled_Copy razor area or time selection to all tracks.lua, set as SHIFT+click on the ruler
+ + Script: ReaTooled_Extend razor area to mouse.lua, set as SHIFT+click on items and empty track space
+ + Script: ReaTooled_Extend razor area to track above.lua and ReaTooled_Extend razor area to track below.lua, mapped to SHIFT+P and SHIFT+;
+ + Script: ReaTooled_Move Tool Left Shift-Click (Select item and extend razor edit).lua
+ + Tool: Pencil Tool (F10): draws automation and clip gain freehand, adds clip gain points with a click (creating the clip gain line if needed), redraws the waveform when zoomed in to sample level (sample edits, turned on for the item you draw on if they were bypassed), and draws empty MIDI items
+ + Edit mode: ReaTooled_Toggle Shuffle mode.lua: each press goes to the next of Shuffle per track (per-track ripple), Shuffle all tracks (all-tracks ripple) and off (Slip). Turned on while REAPER is already in a ripple mode, it starts in that mode; choosing a ripple mode in REAPER switches between the two, and ripple off, Slip or Spot turns it off. Spot and Shuffle are exclusive. Kept when REAPER restarts
+ + Tool: Shuffle drags (Move Tool, or the Multi tool's lower half, in Shuffle mode): gaps move along like empty items, and an item in a gap can also drop one item-length left or right of where it was. Dragging a selected item moves the selected items on its track as one block. Drag to another track: the track it leaves closes up and it goes in at an item edge there (on an empty track, at its time). Tracks with locked items aren't shuffled
+ + Tool: Shuffle drags keep crossfades: the edit point is the crossfade's centre, so items keep the audio under it and crossfade again with their new neighbors. Butted items stay butted (no crossfade is ever added)
+ + Tool: Shuffle drags move grouped tracks (media editing groups), the rest of an item group and selected items on other tracks together, so edited multitracks (drums) stay in sync. If an item on one of them crosses the start or end of what's moving, the move doesn't start
+ + Tool: Shuffle all tracks: a Shuffle drag moves the same stretch of time on every track, like a razor move of the whole project. Items crossing its start or end or the drop point are split there with short fades, markers and regions move along, and locked items never move or split
+ + Tool: Option-drag in Shuffle mode copies, like Pro Tools: the copy goes in at the drop point and pushes what follows along, and the original stays (items, grouped tracks, another track, all tracks, and razor areas)
+ + Tool: Option-drag a razor area in Shuffle mode (with or without Separation Mode) copies just what's in it: the items are split where the area starts and ends, and the copy can drop at an item edge or at the area's own start or end. Dragged back where it started, nothing is copied and the splits are healed. Shows REAPER's copy cursor and makes one undo step
+ + Tool: Shuffle drags show the result live, with what's moving selected (it stays selected after the drop), automation following live (with "Move envelope points with media items" on), and make one undo step
+ + Tool: Spot dialog and Spot mode: move items to an exact Start, Sync Point or End in Timecode, Min:Sec, Bars|Beats, Seconds or Samples, or to their Original (BWF) or User Time Stamp. In Spot mode, clicking an item with the Move Tool (or the Multi tool's lower half) opens it
+ + Script: ReaTooled_Toggle swap left and right drag.lua ("Object Grabber Mode"): for REAPER users, the Selector's and Multi tool's right-drag selects razor areas and their left-drag in empty track space is marquee (off by default)
+ # Tools: Right-drag in the arrange is marquee. The Move Tool only ever selects items: its left-drag in empty track space is marquee too, and the swap doesn't change it
+ + Tool: Separation Mode (ReaTooled_Toggle Separation mode.lua): like Pro Tools' Separation Grabber, dragging a razor area moves what's in it (items are split at the area's edges). Works with every tool, and turning it off puts your razor area drag back as it was. Kept when REAPER restarts
+ + Tool: Separation Mode in Shuffle mode: dragging a razor area (Move Tool, Multi tool or Selector) splits what's in it into its own items and shuffles them like any Shuffle drag, empty space included; Option-drag copies it. Dropped back where it started, everything is as it was
+ + Tools: Cmd+click or Option+click on the Move Tool, Selector, Trim Tool or Multi tool button opens a menu of tool options ("Separation Mode (Move razor areas)" and "Object Grabber Mode (Marquee left drag, Razor right drag)"), ticked when on. A plain click and the tools' shortcuts still just choose the tool
+ # Tools: In Shuffle mode the Multi tool's upper half makes razor areas again (its lower half shuffles)
+ + Script: ReaTooled_Toggle pre-roll (playback and recording).lua, mapped to CMD+K: like Pro Tools' Pre/Post-Roll switch, turns REAPER's pre-roll on playback and on recording on or off together. While it's on, a white "Pre-roll" marker shows where playback will really start (following REAPER's "Start pre-roll at start of measure"); drag it to set the pre-roll length. Option+click the button opens REAPER's Metronome/pre-roll settings. Comes back on at startup if pre-roll was on
+ + Zoom: Cmd+click a zoom preset button (1-5) to save the current zoom to it, like Pro Tools. Keyboard shortcuts always recall
+ + Script: ReaTooled_Select Tool Left Click.lua, ReaTooled_Select Tool Double Click.lua and ReaTooled_Select Tool Shift+Double Click.lua (edit cursor and group aware)
+ + Script: ReaTooled_Link razor area and item selection.lua (razor edits select items, on by default)
+ + Script: ReaTooled_Special Paste + Trim Item Edges to Next and Previous Items (Expand to fill between neighboring items).lua, mapped to CMD+CTRL+V
+ + Script: ReaTooled_Special Paste + Trim Edges to Adjacent Items (Expand to fill, Loop Source and Section On).lua, mapped to CMD+OPT+CTRL+V
+ + Script: ReaTooled versions of the Trim Item Edges to Next/Previous Item tools (Loop Source On/Off) replace the custom actions, same shortcuts (CMD+CTRL+R/T/Y and CMD+OPT+CTRL+R/T/Y)
+ + Script: ReaTooled_Paste Special - Repeat to fill selection.lua replaces the custom action, same shortcut (CMD+OPT+V)
+ + Script: ReaTooled_Glide Envelope Points.lua, mapped to OPT+/
+ + Script: ReaTooled_Set Envelope Point Value.lua and ReaTooled_Set Envelope Point Value - Use last value.lua, mapped to OPT+CTRL+/ and OPT+CTRL+SHIFT+/
+ + Script: ReaTooled_Toggle mute items, ignoring grouping.lua (track under the mouse cursor), mapped to CMD+SHIFT+M
+ + Script: ReaTooled_Remove item under mouse cursor ignoring groups.lua, mapped to CMD+SHIFT+BACKSPACE
+ + Script: ReaTooled_Clear take envelopes and Reset Volume to 0db.lua replaces the custom action, same shortcut (SHIFT+CTRL+B)
+ + Script: ReaTooled_Toggle envelope lanes visible or in lane.lua, mapped to CTRL+- (replaces edgemeal's script)
+ + Script: ReaTooled_Toggle item volume envelope for all items.lua, mapped to CTRL+SHIFT+- and OPT+SHIFT+V (replaces amagalma's script)
+ + Script: ReaTooled_Magic Zero Crossing Loop Copy Buffer Maker.lua replaces the custom action, same shortcut (CMD+OPT+CTRL+SHIFT+T)
+ + Script: ReaTooled_Auto crossfade at edit cursor.lua (turns a butt joint into a centered crossfade)
+ + Script: ReaTooled_Render item(s) and store original in lane.lua (renders in place and keeps the original items, with their FX, on a hidden archive lane)
+ + Script: ReaTooled_Save ripple mode.lua, ReaTooled_Restore ripple mode.lua and ReaTooled_Ripple left edge.lua
+ + Script: ReaTooled_Region Shuffle.lua
+ + Script: ReaTooled_Show Spectrogram on Selected Track(s).lua
+ + Script: ReaTooled - AGC to Volume envelope.lua
+ + Script: ReaTooled_At loop end, move cursor to loop end and clear selection (only when loop button is off).lua. Follows REAPER's "Stop playback at end of loop if repeat is disabled" preference as soon as you change it
+ + Script: ReaTooled_Invert mousewheel direction (for natural scrolling).lua
+ + Key map: Mapped CMD+8 to 80icio's "Perfect Timing! - Audio Quantizer" (like Beat Detective)
+ + Key map: Mapped keypad + and - to Smart Nudge right/left
+ + Key map: Mapped OPT+A and CMD+PAGE DOWN to "View: Zoom out project"
+ + Key map: Mapped HOME and END to "Transport: Go to start/end of project"
+ + Key map: Mapped CMD+LEFT/RIGHT/UP/DOWN to "Item edit: Move items/envelope points left/right/up/down"
+ + Key map: Mapped CMD+SHIFT+ESC to "View: Move edit cursor to play cursor"
+ + Key map: Mapped CMD+CTRL+Z and CMD+CTRL+SHIFT+Z to "SWS: Undo/Redo edit cursor move"
+ + Key map: Mapped CMD+CTRL+1 to CMD+CTRL+0 (and CTRL+6 to CTRL+0) to load track views #1-10, and CMD+OPT+1 to CMD+OPT+5 and CTRL+SHIFT+1 to CTRL+SHIFT+0 to save them
+ + Key map: Mapped OPT+SHIFT+/ to "Envelope: Set shape of selected points to slow start/end"
+ + Key map: Mapped SHIFT+CTRL+E to "Envelopes: View envelopes for last touched track/item"
+ + Key map: Mapped CMD+OPT+CTRL+P to "Peaks: Rebuild peaks for selected items" and CMD+OPT+SHIFT+CTRL+P to "Peaks: Rebuild all peaks"
+ + Key map: Mapped SHIFT+CTRL+R to "Markers: Insert region from selected items", OPT+SHIFT+CTRL+R to "Insert region from time selection and edit..." and CMD+OPT+SHIFT+CTRL+R to "Insert region from time selection"
+ + Key map: Mapped OPT+CTRL+- to "Set playrate to 1.0" and OPT+CTRL+= to "Set playrate to 2.0"
+ + Key map: Mapped OPT+CTRL+G to "Options: Selecting one grouped item selects group"
+ + Key map: Mapped OPT+CTRL+N to "Item properties: Normalize items..."
+ + Key map: Mapped F13 to "Normalize (Bypass Groups)" and F16 to "Mute Item (Bypass Groups)"
+ + Key map: Mapped OPT+` to "Track: Pin tracks to top of arrange view"
+ + Key map: Mapped CMD+OPT+CTRL+M to Media Explorer, CMD+NUMPAD 9 to Video window and CMD+OPT+CTRL+~ to "Spawn new instance of REAPER"
+ + Key map: Mapped CMD+OPT+CTRL+N to "ReaTooled_Toggle Link Play Cursor to Edit Cursor"
+ + Key map: MIDI editor shortcuts are now part of Set up (zoom, vertical zoom and mute events). If one clashes with a shortcut of yours, you're asked which to keep
+ + Mouse Modifiers: New contexts set: razor area edges, region, marker/region edges and marker/region double click
+ + Mouse Modifiers: Added media item edge modifiers for REAPER's new ripple edge options
+ + Mouse Modifiers: OPT+click on a crossfade now uses REAPER's own action (replaces amagalma's script)
+ + Mouse Modifiers: CMD+drag adds a razor area in all relevant contexts
+ + Mouse Modifiers: CMD+OPT+CTRL+double click on the bottom half of an item opens a copy in your external editor with handles; CMD+OPT+SHIFT+CTRL+double click renders it to a new take with tail
+
+ # Tools: Smart Tool and Move Tool now use razor area selection with SHIFT and CMD modifiers
+ # Tools: Track left drag now makes a razor area + time selection by default (instead of marquee + time selection)
+ # Tools: Trim Tool rebuilt as a background tool. A click or drag anywhere in an item trims its nearest edge (the audio stays where it is, at any playrate, with the sync point kept on the audio); REAPER's own edge, fade, crossfade and volume handles still work as usual
+ # Tools: Trim Tool trims selected items together and mirrors the edit on grouped items and track groups; in ripple modes the items after the edit follow (all tracks in Ripple all), like REAPER's own ripple
+ # Tools: Trim Tool at a butt joint: with REAPER's double-edge cursor showing, both edges move together; otherwise only the edge under the cursor moves (what you see is what you get)
+ # Tools: Trim Tool selects what it trimmed, moves the edit cursor to its start and sets the loop points to it with Link Timeline and Edit Selection on; one undo step ("Trim items")
+ # Tools: Trim Tool: clicking empty track space deselects all items and moves the edit cursor
+ # Tools: Spot and Shuffle now change only the mouse modifiers they need and put the tool's own back when turned off (track, arrange and right-drag settings are never touched). In Shuffle mode the Multi tool's upper-half razor drag is off, so its lower half can shuffle
+ # Tools: Zoom Tool click / OPT+click now use ReaTooled's own zoom scripts
+ # Tools: Removed marquee zoom from Option-drag on the Selector, Multi and Move tools (Option-drag copies, like Pro Tools)
+ # Toolbar: The Multi tool button is now labeled "SMART"
+ # Tools: Removed the Move/Split (Separation) Tool and Stretch (TCE) Tool
+ # Script: Updated "ReaTooled_Move Tool Left Click (Select item under mouse cursor, move cursor to start of items).lua": no flicker, follows Link Timeline and Edit Selection (sets the loop points to the item when linked)
+ # Script: Updated "ReaTooled_Link Track and Item and Razor Selection.lua": now fully ReaTooled's own (replaces TJF's)
+ # Script: Updated "ReaTooled_Play-Stop (with memory, edit-play toggles, and no undo).lua": starts from the loop points when there are any; play marker only shows while stopped
+ # Script: Updated "ReaTooled_Move edit cursor to next/previous transient or item edge" (TAB / OPT+TAB) and "Extend time selection to next/previous transient or item edge" (SHIFT+TAB / OPT+SHIFT+TAB): stop at fades and crossfades, follow razor areas, only scroll when the cursor goes off screen
+ # Script: Updated "ReaTooled_Smart Remove.lua" (Backspace): no longer changes the view
+ # Script: Updated "ReaTooled_Split Item (Hover Mode Dependent).lua": more precise time selection logic
+ # Script: Updated "ReaTooled_Toggle Layered Editing.lua" for more reliable performance
+ # Script: Updated "ReaTooled_Recall ReaTooled Button States.lua": finds scripts by file path, so toolbar buttons keep their state after updates
+ # Script: Nudge scripts no longer change the view
+ # Script: Mousewheel scripts (pitch, take volume, peaks view gain) are now ReaTooled's own versions
+ # Script: Fixed spelling of "Dependent" in script names
+ # Key map: ","/"." now Smart Nudge left/right (was nudge by last nudge settings)
+ # Key map: [ and ] now set loop points start/end; SHIFT+[ and SHIFT+] set time selection start/end (swapped)
+ # Key map: C and \ now "Loop points: Set loop points to items"; SHIFT+\ sets time selection to items (swapped)
+ # Key map: CTRL+1 to CTRL+5 now recall zoom presets (were SWS project tabs 1-5)
+ # Key map: CMD+K now toggles pre-roll for both playback and recording (was pre-roll on playback only)
+ # Key map: OPT+RETURN now "Go to end of project" (was Project settings)
+ # Key map: CMD+OPT+CTRL+E now "Open items in secondary external editor" (view envelopes moved to SHIFT+CTRL+E)
+ # Key map: N and OPT+N now "Normalize items using most recent settings"; normalize dialog moved to OPT+CTRL+N
+ # Key map: OPT+X now toggles auto-crossfade (was crossfade on split)
+ # Key map: SHIFT+G now groups items and prompts for a group name
+ # Key map: CTRL+J now nudges item volume -12 dB (was normalize to -45 LU)
+ # Key map: CMD+6 and F10 now toggle REAPER's take sample edits (replaces TJF's Split/Glue/Sample Editor script)
+ # Key map: SHIFT+mousewheel now scrolls vertically; CMD+OPT+mousewheel unmapped
+ # Key map: Unmapped OPT+1, OPT+2, OPT+4 and CMD+OPT+SHIFT+H (Show only tracks with items); CMD+8 (Draw Spectral Edits) now opens Perfect Timing!
+ # Toolbar: Removed Grid, Nudge and Metronome buttons from the ReaTooled toolbar (Metronome is in REAPER's main toolbar; Grid and Nudge are in the new Grid and Nudge Settings window)
+ # Toolbar: Icon and cursor updates, toolbar buttons blink when active
+ # Menus: AAF import/export now comes from the reAAF extension (removed the old AAF menu item)
+ # Theme: v3 Dark and v3 Light now use the fonts of REAPER's default theme, except volume/pan labels and text toolbar buttons, which use Inter 9
+ # Theme: Recompiled with REAPER 7 elements; loop, guide line and fill color tweaks; darker volume envelope in the Light theme
+ # Appearance: Item labels on top with a selection bar (no selector dot); item buttons and labels hide when items are smaller than 40px
+ # Appearance: Arrange background shading every 10 seconds (time) or 4 bars (beats); updated snap and grid defaults
+ # Preferences: Items always replace earlier items (instead of enclosed items replacing enclosing items)
+ # Preferences: Unchecked "Link loop points to time selection"
+ # Preferences/Audio/Playback: Unchecked "Scroll view to edit cursor on stop"
+ # Preferences/Editing Behavior/Envelope Display: Disabled "Use relative mouse edits"
+ # SWS: Auto-icon turned off and icons removed from templates]]></changelog>
         <source file="ReaTooled/Config/keymap.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/keymap.ini</source>
         <source file="ReaTooled/Config/menus.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/menus.ini</source>
         <source file="ReaTooled/Config/mouse.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/mouse.ini</source>
@@ -154,7 +348,14 @@
       </version>
     </reapack>
     <reapack name="ReaTooled Themes" type="theme" desc="ReaTooled themes">
-      <version name="3.2026.1102.1131" author="Brendan Baker">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 ReaTooled's themes, installed into REAPER's ColorThemes folder. "Default_7.0 ReaTooled v3 Dark" is the default.\par}
+}]]></description>
+      </metadata>
+      <version name="3.2026.1103.2249" author="Brendan Baker" time="2026-11-04T03:49:38Z">
         <source file="Assembled_ReaTooled v1.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Assembled_ReaTooled%20v1.ReaperThemeZip</source>
         <source file="Default_7.0 ReaTooled v2 Light.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Default_7.0%20ReaTooled%20v2%20Light.ReaperThemeZip</source>
         <source file="Default_7.0 ReaTooled v3 Dark.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Default_7.0%20ReaTooled%20v3%20Dark.ReaperThemeZip</source>
@@ -165,6 +366,16 @@
   </category>
   <category name="Edit">
     <reapack name="ReaTooled Smart Nudge" type="script" desc="ReaTooled Smart Nudge">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 Includes:\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab ReaTooled_Smart Nudge Left\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab ReaTooled_Smart Nudge Right\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.2.0" author="Brendan Baker">
         <source file="ReaTooled_Smart Nudge Left.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Smart%20Nudge%20Left.lua</source>
         <source file="ReaTooled_Smart Nudge Right.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Smart%20Nudge%20Right.lua</source>
@@ -172,156 +383,493 @@
       </version>
     </reapack>
     <reapack name="ReaTooled_Add Stretch Marker (Hover Mode Dependent).lua" type="script" desc="ReaTooled - Add Stretch Marker (Hover Mode Dependant)">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Adjusted to work with the modified ReaTooled Hover Edit Mode script ("_RS7cb08a92f7a211ce66734644b4fbe99a91bd42f5")\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 TJF Add Strech Marker (Hover Mode Dependant)\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 Will add Stretch Markers at Mouse Cursor or Edit Curser depending on Hover Mode Status Recommend Assign to "W" key\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.1" author="Brendan Baker">
+        <changelog><![CDATA[bug fixes - add SWS arrange view save and recall]]></changelog>
         <source file="ReaTooled_Add Stretch Marker (Hover Mode Dependent).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Add%20Stretch%20Marker%20%28Hover%20Mode%20Dependent%29.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Add Sync Point (Hover Mode Dependent).lua" type="script" desc="ReaTooled - Add Synch Point (Hover Mode Dependant)">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Adjusted to work with the modified ReaTooled Hover Edit Mode script ("_RS7cb08a92f7a211ce66734644b4fbe99a91bd42f5")\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 TJF TJF Add Sync Point (Hover Mode Dependent)\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 Will also not split if no item is selected. Mimics "CMD + ," in protools Adds Hover Mode Support\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.0" author="Brendan Baker">
         <source file="ReaTooled_Add Sync Point (Hover Mode Dependent).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Add%20Sync%20Point%20%28Hover%20Mode%20Dependent%29.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Auto crossfade at edit cursor.lua" type="script" desc="ReaTooled - Convert Butt Joint to Centered Crossfade">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 Converts an existing butt joint at the edit cursor into a centered crossfade using REAPER's default crossfade length. WARNING: This necessarily modifies item boundaries (by design).\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.0" author="Brendan Baker">
         <source file="ReaTooled_Auto crossfade at edit cursor.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Auto%20crossfade%20at%20edit%20cursor.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Clear take envelopes and Reset Volume to 0db.lua" type="script" desc="Clear Take Envelopes &amp; Reset Item/Take Volume to 0dB">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 Clears all take envelopes and resets item and take volume to 0.0dB for all selected items / takes.\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.0" author="Brendan Baker">
         <source file="ReaTooled_Clear take envelopes and Reset Volume to 0db.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Clear%20take%20envelopes%20and%20Reset%20Volume%20to%200db.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Coalesce Clip Gain to Track Volume.lua" type="script" desc="ReaTooled - Coalesce Clip Gain to Track Volume">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Like Pro Tools' "Coalesce Clip Gain to Volume Automation"\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 For each selected item, moves its clip gain into the track's volume automation and resets the clip gain to 0 dB. Clip gain here means the take volume envelope, plus (see SETTINGS) the take volume and item volume. Writes to the Pre-FX volume envelope by default, and creates it if needed. Short glides at the item edges keep the automation outside the item as it was. Known limit: two selected items overlapping on the same track can give unexpected results. Envelopes with automation items are skipped.\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.0" author="Brendan Baker">
+        <changelog><![CDATA[Initial version (replaces TJF Coalesce Take Volume to Track Volume)]]></changelog>
         <source file="ReaTooled_Coalesce Clip Gain to Track Volume.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Coalesce%20Clip%20Gain%20to%20Track%20Volume.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Coalesce Track Volume to Clip Gain.lua" type="script" desc="ReaTooled - Coalesce Track Volume to Clip Gain">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Like Pro Tools' "Coalesce Volume Automation to Clip Gain"\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 For each selected item, moves the track's volume automation under the item into the item's take volume envelope (combined with any clip gain already there), and sets the track automation to 0 dB across the item. Uses the Pre-FX volume envelope by default. Creates the take volume envelope if needed. Short glides at the item edges keep the automation outside the item as it was. Known limit: two selected items overlapping on the same track can give unexpected results. Envelopes with automation items are skipped.\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.0" author="Brendan Baker">
+        <changelog><![CDATA[Initial version (replaces TJF Coalesce Track Volume to Take Volume)]]></changelog>
         <source file="ReaTooled_Coalesce Track Volume to Clip Gain.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Coalesce%20Track%20Volume%20to%20Clip%20Gain.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Copy razor area or time selection to all tracks.lua" type="script" desc="ReaTooled_Copy Razor (Union) or Time Selection to All Tracks + Set Time Selection">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 Creates a unified razor area from all razor edits (min start to max end), applies it to all tracks, and sets matching time selection. If no razor exists, falls back to time selection. Exits silently if neither is set.\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.6" author="Brendan Baker">
         <source file="ReaTooled_Copy razor area or time selection to all tracks.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Copy%20razor%20area%20or%20time%20selection%20to%20all%20tracks.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Create razor area on empty track space.lua" type="script" desc="ReaTooled - Create Razor Edit to Fill Gap at Edit Cursor">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 Creates a track-area Razor Edit that exactly spans the empty space (gap) surrounding the edit cursor on a target track. Target track resolution (in order of preference): 1) Track under mouse (native hit-test; pinned-track safe), else 2) Track under mouse via SWS (fallback), else 3) Single selected track, else 4) Last touched track. Handles edge cases:\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Gap from project start (0) to the first item\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Gap from the last item to project end\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Tracks with no items (entire project length) Project end is resolved in order of priority: 1) Marker named "=END" 2) Explicit Project Settings end time ("PROJECT_LENGTH") 3) Automatic length (GetProjectLength) If no gap encompasses the edit cursor (e.g., cursor is inside an item), no changes are made.\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.5" author="Brendan Baker">
+        <changelog><![CDATA[Add LANE_AWARE toggle: when true, gap detection only considers items on the active fixed lane when the track has fixed lanes enabled. Items on hidden or inactive lanes are ignored, matching what the user sees and hears.]]></changelog>
         <source file="ReaTooled_Create razor area on empty track space.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Create%20razor%20area%20on%20empty%20track%20space.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Create razor edit and time selection from edit cursor to end of project.lua" type="script" desc="ReaTooled - Create razor edit and time selection from the edit cursor to the end of project">
+      <metadata>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.0" author="Brendan Baker">
         <source file="ReaTooled_Create razor edit and time selection from edit cursor to end of project.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Create%20razor%20edit%20and%20time%20selection%20from%20edit%20cursor%20to%20end%20of%20project.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Create razor edit and time selection from edit cursor to start of project.lua" type="script" desc="ReaTooled - Create razor edit and time selection from the edit cursor to the start of project">
+      <metadata>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.0" author="Brendan Baker">
         <source file="ReaTooled_Create razor edit and time selection from edit cursor to start of project.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Create%20razor%20edit%20and%20time%20selection%20from%20edit%20cursor%20to%20start%20of%20project.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Create razor edit area on all tracks from time selection.lua" type="script" desc="ReaTooled_Convert Time or Loop Selection to Razor Area on All Tracks (for mouse modifier)">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 Waits for REAPER to apply a time or loop selection (useful when triggered by mouse modifiers), then creates razor edit areas across all tracks and matches time selection.\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.0" author="Brendan Baker">
         <source file="ReaTooled_Create razor edit area on all tracks from time selection.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Create%20razor%20edit%20area%20on%20all%20tracks%20from%20time%20selection.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Create razor edit from edit cursor to end of project.lua" type="script" desc="ReaTooled - Create razor edit from the edit cursor to the end of project">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 Creates a track-area Razor Edit from the edit cursor to the end of the project. If no tracks are selected, applies to ALL tracks. Replaces existing Razor on those tracks. If \u8805?1 track is selected AND helper (_RSf28451a9bd28e7b3d270c4e5ce58052377a5e3df) is NOT running, ignore the selected tracks and apply ONLY to the focused (last-touched) track.\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.2" author="Brendan Baker">
+        <changelog><![CDATA[If ≥1 selected AND helper not running, target last-touched track instead of selected tracks]]></changelog>
         <source file="ReaTooled_Create razor edit from edit cursor to end of project.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Create%20razor%20edit%20from%20edit%20cursor%20to%20end%20of%20project.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Create razor edit from edit cursor to start of project.lua" type="script" desc="ReaTooled - Create razor edit from the edit cursor to the start of project">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 Creates a track-area Razor Edit from project start (0.0) to the edit cursor. If no tracks are selected, applies to ALL tracks. If at least one track is selected AND the helper script (_RSf28451a9bd28e7b3d270c4e5ce58052377a5e3df) is NOT running, ignore selected tracks and apply ONLY to the focused (last touched) track.\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.2" author="Brendan Baker">
+        <changelog><![CDATA[If >=1 track selected AND helper not running, target last-touched track instead of selected tracks]]></changelog>
         <source file="ReaTooled_Create razor edit from edit cursor to start of project.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Create%20razor%20edit%20from%20edit%20cursor%20to%20start%20of%20project.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Create Tone Generator from Time selection.lua" type="script" desc="ReaTooled - Create Tone Generator from Time Selection">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 This script creates an empty MIDI item from the time selection and ads a tone generator JS effect to the item -- good for "beeping out" sections of audio.\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.0" author="Brendan Baker">
         <source file="ReaTooled_Create Tone Generator from Time selection.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Create%20Tone%20Generator%20from%20Time%20selection.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Extend razor area to mouse.lua" type="script" desc="ReaTooled - Razor From Cursor To Mouse">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Creates or extends a razor edit area across multiple tracks.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Behavior:\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 - No razor exists anywhere: creates razor from pre-click cursor to mouse on selected tracks.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 - Razor exists, mouse is on a track with a razor, mouse is outside union bounds:\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 extends union bounds toward mouse, writes to all tracks with a razor.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 - Razor exists, mouse is on a track with a razor, mouse is inside union bounds:\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 trims nearest edge of union bounds to mouse position, writes to all tracks with a razor.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 - Razor exists, mouse is on a track without a razor:\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 adds that track to the razor group using existing union bounds unchanged.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Requires ReaTooled - Link Razor Area to Item Selection (Context-Aware) v4.6+ to be running.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Assign to a left-click mouse modifier in Arrange view.\par}
+}]]></description>
+      </metadata>
       <version name="2.1" author="Brendan Baker">
+        <changelog><![CDATA[Multi-track support: razor bounds now use union across all tracks with a razor; clicking a track without a razor adds it to the group using existing bounds; creating a new razor now applies to all selected tracks]]></changelog>
         <source file="ReaTooled_Extend razor area to mouse.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Extend%20razor%20area%20to%20mouse.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Extend razor area to track above.lua" type="script" desc="ReaTooled - Extend Razor Areas Upward or Create From Items/TS (track-aware)">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 Behavior priority: 1) If any Razor Edit(s) exist on any track:\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Extend those exact track-area Razor segments (guid == "") to the track(s) directly above the tracks that have them. (Optionally propagate env/item GUID segments if enabled.) 2) Else, if items are selected:\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Create Razor segments that match each selected item (per-item, per-track), and also apply those segments to the track(s) directly above. 3) Else, if a time selection exists and it intersects selected items:\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab For each selected item, create a Razor segment from the intersection of the item bounds and the time selection, then mirror to the track(s) above. Finish rules (family-consistent):\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Always clear the Time Selection at the end.\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab If LINK is OFF, restore Loop Points to their original position (Razor edits remain).\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab If LINK is ON, clearing TS will also clear LP (we do not toggle LINK).\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.4.1" author="Brendan Baker">
+        <changelog><![CDATA[Ported 1.3.8 robustness:
+• Track-area–only semantics by default; safe GUID handling (configurable).
+• Hardened Razor parsing; per-track track-area MERGE/UNION with EPS tolerance; preserve non-track triplets.
+• De-dupe & accumulate per-destination when multiple carriers target the same track.
+• Selection hygiene for TS∩selected-items (no selection-set slots).
+• Family finish: clear TS; restore LP if LINK is OFF.]]></changelog>
         <source file="ReaTooled_Extend razor area to track above.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Extend%20razor%20area%20to%20track%20above.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Extend razor area to track below.lua" type="script" desc="ReaTooled - Extend Razor Areas Downward or Create From Items/TS (track-aware)">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 Behavior priority: 1) If any Razor Edit(s) exist on any track:\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Extend those exact track-area Razor segments (guid == "") to the track(s) directly below the tracks that have them. (Optionally propagate env/item GUID segments if enabled.) 2) Else, if items are selected:\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Create Razor segments that match each selected item (per-item, per-track), and also apply those segments to the track(s) directly below. 3) Else, if a time selection exists and it intersects selected items:\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab For each selected item, create a Razor segment from the intersection of the item bounds and the time selection, then mirror to the track(s) below. Finish rules (family-consistent):\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Always clear the Time Selection at the end.\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab If LINK is OFF, restore Loop Points to their original position (Razor edits remain).\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab If LINK is ON, clearing TS will also clear LP (we do not toggle LINK).\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.5.1" author="Brendan Baker">
+        <changelog><![CDATA[Ported 1.3.8/1.4.1 robustness:
+• Track-area–only semantics by default; safe GUID handling (configurable).
+• Hardened Razor parsing; per-track track-area MERGE/UNION with EPS tolerance; preserve non-track triplets.
+• De-dupe & accumulate per-destination when multiple carriers target the same track.
+• TS∩selected-items respects current selection (no auto-select side effects).
+• Family finish: clear TS; restore LP if LINK is OFF.]]></changelog>
         <source file="ReaTooled_Extend razor area to track below.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Extend%20razor%20area%20to%20track%20below.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Extend time selection to next (right) transient or item edge (Tab to Transient toggle dependent).lua" type="script" desc="ReaTooled - Extend time selection + razor area to next (right) transient or item edge (gap-aware)">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Depending on the state of the ReaTooled Toggle Tab to Transient button,\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 this script creates or extends a time selection + razor area to the next (right) transient or item edge.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 It replicates SHIFT+TAB / SHIFT+' behavior from Pro Tools, with gap-aware stepping.\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.5.2" author="Brendan Baker">
+        <changelog><![CDATA[FIX: function order (get_target_tracks defined before use) + all locals.]]></changelog>
         <source file="ReaTooled_Extend time selection to next (right) transient or item edge (Tab to Transient toggle dependent).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Extend%20time%20selection%20to%20next%20%28right%29%20transient%20or%20item%20edge%20%28Tab%20to%20Transient%20toggle%20dependent%29.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Extend time selection to previous (left) transient or item edge (Tab to Transient toggle dependent).lua" type="script" desc="ReaTooled - Extend time selection + razor area to previous (left) transient or item edge (gap-aware)">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Depending on the state of the ReaTooled Toggle Tab to Transient button,\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 this script creates or extends a time selection + razor area to the previous (left) transient or item edge.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Mirrors the rightward version, including fade/crossfade-aware stepping and robust viewport follow of the left edge.\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.0.0" author="Brendan Baker">
+        <changelog><![CDATA[Initial leftward release. Fade/crossfade-aware stepping; transient-aware with fallback; follows Razor left edge off-screen.]]></changelog>
         <source file="ReaTooled_Extend time selection to previous (left) transient or item edge (Tab to Transient toggle dependent).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Extend%20time%20selection%20to%20previous%20%28left%29%20transient%20or%20item%20edge%20%28Tab%20to%20Transient%20toggle%20dependent%29.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Fade In to Edit Cursor Or Mouse (Hover Mode Dependent).lua" type="script" desc="ReaTooled - Fade In to Edit Cursor or Mouse (Hover Mode Dependant)">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Adjusted to work with the modified ReaTooled Hover Edit Mode script ("_RS7cb08a92f7a211ce66734644b4fbe99a91bd42f5")\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 TJF Fade In to Edit Cursor or Mouse (Hover Mode Dependant)\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 Depending on Status of Hover mode will either fade in to edit cursor or mouse cursor Recommend Assigning to "D" key\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.2" author="Brendan Baker">
+        <changelog><![CDATA[Change SetEditCurPos to not move view]]></changelog>
         <source file="ReaTooled_Fade In to Edit Cursor Or Mouse (Hover Mode Dependent).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Fade%20In%20to%20Edit%20Cursor%20Or%20Mouse%20%28Hover%20Mode%20Dependent%29.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Fade Out From Edit Cursor Or Mouse (Hover Mode Dependent).lua" type="script" desc="ReaTooled - Fade Out From Edit Cursor or Mouse (Hover Mode Dependant)">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Adjusted to work with the modified ReaTooled Hover Edit Mode script ("_RS7cb08a92f7a211ce66734644b4fbe99a91bd42f5")\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 TJF Fade Out from Edit Cursor or Mouse (Hover Mode Dependant)\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 Depending on Status of Hover mode will either fade out from edit cursor or mouse cursor Recommend Assigning to "G" key\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.2" author="Brendan Baker">
+        <changelog><![CDATA[change SetEditCurPos to not move view when fading]]></changelog>
         <source file="ReaTooled_Fade Out From Edit Cursor Or Mouse (Hover Mode Dependent).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Fade%20Out%20From%20Edit%20Cursor%20Or%20Mouse%20%28Hover%20Mode%20Dependent%29.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Glide Envelope Points.lua" type="script" desc="GLIDE envelopes to selection/items (ReaTooled, inspired by TJF)">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 Reatooled version that preserves the original behavior (Time Selection, Razor Edit, Item Selection, Take/Track envelopes, Automation Items, optional Edit Cursor pickup), with safer logic and performance improvements:\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab No mutation of shared state across loops (per-AI/local clamping)\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Optional filters for envelope visibility and arming\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Fewer redundant Envelope_Evaluate calls (re-evaluate only when needed)\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Sort once per AI batch, not per-point\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Safer clamping for item-relative cursor\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Cleaner structure and locals NOTE: This script uses only native ReaScript API (no SWS BR_ calls).\par}
+}]]></description>
+      </metadata>
       <version name="3.0" author="Brendan Baker">
         <source file="ReaTooled_Glide Envelope Points.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Glide%20Envelope%20Points.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Glue items with handles.lua" type="script" desc="ReaTooled - Glue items with handles (AudioSuite-style)">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Glue items and keep handles, like Pro Tools AudioSuite rendering\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 Opens a small window (it remembers your last choices):\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab File mode: "Create continuous file" glues the selected items on each track into one item; "Create individual files" glues each item on its own\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Handle length in seconds (default 2), or press "Whole File" to keep all the source audio Render (or Enter) glues, Cancel (or Esc) closes. The window can stay open while you change the selection. The glued item stays exactly where and as long as the original selection, but its new file has extra audio beyond its edges, so you can still trim it out afterwards. Like REAPER's own glue, take FX and take envelopes are printed. Handles only reach as far as the source audio exists (and not before the project start). Fades at the outer edges are kept; crossfades inside a continuous glue are printed as they are. Works with fixed item lanes (one item per lane). Needs ReaImGui (installed with ReaTooled).\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.1" author="Brendan Baker">
+        <changelog><![CDATA[New AudioSuite-style window: File mode dropdown, Whole File button, live selection summary]]></changelog>
         <source file="ReaTooled_Glue items with handles.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Glue%20items%20with%20handles.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Grid and Nudge Settings.lua" type="script" desc="ReaTooled - Grid &amp; Nudge Settings (Dockable GUI)">
-      <version name="3.3.2" author="Brendan Baker">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Grid and nudge settings, like Pro Tools' Edit window\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 Turn the grid on and off, choose its division, and set the nudge amount and unit, in a dockable window or right inside REAPER's Transport bar.\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Grid: click to toggle the grid; the division menu has frame rate, 1 measure and musical divisions.\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Nudge: click the value to type one; the unit menu has milliseconds, seconds, measures and beats (with dotted and triplet), samples, frames and more.\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab In the Transport (right-click the window > Put in the Transport): Grid above Nudge (or one row), sharp on Retina/HiDPI screens and drawn in your theme's colors. Drag the grip to move it along the Transport and its right edge to resize it; the grip's menu attaches it to an edge of the Transport, either side of the time display or left of the selection display, locks it, or puts it back in a window.\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab It moves and resizes with the Transport, never covers the transport buttons or time display, moves to free space when it runs out of room, and hides when there is none. Mapped to M. Starts with REAPER, in the window or the Transport, whichever you used last.\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
+      <version name="3.3.3" author="Brendan Baker" time="2026-11-04T03:49:38Z">
+        <changelog><![CDATA[• ReaPack's About text describes the Transport mode.]]></changelog>
         <source file="ReaTooled_Grid and Nudge Settings.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Grid%20and%20Nudge%20Settings.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Magic Zero Crossing Loop Copy Buffer Maker.lua" type="script" desc="ReaTooled - Magic Zero Crossing Loop Copy Buffer Maker (Good for Room Tone)">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Turns a razor edit (or time selection) into a looping, click-free\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 section and copies it, ready to paste as room tone. 1. Sets the time selection to the razor edit areas (if there are any) 2. Splits the item at the nearest zero crossings to the start and end 3. Turns on "Loop source" for the section and loops that part of the source 4. Smart-copies it Replaces the custom action of the same name, without needing the TJF and Lokasenna scripts it used.\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.0" author="Brendan Baker">
+        <changelog><![CDATA[Initial version (from the custom action)]]></changelog>
         <source file="ReaTooled_Magic Zero Crossing Loop Copy Buffer Maker.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Magic%20Zero%20Crossing%20Loop%20Copy%20Buffer%20Maker.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Move edit cursor to next (right) transient or item edge (Tab to Transient toggle dependent).lua" type="script" desc="ReaTooled - TAB honoring fades/crossfades (SelectionSet restore + only-if-offscreen centering)">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 Pro Tools-like TAB using ReaTooled "Toggle Tab to Transient".\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Transient mode (toggle ON):\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Uses REAPER\u8217?s native transient navigation.\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Temporarily saves/restores item selection using Selection Set #01.\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Respects user track/item selection context (tracks > all items).\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Item-edge mode (toggle OFF):\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Moves between fades, crossfades, item edges on relevant tracks.\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab No selection changes.\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab View centers on edit cursor only if it moves off-screen (margin configurable).\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab No defer; Undo suppressed (-1).\par}
+}]]></description>
+      </metadata>
       <version name="1.17" author="Brendan Baker">
+        <changelog><![CDATA[* Added VIEW_MARGIN user setting (default 5%).
+* Optional follow behavior during playback (FOLLOW_DURING_PLAY).
+* Slightly smoother viewport updates.]]></changelog>
         <source file="ReaTooled_Move edit cursor to next (right) transient or item edge (Tab to Transient toggle dependent).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Move%20edit%20cursor%20to%20next%20%28right%29%20transient%20or%20item%20edge%20%28Tab%20to%20Transient%20toggle%20dependent%29.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Move edit cursor to previous (left) transient or item edge (Tab to Transient toggle dependent).lua" type="script" desc="ReaTooled - TAB honoring fades/crossfades (SelectionSet restore + only-if-offscreen centering)">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 Pro Tools-like TAB using ReaTooled "Toggle Tab to Transient".\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Transient mode (toggle ON):\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Uses REAPER\u8217?s native transient navigation.\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Temporarily saves/restores item selection using Selection Set #01.\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Respects user track/item selection context (tracks > all items).\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Item-edge mode (toggle OFF):\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Moves between fades, crossfades, item edges on relevant tracks.\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab No selection changes.\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab View centers on edit cursor only if it moves off-screen (margin configurable).\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab No defer; Undo suppressed (-1).\par}
+}]]></description>
+      </metadata>
       <version name="1.17" author="Brendan Baker">
+        <changelog><![CDATA[* Added VIEW_MARGIN user setting (default 5%).
+* Optional follow behavior during playback (FOLLOW_DURING_PLAY).
+* Slightly smoother viewport updates.]]></changelog>
         <source file="ReaTooled_Move edit cursor to previous (left) transient or item edge (Tab to Transient toggle dependent).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Move%20edit%20cursor%20to%20previous%20%28left%29%20transient%20or%20item%20edge%20%28Tab%20to%20Transient%20toggle%20dependent%29.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Move Tool Left Click (Select item under mouse cursor, move cursor to start of items).lua" type="script" desc="ReaTooled - Move Tool Left Click (Select Under Mouse + Cursor to Item/Group Start) [no-flicker + loop-if-linked]">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 Replaces selection with the item under the mouse (no 40529), expands to group via 40034 only if the user's 41156 option is ON, then moves the edit cursor to the earliest start of the current selection. If the link script (_RSed328eb507619b18c1154efa1b048d816cfc2d0c) is ON, also sets loop points to the full span of the selected items. UI stays frozen until the end; view is preserved. Razor mode (set CLICK_MAKES_RAZOR = true below): instead of moving the edit cursor and loop points, the click puts a razor area exactly over the selected item(s), and the Link Timeline and Edit Selection toggle decides whether the loop points follow it. Trade-offs: while the razor area is there, dragging in it does nothing, and with "Razor edits in media item lane affect all track envelopes" on, deleting also deletes the automation under it.\par}
+}]]></description>
+      </metadata>
       <version name="5.10" author="Brendan Baker">
+        <changelog><![CDATA[Does nothing right after a Shuffle mode drag (REAPER runs this click when the drag is let go; the Shuffle move script already selected the item and made the undo step)]]></changelog>
         <source file="ReaTooled_Move Tool Left Click (Select item under mouse cursor, move cursor to start of items).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Move%20Tool%20Left%20Click%20%28Select%20item%20under%20mouse%20cursor%2C%20move%20cursor%20to%20start%20of%20items%29.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Move Tool Left Shift-Click (Select item and extend razor edit).lua" type="script" desc="ReaTooled - Bottom-half Shift-Click ADD (preserve selection) + Cursor/Loop-if-Linked [single script]">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 Single-script solution for Media item bottom-half Shift+Click (no pass-through available). Restores the prior selection from its own cache, adds the item under mouse, optionally expands to full groups when option 41156 is ON, moves the cursor to earliest selected start, and if the link script (_RSed328eb507619b18c1154efa1b048d816cfc2d0c) is ON, sets loop points to [min, max] of selection. UI stays frozen; view is preserved. No SWS required.\par}
+}]]></description>
+      </metadata>
       <version name="6.3" author="Brendan Baker">
         <source file="ReaTooled_Move Tool Left Shift-Click (Select item and extend razor edit).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Move%20Tool%20Left%20Shift-Click%20%28Select%20item%20and%20extend%20razor%20edit%29.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Nudge left by last nudge dialogue settings and move cursor.lua" type="script" desc="ReaTooled_Nudge Items Left via Last Nudge Settings + Move Cursor to First Item">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 Nudges selected items to the left using REAPER's last-used nudge dialog settings. Moves the edit cursor to the first selected item without affecting arrange view.\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.1" author="Brendan Baker">
         <source file="ReaTooled_Nudge left by last nudge dialogue settings and move cursor.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Nudge%20left%20by%20last%20nudge%20dialogue%20settings%20and%20move%20cursor.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Nudge right by last nudge dialogue settings and move cursor.lua" type="script" desc="ReaTooled_Nudge Items Right via Last Nudge Settings + Move Cursor to First Item">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 Nudges selected items to the right using REAPER's last-used nudge dialog settings. Moves the edit cursor to the first selected item without affecting the arrange view.\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.1" author="Brendan Baker">
         <source file="ReaTooled_Nudge right by last nudge dialogue settings and move cursor.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Nudge%20right%20by%20last%20nudge%20dialogue%20settings%20and%20move%20cursor.lua</source>
       </version>
@@ -332,22 +880,60 @@
       </version>
     </reapack>
     <reapack name="ReaTooled_Paste Special - Repeat to fill selection.lua" type="script" desc="ReaTooled - Paste Special = Repeat to fill LOOP selection">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 Fills LOOP selection with loops of the item in the clipboard, similar to PT OPT+CMD+V\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.1" author="Brendan Baker">
         <source file="ReaTooled_Paste Special - Repeat to fill selection.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Paste%20Special%20-%20Repeat%20to%20fill%20selection.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Remove item under mouse cursor ignoring groups.lua" type="script" desc="ReaTooled: Delete Item Under Mouse (Suspend Groups)">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 Temporarily suspends item grouping, selects the item under the mouse cursor, deletes it, restores grouping, and restores the previous item selection (minus the deleted item). Designed for key bindings.\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.0" author="Brendan Baker">
+        <changelog><![CDATA[Initial public release]]></changelog>
         <source file="ReaTooled_Remove item under mouse cursor ignoring groups.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Remove%20item%20under%20mouse%20cursor%20ignoring%20groups.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Render item(s) and store original in lane.lua" type="script" desc="ReaTooled - Render and Archive to Lane">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 Renders selected items in place (baking take FX to audio) while preserving the original items with their full FX chain intact on a new hidden archive lane. Archive lanes are timestamped and named with the baked FX chain. Only the main render lane remains visible and plays. Mutes archived items to save CPU.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 IMPORTANT - For rendered files to be named with FX chain info: In REAPER's Render to File dialog, set the filename pattern to use $take as the token. The script names each rendered take after rendering so the output file will automatically be named e.g. "Guitar - EQ2 > Decapitator > H-Reverb.wav"\par}
+}]]></description>
+      </metadata>
       <version name="1.4" author="Brendan Baker">
+        <changelog><![CDATA[- Removed vowel and symbol stripping from FX names - now shows full readable short name
+- Removed stripVowelsAndSymbols function entirely
+- FX names now strip only format prefix (VST3, AU, JS etc) and vendor in parens]]></changelog>
         <source file="ReaTooled_Render item(s) and store original in lane.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Render%20item%28s%29%20and%20store%20original%20in%20lane.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Restore ripple mode.lua" type="script" desc="ReaTooled - Restore ripple mode">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Restores the ripple editing mode saved by "ReaTooled - Save ripple mode".\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 Does nothing if no mode has been saved yet. Made for use inside custom actions: it runs instantly and adds no undo point.\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.0" author="Brendan Baker">
+        <changelog><![CDATA[Initial version]]></changelog>
         <source file="ReaTooled_Restore ripple mode.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Restore%20ripple%20mode.lua</source>
       </version>
     </reapack>
@@ -357,96 +943,310 @@
       </version>
     </reapack>
     <reapack name="ReaTooled_Save ripple mode.lua" type="script" desc="ReaTooled - Save ripple mode">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Saves the current ripple editing mode (off, per-track or all tracks)\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 to a persistent ReaTooled ExtState, so "ReaTooled - Restore ripple mode" can put it back later. Made for use inside custom actions: it runs instantly and adds no undo point.\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.0" author="Brendan Baker">
+        <changelog><![CDATA[Initial version]]></changelog>
         <source file="ReaTooled_Save ripple mode.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Save%20ripple%20mode.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Select Tool Double Click.lua" type="script" desc="ReaTooled - Select Tool Double Click">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Double-click selection tool for Reaper.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Selects the item under the mouse, creates a razor area around it (and any grouped items), and moves the edit cursor to the item's start.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Designed for focused item selection without affecting adjacent groups or view positions.\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.1" author="Brendan Baker">
+        <changelog><![CDATA[Added group-aware logic for razor and selection]]></changelog>
         <source file="ReaTooled_Select Tool Double Click.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Select%20Tool%20Double%20Click.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Select Tool Left Click.lua" type="script" desc="ReaTooled - Select Tool Left Click (Edit Cursor + Group Aware)">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Select tool left-click behavior.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Moves edit cursor to mouse position and selects item under mouse.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Clears time selection if the Link toggle (Link Play Cursor to Edit Cursor,\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 ReaTooled's Link Timeline and Edit Selection) is ON.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Respects REAPER's native group selection preference (41156).\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Only expands selection to group if "Selecting one grouped item selects group" option is ON.\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.4" author="Brendan Baker">
+        <changelog><![CDATA[Skipped right after a Shuffle mode drag (razor areas with Separation Mode on): the Shuffle move script has done the selection and the undo step.]]></changelog>
         <source file="ReaTooled_Select Tool Left Click.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Select%20Tool%20Left%20Click.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Select Tool Shift+Double Click.lua" type="script" desc="ReaTooled - Select Tool Double Click (Add to Selection) [SHIFT+DOUBLE-CLICK]">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Shift+Double-Click selection tool that PRESERVES selection.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Extends selection to the item under the mouse (group-aware), and appends razor areas on the items' tracks.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Does NOT clear existing razors; simply adds segments for the newly added item(s).\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Moves edit cursor to the clicked item start but restores arrange view (no jumping).\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.2" author="Brendan Baker">
+        <changelog><![CDATA[New "add-to-selection" behavior; preserve prior selection; append (don’t clear) razors; keep view steady.]]></changelog>
         <source file="ReaTooled_Select Tool Shift+Double Click.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Select%20Tool%20Shift%2BDouble%20Click.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Set Envelope Point Value - Use last value.lua" type="script" desc="ReaTooled: Set Envelope Point Value — Use Last Value (Auto-Fallback)">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 Applies the stored \u8220?Last Value\u8221? from the Interactive script to: 1) Selected points, 2) Razor envelope areas, 3) Time Selection. If no Last Value exists, automatically runs the Interactive script. Fader-scaled Volume lanes accept dB input (stored as raw via proper scaling).\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.4" author="Brendan Baker">
+        <changelog><![CDATA[Fix: ensure SetPointsInRange is defined before use; robust function ordering]]></changelog>
         <source file="ReaTooled_Set Envelope Point Value - Use last value.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Set%20Envelope%20Point%20Value%20-%20Use%20last%20value.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Set Envelope Point Value.lua" type="script" desc="ReaTooled: Set Envelope Point Value (Interactive)">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 Set the value of many envelope points at once (priority: Selected points \u8594? Razor envelope areas \u8594? Time Selection). Values are interpreted per envelope scaling:\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Fader-scaled Volume (track/take/send): enter dB (e.g., -12, 0, +3) -> internally converted to amplitude then to raw via ScaleToEnvelopeMode.\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Other envelopes: written as entered (e.g., 0..1 for normalized FX params). Supports Automation Items; no SWS required.\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.3" author="Brendan Baker">
+        <changelog><![CDATA[Fix: ensure SetPointsInRange is defined before use; robust function ordering]]></changelog>
         <source file="ReaTooled_Set Envelope Point Value.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Set%20Envelope%20Point%20Value.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Smart Remove.lua" type="script" desc="ReaTooled - Smart Remove">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 Context-aware remove, Pro Tools style.\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Razor edits present and focus on items: remove razor areas, move edit cursor to the earliest razor start, clear time selection.\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Time selection and focus on items: remove the selected area (gaps included, so ripple closes the whole range). With no items selected, removes across all tracks. Moves edit cursor to selection start and clears the time selection.\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab No time selection and focus on items: remove selected items and move edit cursor to the item's former start.\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Otherwise: remove items/tracks/envelope points depending on focus. With the mouse over a track envelope's control panel, remove that envelope (REAPER asks for confirmation). SWS is optional; without it the envelope-panel check is skipped.\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.10" author="Brendan Baker">
+        <changelog><![CDATA[SWS now optional; single-step undo; updated description]]></changelog>
         <source file="ReaTooled_Smart Remove.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Smart%20Remove.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Special Paste + Trim Edges to Adjacent Items (Expand to fill, Loop Source and Section On).lua" type="script" desc="ReaTooled_Special Paste (Expand to fill gaps per track, Loop Source and Section On)">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 Pastes clipboard items and forces each one to fill the bounded gap on its track. Unlike the context-sensitive Special Paste, this script always fills \u8212? no Razor, no over-body, no left-fill logic. Items with no bounded gap on their track are left at their pasted position. Loop Source is enabled and a loop section is created or preserved on every pasted item.\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="4.1" author="Brendan Baker">
+        <changelog><![CDATA[• REWORK: Gap detection, item identity, option guards, and right-neighbor locking all brought in line with ReaTooled_Special Paste v3.9.
+- GUID-based item diffing (collect_all_items_guid_set / diff_new_items) replaces pointer-identity snapshot, which is fragile after a paste operation.
+- Gap snapshot is taken BEFORE the paste on all tracks so the pre-paste gap geometry is available after pasted items occupy the gap.
+- Right neighbors are locked before paste and unlocked immediately after, preventing REAPER from deleting or damaging them when the clipboard item is longer than the gap.
+- Ripple mode is forced off for the operation and restored exactly afterward.
+- Auto-crossfade and "Trim content behind media items" are disabled for the operation and restored exactly afterward.
+- Arrange view is snapshotted and restored so the screen never scrolls.
+- EPS widened from 1e-6 to 1e-4 (0.1 ms) to match v3.9 and tolerate floating-point drift at high sample rates.
+- MIN_ITEM_LEN constant introduced to replace magic 0.0001 literal.]]></changelog>
         <source file="ReaTooled_Special Paste + Trim Edges to Adjacent Items (Expand to fill, Loop Source and Section On).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Special%20Paste%20%2B%20Trim%20Edges%20to%20Adjacent%20Items%20%28Expand%20to%20fill%2C%20Loop%20Source%20and%20Section%20On%29.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Special Paste + Trim Item Edges to Next and Previous Items (Expand to fill between neighboring items).lua" type="script" desc="ReaTooled - ReaTooled_Special Paste + Trim Item Edges to Next and Previous Items (Expand to fill between neighboring items)">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 Smart context-sensitive paste for REAPER. Fills gaps, Razor ranges, or pastes at cursor depending on context. See changelog for full behavior description.\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="3.13" author="Brendan Baker">
+        <changelog><![CDATA[• FIX: Confirmed via console trace — get_anchor_track()'s heuristics (mouse hover / GetLastTouchedTrack / selected item) could resolve to a DIFFERENT track than the one REAPER's own native paste (40058) actually puts items on, since our script never drove REAPER's internal current-track state and was only guessing at it. When the guess was wrong, gap geometry (gap_start/gap_end/effective_gap_start) was computed for the wrong track while items landed on the real target track, producing exactly the reported symptom: gap not filled on the left, anchor track reported as different from the track actually pasted into.
+• FIX: get_anchor_track() removed entirely. Replaced with probe_paste_destination(): a real throwaway paste+undo run before the undo block opens (same pattern as clipboard_has_items()) that reads back, via reaper.GetMediaItemTrack() on the probe-pasted items, exactly which track(s) REAPER itself chose as the paste destination. The anchor track is now that observed topmost destination track — ground truth, not a heuristic — so it can never diverge from where the real paste lands afterward. This also subsumes the empty-clipboard check for the non-Razor path (previously only the Razor path checked upfront).]]></changelog>
         <source file="ReaTooled_Special Paste + Trim Item Edges to Next and Previous Items (Expand to fill between neighboring items).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Special%20Paste%20%2B%20Trim%20Item%20Edges%20to%20Next%20and%20Previous%20Items%20%28Expand%20to%20fill%20between%20neighboring%20items%29.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Split Item (Hover Mode Dependent).lua" type="script" desc="ReaTooled Split Item Smart (Precise Time Selection Logic)">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Split at time selection only if strictly smaller than selection, or nothing selected\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Otherwise, split at cursor or mouse depending on Hover Mode\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Includes debug logging\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.6" author="Brendan Baker">
         <source file="ReaTooled_Split Item (Hover Mode Dependent).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Split%20Item%20%28Hover%20Mode%20Dependent%29.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Toggle mute items, ignoring grouping.lua" type="script" desc="ReaTooled: Toggle Item Mute (Ignore Groups, Mouse-Track Scoped, Majority-Based)">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 Toggles item mute (ignoring groups) based on the track under the mouse cursor. Targeting priority (all scoped to the mouse track): 1) If Razor Edit exists on the mouse track: WHOLE items on the mouse track touched by Razor. 2) Else if Time Selection exists: WHOLE items on the mouse track that intersect the TS. 3) Else if any selected items exist on the mouse track: those items. 4) Else: the single item under the mouse cursor.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 Majority rule:\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab If most targeted items are muted, unmute all; if most are unmuted, mute all.\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Tie-breaker: mute all (deterministic).\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 Notes:\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Ignores grouping by writing item mute flag directly (B_MUTE).\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Works with locked items; doesn\u8217?t require SWS.\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.2" author="Brendan Baker">
+        <changelog><![CDATA[Scope all operations to the track under the mouse cursor; simplified targeting logic.]]></changelog>
         <source file="ReaTooled_Toggle mute items, ignoring grouping.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Toggle%20mute%20items%2C%20ignoring%20grouping.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Trim Item Edges to Next and Previous Items (Expand to fill between neighboring items).lua" type="script" desc="ReaTooled_Trim Item Edges to Next and Previous Items (Expand to fill between neighboring items, preserve sync)">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Trims both edges of selected item(s) to the nearest neighboring items on the same track.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Preserves source sync by adjusting take start offset when the LEFT edge moves.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Removes fades. Loop Source state is LEFT UNCHANGED. Works only within the same track.\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.2" author="Brendan Baker">
         <source file="ReaTooled_Trim Item Edges to Next and Previous Items (Expand to fill between neighboring items).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Trim%20Item%20Edges%20to%20Next%20and%20Previous%20Items%20%28Expand%20to%20fill%20between%20neighboring%20items%29.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Trim Item Edges to Next and Previous Items (Expand to fill between neighboring items, Loop Source On).lua" type="script" desc="ReaTooled_Trim Item Edges to Next and Previous Items (Expand to fill, Loop Source ON + SWS Loop Section BEFORE resize, only if missing, preserve sync)">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Trims both edges of selected item(s) to the nearest neighboring items on the same track.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Loop Source is forced ON. If missing, a Loop Section is created to the item's *current* bounds BEFORE resizing (SWS).\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 PRESERVES SYNC: when the LEFT edge moves, adjusts take start offset modulo the pre-resize loop-section length (rate-aware).\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Removes fades. Works only within the same track.\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.4" author="Brendan Baker">
         <source file="ReaTooled_Trim Item Edges to Next and Previous Items (Expand to fill between neighboring items, Loop Source On).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Trim%20Item%20Edges%20to%20Next%20and%20Previous%20Items%20%28Expand%20to%20fill%20between%20neighboring%20items%2C%20Loop%20Source%20On%29.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Trim Item Left Edge to Previous Item (with Loop Item Source Off).lua" type="script" desc="ReaTooled_Trim Item Left Edge to Previous Item (preserve sync; Loop Source state unchanged)">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Trims the LEFT edge of selected item(s) to the previous item on the same track.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 PRESERVES SOURCE SYNC by adjusting the take start offset when the left edge moves.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Removes fade-in per item. Loop Source state is LEFT UNCHANGED (no force ON/OFF).\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Works only within the same track (ignores items on other tracks).\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.2" author="Brendan Baker">
         <source file="ReaTooled_Trim Item Left Edge to Previous Item (with Loop Item Source Off).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Trim%20Item%20Left%20Edge%20to%20Previous%20Item%20%28with%20Loop%20Item%20Source%20Off%29.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Trim Item Left Edge to Previous Item (with Loop Item Source On).lua" type="script" desc="ReaTooled_Trim Item Left Edge to Previous Item (Loop Source ON + SWS Loop Section BEFORE resize, only if missing, preserve sync)">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Trims the left edge of selected item(s) to the previous item on the same track.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Loop Source is forced ON. If missing, a Loop Section is created to the item's *current* bounds BEFORE resizing (SWS).\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 PRESERVES SYNC: when the LEFT edge moves, adjusts take start offset modulo the pre-resize loop-section length (rate-aware).\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Removes fade-in. Works only within the same track.\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.4" author="Brendan Baker">
         <source file="ReaTooled_Trim Item Left Edge to Previous Item (with Loop Item Source On).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Trim%20Item%20Left%20Edge%20to%20Previous%20Item%20%28with%20Loop%20Item%20Source%20On%29.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Trim Item Right Edge to Next Item (with Loop Item Source Off).lua" type="script" desc="ReaTooled_Trim Item Right Edge to Next Item (with Loop Item Source Off)">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Trims the right edge of selected item(s) to the next item on the same track.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Disables loop item source and removes fade-out per item.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Works only within the same track (ignores items on other tracks).\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.1" author="Brendan Baker">
         <source file="ReaTooled_Trim Item Right Edge to Next Item (with Loop Item Source Off).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Trim%20Item%20Right%20Edge%20to%20Next%20Item%20%28with%20Loop%20Item%20Source%20Off%29.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Trim Item Right Edge to Next Item (with Loop Item Source On).lua" type="script" desc="ReaTooled_Trim Item Right Edge to Next Item (Loop Source ON + SWS Loop Section BEFORE resize, only if missing)">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Trims the right edge of selected item(s) to the next item on the same track.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Enables Loop Source and (via SWS) sets/enables a Loop Section to each item's *current* bounds BEFORE resizing,\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 but ONLY if the item does not already have a loop section.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Removes fade-out. Works only within the same track.\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.3" author="Brendan Baker">
         <source file="ReaTooled_Trim Item Right Edge to Next Item (with Loop Item Source On).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Trim%20Item%20Right%20Edge%20to%20Next%20Item%20%28with%20Loop%20Item%20Source%20On%29.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Trim left side of items (Hover Mode Dependent).lua" type="script" desc="ReaTooled - Trim left side of items (Hover Mode Dependant)">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Trim Left Side of Item to Mouse Cursor\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 Modified from TJF's scripts to work better when in Ripple mode, and to move cursor to the trim/edit edge Depending on Hover mode will Trim Left Edge of items to mouse cursor or edit cursor Recommend Assigning to "A" key\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.0" author="Brendan Baker">
         <source file="ReaTooled_Trim left side of items (Hover Mode Dependent).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Trim%20left%20side%20of%20items%20%28Hover%20Mode%20Dependent%29.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Trim right side of items (Hover Mode Dependent).lua" type="script" desc="ReaTooled - Trim right side of items (Hover Mode Dependant)">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Trim right Side of Item to Mouse Cursor\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 Modified from TJF's scripts to work better when in Ripple mode, and to move cursor to the trim/edit edge Depending on Hover mode will Trim Right Edge of items to mouse cursor or edit cursor Recommend Assigning to "S" key\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.0" author="Brendan Baker">
         <source file="ReaTooled_Trim right side of items (Hover Mode Dependent).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Trim%20right%20side%20of%20items%20%28Hover%20Mode%20Dependent%29.lua</source>
       </version>
@@ -459,11 +1259,32 @@
       </version>
     </reapack>
     <reapack name="ReaTooled_Link razor area and item selection.lua" type="script" desc="ReaTooled - Link Razor Area to Item Selection (Context-Aware)">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Background utility script that ensures razor area edits select items intelligently.\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Razor areas that exactly match item bounds select only those items (click/script behavior).\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Broader or misaligned razor areas select all overlapping items (manual/drag behavior).\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Razor areas are preserved (never cleared or rewritten).\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Designed for seamless compatibility with ReaTooled Move Tool Left Click.\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Continuously tracks edit cursor position to ExtState for use by other ReaTooled scripts.\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="4.6" author="Brendan Baker">
+        <changelog><![CDATA[Added continuous cursor position tracking to ExtState ("ReaTooled", "lastcursor") for use by ReaTooled razor scripts that need pre-click cursor position]]></changelog>
         <source file="ReaTooled_Link razor area and item selection.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Helpers/ReaTooled_Link%20razor%20area%20and%20item%20selection.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Show Spectrogram on Selected Track(s).lua" type="script" desc="Spectrogram on Selected Track Only (Defer; batch-consistent, no undo points)">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 Enforces spectrogram on the currently selected track only by toggling ALL of that track's items together via action 42303, and reverting exactly the batch it previously toggled on the previous track. All operations are wrapped to avoid creating undo points.\par}
+}]]></description>
+      </metadata>
       <version name="1.4" author="Brendan Baker">
         <source file="ReaTooled_Show Spectrogram on Selected Track(s).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Helpers/ReaTooled_Show%20Spectrogram%20on%20Selected%20Track%28s%29.lua</source>
       </version>
@@ -471,23 +1292,57 @@
   </category>
   <category name="Mouse Actions">
     <reapack name="ReaTooled_Mousewheel adjust pitch of item under cursor.lua" type="script" desc="Adjust Item Pitch by Mousewheel (ReaTooled Compatible)">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 Adjusts pitch of item takes using the mousewheel. Uses REAPER's native pitch shifting API. Direction is invertible via ReaTooled inversion toggle script.\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.1" author="Brendan Baker">
+        <changelog><![CDATA[Added support for ReaTooled inversion ExtState]]></changelog>
         <source file="ReaTooled_Mousewheel adjust pitch of item under cursor.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Mouse%20Actions/ReaTooled_Mousewheel%20adjust%20pitch%20of%20item%20under%20cursor.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Mousewheel to change take volume for selected items.lua" type="script" desc="@description Adjust Take Volume by Mousewheel">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 Adjusts selected item take volume via mousewheel, in .5db increments\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.1" author="Brendan Baker">
+        <changelog><![CDATA[Made mousewheel direction invertable via Script: ReaTooled_Invert mousewheel direction (for natural scrolling).lua]]></changelog>
         <source file="ReaTooled_Mousewheel to change take volume for selected items.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Mouse%20Actions/ReaTooled_Mousewheel%20to%20change%20take%20volume%20for%20selected%20items.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Mousewheel to zoom items peaks view gain.lua" type="script" desc="Adjust Peaks View Gain by Mousewheel (ReaTooled Compatible)">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 Adjusts the visual peak gain of media items using the mousewheel. Uses REAPER native actions 40155 / 40156. Scroll direction is invertible via ReaTooled inversion toggle.\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.1" author="Brendan Baker">
+        <changelog><![CDATA[Added ReaTooled mousewheel inversion support]]></changelog>
         <source file="ReaTooled_Mousewheel to zoom items peaks view gain.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Mouse%20Actions/ReaTooled_Mousewheel%20to%20zoom%20items%20peaks%20view%20gain.lua</source>
       </version>
     </reapack>
   </category>
   <category name="Startup">
     <reapack name="reaper_reatooled.ext" type="extension" desc="ReaTooled Starter (starts Set up ReaTooled on the first launch)">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 Starts "Set up ReaTooled" the first time REAPER opens after ReaTooled is installed, so there's nothing to import or run by hand.\par}
+}]]></description>
+      </metadata>
       <version name="1.0" author="Brendan Baker">
         <source platform="darwin" file="reaper_reatooled.dylib">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/UserPlugins/reaper_reatooled.dylib</source>
         <source platform="win64" file="reaper_reatooled-x64.dll">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/UserPlugins/reaper_reatooled-x64.dll</source>
@@ -496,7 +1351,22 @@
       </version>
     </reapack>
     <reapack name="ReaTooled Startup" type="script" desc="ReaTooled Startup">
-      <version name="2.4.18" author="Brendan Baker">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 Includes:\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab ReaTooled - Link Loop Points and Razor Areas\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab ReaTooled - Install startup hook\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab ReaTooled - Hover Edit Mode Saved State\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab ReaTooled - Restore settings from a backup\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab ReaTooled - Set up ReaTooled\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab ReaTooled - Update ReaTooled\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
+      <version name="2.4.19" author="Brendan Baker" time="2026-11-04T03:49:38Z">
+        <changelog><![CDATA[ReaTooled_Set up ReaTooled: Shortcut clashes are shown together in one window instead of Yes/No/Cancel boxes: each row says "Keep yours" or "Update to ReaTooled's" (Keep yours is the default), any row can be changed until Continue, and the shortcut that loses its key can be given another one there. The final message lists ReaTooled actions left without a shortcut. Without ReaImGui every clashing key is kept as yours. ReaSmoothPlayhead is no longer installed by ReaBoot: Set up adds its ReaPack repository, so it's installed with the rest after the restart, once the ReaTooled theme is in place (an earlier unsaved theme made it report "unsaved changes"). Font settings left in reaper.ini by an earlier theme are removed, so the ReaTooled theme's own fonts apply (they're in the backup, and Restore puts them back)]]></changelog>
         <source file="ReaTooled_Earlier shortcuts.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Earlier%20shortcuts.lua</source>
         <source file="ReaTooled_Earlier toolbars.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Earlier%20toolbars.lua</source>
         <source file="ReaTooled_Enable Link Edit Cursor and Play Cursor.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Enable%20Link%20Edit%20Cursor%20and%20Play%20Cursor.lua</source>
@@ -512,6 +1382,17 @@
   </category>
   <category name="Toggles">
     <reapack name="ReaTooled - Ripple Off (Slip).lua" type="script" desc="ReaTooled - Ripple OFF indicator (button ON when ripple OFF)">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Clicking this button always runs "Ripple edit mode: OFF" (40309).\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab The button then stays synced as an indicator:\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Button ON  when Ripple is OFF\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Button OFF when Ripple per-track or Ripple all-tracks is enabled\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Uses the same was_set / set_action_options pattern as your mouse-modifier script.\par}
+}]]></description>
+      </metadata>
       <version name="1.2" author="Brendan Baker">
         <source file="ReaTooled - Ripple Off (Slip).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Toggles/ReaTooled%20-%20Ripple%20Off%20%28Slip%29.lua</source>
       </version>
@@ -522,7 +1403,19 @@
       </version>
     </reapack>
     <reapack name="ReaTooled_At loop end, move cursor to loop end and clear selection (only when loop button is off).lua" type="script" desc="ReaTooled - Loop END stop+cursor handler (pref-aware)">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Follows REAPER's "Stop playback at end of loop if repeat is disabled" (stopendofloop): \u8211? ON : REAPER stops at the loop end itself; this script only does the cleanup below, and only when playback really ended at the loop end (not when you press stop). \u8211? OFF: playback carries on past the loop end, and this script does nothing (the cursor and loop points stay where they are).\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab \u9654? Play Marker is a singleton and is always forced to {\b ID 0}: \u8211? If ID 0 is occupied (marker or region), it is faithfully recreated at a new auto ID, then removed. \u8211? \u9654? is then created/moved at ID 0 and any other \u9654? by {\b name} are deleted (no color matching).\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab LP+EC-aware loop-end cleanup (unchanged semantics, renamed): \u8211? Follow OFF + LP+EC OFF: EDIT := loop start; preserve LP & Razor; \u9654? mirrors LP start (via watcher). \u8211? Follow ON  + LP+EC OFF: \u9654? := loop end; clear LP; keep Razor; EDIT stays. \u8211? Follow ON  + LP+EC ON : EDIT := loop end; clear LP & Razor.\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab When LP+EC is OFF and loop points change, \u9654? mirrors Loop Start (queued while playing).\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="2.8" author="Brendan Baker">
+        <changelog><![CDATA[With "Stop playback at end of loop if repeat is disabled" off, playback now carries on past the loop end, as in REAPER: the script no longer stops it or moves the cursor. With the preference on, nothing changes.]]></changelog>
         <source file="ReaTooled_At loop end, move cursor to loop end and clear selection (only when loop button is off).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Toggles/ReaTooled_At%20loop%20end%2C%20move%20cursor%20to%20loop%20end%20and%20clear%20selection%20%28only%20when%20loop%20button%20is%20off%29.lua</source>
       </version>
     </reapack>
@@ -532,17 +1425,40 @@
       </version>
     </reapack>
     <reapack name="ReaTooled_Hover Edit Mode.lua" type="script" desc="ReaTooled - Hover Edit Mode">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Will Turn "Hover mode" on or off\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 Will create a toggle stage for this function, that my trim scripts will read.\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.0" author="Brendan Baker">
         <source file="ReaTooled_Hover Edit Mode.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Toggles/ReaTooled_Hover%20Edit%20Mode.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Invert mousewheel direction (for natural scrolling).lua" type="script" desc="Toggle ReaTooled Mousewheel Inversion">
       <version name="1.1" author="Brendan Baker">
+        <changelog><![CDATA[Message uses the same words as "Scrolling and zooming" (Standard / Reversed)]]></changelog>
         <source file="ReaTooled_Invert mousewheel direction (for natural scrolling).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Toggles/ReaTooled_Invert%20mousewheel%20direction%20%28for%20natural%20scrolling%29.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Link Track and Item and Razor Selection.lua" type="script" desc="ReaTooled - Link Track and Item and Razor Selection (Main Function)">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 Models and builds upon "Link track and clip selection" from PT.\par}
+}]]></description>
+      </metadata>
       <version name="2.22" author="Brendan Baker">
+        <changelog><![CDATA[- STRICT track-only selection:
+• Blocks all envelope/automation lanes via BR_GetMouseCursorContext_Envelope
+• Blocks env_point/env_segment/env_edge explicitly
+• Blocks track_divider and unknown detail zones
+• Rejects zero-height (folder compact) tracks
+- Removed unused GetTrackStateChunk() call]]></changelog>
         <source file="ReaTooled_Link Track and Item and Razor Selection.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Toggles/ReaTooled_Link%20Track%20and%20Item%20and%20Razor%20Selection.lua</source>
       </version>
     </reapack>
@@ -552,11 +1468,28 @@
       </version>
     </reapack>
     <reapack name="ReaTooled_Recall ReaTooled Button States.lua" type="script" desc="ReaTooled - Recall ReaTooled Button States">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Recalls various ReaTooled Button States\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.8" author="Brendan Baker">
+        <changelog><![CDATA[Recalls the pre-roll toggle (its marker) when REAPER's pre-roll is on, and puts back drags the Shuffle move script left switched off over a razor area]]></changelog>
         <source file="ReaTooled_Recall ReaTooled Button States.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Toggles/ReaTooled_Recall%20ReaTooled%20Button%20States.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Recall ReaTooled Keymap State.lua" type="script" desc="ReaTooled - Recall ReaTooled Keymap Saved State">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Recalls ReaTooled Shortcut State\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.0" author="Brendan Baker">
         <source file="ReaTooled_Recall ReaTooled Keymap State.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Toggles/ReaTooled_Recall%20ReaTooled%20Keymap%20State.lua</source>
       </version>
@@ -567,56 +1500,146 @@
       </version>
     </reapack>
     <reapack name="ReaTooled_Synch razor areas on grouped items.lua" type="script" desc="ReaTooled - Razor Edit Group Sync (Preserve Area, Envelope-Aware)">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Mirrors razor edits across grouped items or envelopes.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 If razor is on envelope, it only copies to same envelope on grouped tracks.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 If razor intersects items in a group, mirrors the edit to all grouped tracks.\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.1" author="Brendan Baker">
         <source file="ReaTooled_Synch razor areas on grouped items.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Toggles/ReaTooled_Synch%20razor%20areas%20on%20grouped%20items.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Toggle Edit Cursor follows Playback on Stop.lua" type="script" desc="ReaTooled Toggle Edit Cursor follows Playback on Stop">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 CREDITS: Copied from amagalma, toggles Edit Cursor follows Playback on Stop from Toggles behavior of Play-Stop actions between amagalma's custom or Reaper's default\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab To be used in conjunction with "ReaTooled_Play-Stop (with memory, edit-play toggles, and no undo).lua"\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.1" author="Brendan Baker">
+        <changelog><![CDATA[+ Adds ReaTooled ExtState for later recall]]></changelog>
         <source file="ReaTooled_Toggle Edit Cursor follows Playback on Stop.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Toggles/ReaTooled_Toggle%20Edit%20Cursor%20follows%20Playback%20on%20Stop.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Toggle envelope lanes visible or in lane.lua" type="script" desc="ReaTooled_Toggle In-Lane Volume Envelope (Using Action 40891)">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 Toggles the volume envelope visibility in in-lane mode using REAPER's built-in actions.\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.0" author="Brendan Baker">
         <source file="ReaTooled_Toggle envelope lanes visible or in lane.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Toggles/ReaTooled_Toggle%20envelope%20lanes%20visible%20or%20in%20lane.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Toggle item volume envelope for all items.lua" type="script" desc="ReaTooled ToggleToggle visibility of all take volume envelopes">
+      <metadata>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.0" author="Brendan Baker">
         <source file="ReaTooled_Toggle item volume envelope for all items.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Toggles/ReaTooled_Toggle%20item%20volume%20envelope%20for%20all%20items.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Toggle Layered Editing.lua" type="script" desc="ReaTooled - Layered Editing (inverse of 41117, synced)">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Uses native action 41117 as the underlying option.\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Toolbar button shows the INVERSE of 41117:\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Button ON  when 41117 is OFF\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Button OFF when 41117 is ON\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Button state stays in sync even if 41117 is changed elsewhere.\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Uses the same was_set / set_action_options pattern as the mouse-modifier script.\par}
+}]]></description>
+      </metadata>
       <version name="1.1" author="Brendan Baker">
         <source file="ReaTooled_Toggle Layered Editing.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Toggles/ReaTooled_Toggle%20Layered%20Editing.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Toggle Link Play Cursor to Edit Cursor.lua" type="script" desc="ReaTooled - Toggle Link loop points and razor areas (with ▶ management &amp; last-known play pos)">
+      <metadata>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.5" author="Brendan Baker">
         <source file="ReaTooled_Toggle Link Play Cursor to Edit Cursor.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Toggles/ReaTooled_Toggle%20Link%20Play%20Cursor%20to%20Edit%20Cursor.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Toggle Link Track and Item and Razor Selection.lua" type="script" desc="ReaTooled Toggle Link Track and Item and Razor Selection">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 -----------------------------------------------------------------------------------------\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.0" author="Brendan Baker">
         <source file="ReaTooled_Toggle Link Track and Item and Razor Selection.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Toggles/ReaTooled_Toggle%20Link%20Track%20and%20Item%20and%20Razor%20Selection.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Toggle Markers Follow Ripple All vs Locked.lua" type="script" desc="ReaTooled - Toggle: Ripple All affects Regions/Markers">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 Toggles REAPER's native option: "Options: Ripple edit all affects regions/markers" (command ID 43690) Replaces the older marker-lock workflow. Stores state in ExtState for recall.\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.2" author="Brendan Baker">
+        <changelog><![CDATA[Replace marker-lock actions with native toggle 43690; robust toolbar sync]]></changelog>
         <source file="ReaTooled_Toggle Markers Follow Ripple All vs Locked.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Toggles/ReaTooled_Toggle%20Markers%20Follow%20Ripple%20All%20vs%20Locked.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Toggle pre-roll (playback and recording).lua" type="script" desc="ReaTooled - Toggle pre-roll (playback and recording)">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 Like Pro Tools' Pre/Post-Roll switch (Cmd+K): turns REAPER's pre-roll on playback and pre-roll on recording on or off together. If either is off, both go on; if both are on, both go off. The toolbar button is lit while it's on. While pre-roll is on, a white "Pre-roll" marker shows where playback will really start: the pre-roll length before the play start, moved back to the bar line at or before it when REAPER's "Start pre-roll at start of measure" is checked (a point just before a bar line counts as that bar, within a 16th note, as REAPER does). The play start is worked out like ReaTooled's Play-Stop does it (the loop points if there are any, else the \u9654? play marker when Link Timeline and Edit Selection is off, else the edit cursor). It follows as those move, hides while playing or recording (like \u9654?), and is removed when pre-roll goes off. Drag the marker to change the pre-roll length, like Pro Tools' pre-roll flag: with "Start pre-roll at start of measure" checked it snaps to whole bars (REAPER only starts on a bar line then), unchecked to quarter bars. Needs SWS. Option+click the toolbar button (or Option+run it) to open REAPER's Metronome/pre-roll settings (pre-roll length, etc.) without switching anything. REAPER's own separate toggles still work: turning both off there ends this too.\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.5" author="Brendan Baker">
+        <changelog><![CDATA[At startup (Recall ReaTooled Button States), the marker and button come back if REAPER's pre-roll is on, without switching anything]]></changelog>
         <source file="ReaTooled_Toggle pre-roll (playback and recording).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Toggles/ReaTooled_Toggle%20pre-roll%20%28playback%20and%20recording%29.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Toggle ReaTooled Shortcuts.lua" type="script" desc="ReaTooled - Toggle ReaTooled Shortcuts">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 Toggles between the ReaTooled Keymap (alt 16) and Main Keymap\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.0" author="Brendan Baker">
         <source file="ReaTooled_Toggle ReaTooled Shortcuts.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Toggles/ReaTooled_Toggle%20ReaTooled%20Shortcuts.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Toggle Tab to Transient.lua" type="script" desc="ReaTooled - Toggle Tab to Transient">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Mimics Protools tab function toggle\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 Will create a toggle stage for this function, that will alter the behavior of the tab function script.\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Adds ReaTooled ExtState for later recall\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.0" author="Brendan Baker">
         <source file="ReaTooled_Toggle Tab to Transient.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Toggles/ReaTooled_Toggle%20Tab%20to%20Transient.lua</source>
       </version>
@@ -624,6 +1647,32 @@
   </category>
   <category name="Tools">
     <reapack name="ReaTooled Tools" type="script" desc="ReaTooled Tools">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 Includes:\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab ReaTooled - Default Multi Tool (Smart)\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab ReaTooled - Move Tool\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab ReaTooled - Pencil Tool\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab ReaTooled - Razor Select Tool (Selector Tool)\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab ReaTooled_AdjustItemEdge\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab ReaTooled - Pencil click on item (add a clip gain point)\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab ReaTooled - Pencil sample edits (background, started by the Pencil Tool)\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab ReaTooled - Shuffle move (background, started in Shuffle mode)\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab ReaTooled - Spot click (used by Spot mode)\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab ReaTooled - Spot dialog\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab ReaTooled - Toggle Separation mode (drag a razor area to move what's in it)\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab ReaTooled - Toggle Shuffle mode\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab ReaTooled - Toggle Spot mode\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab ReaTooled - Toggle swap left and right drag\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Item Body Drag to Trim Edge v7.8.2 (Group/Track-Group Safe, Native Fades, Native Edge-Safe Ripple)\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab ReaTooled - Scrub Tool\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab ReaTooled - Trim Tool (Controller)\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab ReaTooled - Zoom Tool (Zoomer Tool)\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="7.8.6" author="Brendan Baker">
         <source file="Default Multi Tool (Smart)_ReaTooled.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/Default%20Multi%20Tool%20%28Smart%29_ReaTooled.lua</source>
         <source file="Move Tool (Grabber)_ReaTooled.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/Move%20Tool%20%28Grabber%29_ReaTooled.lua</source>
@@ -651,18 +1700,47 @@
   </category>
   <category name="Tracks">
     <reapack name="ReaTooled_Toggle selected tracks inactive.lua" type="script" desc="ReaTooled - Toggle selected tracks inactive (like Pro Tools &quot;Make Inactive&quot;)">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Make tracks inactive and active again, like Pro Tools\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 Works on the selected tracks, or the track under the mouse if none are selected. Making a track inactive sets all its FX offline (track FX and input FX, which frees their CPU and memory), mutes it (which silences its sends too), disarms recording and turns the track grey. Running it again puts everything back exactly as it was: FX that were already offline stay offline, and the track's mute, record arm and colour come back. Only REAPER's own track settings are used, so the project stays a normal REAPER project. Without ReaTooled, an inactive track simply looks muted and grey with its FX offline. If some of the tracks are inactive and some aren't, all of them are made active. The track stays visible; hide it as usual if you want.\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.0" author="Brendan Baker">
+        <changelog><![CDATA[Initial version]]></changelog>
         <source file="ReaTooled_Toggle selected tracks inactive.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tracks/ReaTooled_Toggle%20selected%20tracks%20inactive.lua</source>
       </version>
     </reapack>
   </category>
   <category name="Transport">
     <reapack name="ReaTooled_Go to marker by number (keypad . number .).lua" type="script" desc="ReaTooled - Go to marker by number (keypad . number .)">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Pro Tools-style memory location recall with REAPER markers\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 Map this to the numeric keypad's "." key. Press [.], type a marker number, then press [.] or Enter: the edit cursor (and playback, if playing) jumps to that marker. If there's no marker with that number, the region with that number is selected (time selection, cursor at its start), like recalling a Pro Tools "selection" memory location. While the window is open, [+] and [-] step to the next and previous marker or region, and the window stays open so you can keep stepping (like Pro Tools' [.] [+] / [.] [-]). As you type, the window shows the marker's name, or says right away that there's no such number. Uses REAPER's own marker and region numbers, so it works in any project. Esc cancels, Backspace deletes a digit. The window closes by itself after a few seconds without a key press, or when you click somewhere else. Needs ReaImGui (installed with ReaTooled).\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.1" author="Brendan Baker">
+        <changelog><![CDATA[New window in the ReaTooled style; + and - step to next/previous marker or region; shows the marker name while you type; tells markers and regions apart; stays open longer while you're stepping]]></changelog>
         <source file="ReaTooled_Go to marker by number (keypad . number .).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Transport/ReaTooled_Go%20to%20marker%20by%20number%20%28keypad%20.%20number%20.%29.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Play-Stop (with memory, edit-play toggles, and no undo).lua" type="script" desc="ReaTooled - Transport (LP-first start, v2.4 stop-cursor behavior, Loop Points only) + v1.2-style Play Marker (LP+EC OFF) [ID 0 forced]">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Loop Points only (no Time Selection calls).\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab LP-first start: if Loop Points exist, always start from LP start.\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="2.7.6" author="Brendan Baker">
         <source file="ReaTooled_Play-Stop (with memory, edit-play toggles, and no undo).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Transport/ReaTooled_Play-Stop%20%28with%20memory%2C%20edit-play%20toggles%2C%20and%20no%20undo%29.lua</source>
       </version>
@@ -675,12 +1753,31 @@
       </version>
     </reapack>
     <reapack name="ReaTooled_Merge backup key map with current key map.lua" type="script" desc="ReaTooled - Merge backup key map with current key map">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 This script compares the "reaper-kb.ini.backup" file created with the script "ReaTooled_Create backup key map.lua" with the current key map saved in "reaper-kb.ini" and prompts the user to add any missing shortcuts from the backup.\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.0" author="Brendan Baker">
+        <changelog><![CDATA[initial release]]></changelog>
         <source file="ReaTooled_Merge backup key map with current key map.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Utilities/ReaTooled_Merge%20backup%20key%20map%20with%20current%20key%20map.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Scrolling settings.lua" type="script" desc="ReaTooled - Scrolling settings">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Try and choose scroll and wheel-zoom directions\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 Shows REAPER's vertical and horizontal scroll direction (Preferences > Keyboard/Multitouch) and the direction of ReaTooled's wheel scripts (zoom, take volume, pitch, peaks gain), with what each choice does. Every choice takes effect right away, so you can try it in REAPER while the window is open. "Put back how it was" returns all three to what they were when the window opened. Your Mac's own scrolling setting is read, never changed. Opens once after "Set up ReaTooled"; run it any time from the Actions list. Needs ReaImGui and SWS (both installed with ReaTooled).\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.2" author="Brendan Baker">
+        <changelog><![CDATA[Pro Tools note reworded]]></changelog>
         <source file="ReaTooled_Scrolling settings.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Utilities/ReaTooled_Scrolling%20settings.lua</source>
       </version>
     </reapack>
@@ -692,6 +1789,25 @@
   </category>
   <category name="Zoom">
     <reapack name="ReaTooled Zoom Presets" type="script" desc="ReaTooled Zoom Presets">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 Includes:\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab ReaTooled_Recall zoom preset 1\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab ReaTooled_Recall zoom preset 2\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab ReaTooled_Recall zoom preset 3\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab ReaTooled_Recall zoom preset 4\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab ReaTooled_Recall zoom preset 5\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab ReaTooled_Save zoom preset 1\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab ReaTooled_Save zoom preset 2\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab ReaTooled_Save zoom preset 3\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab ReaTooled_Save zoom preset 4\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab ReaTooled_Save zoom preset 5\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab ReaTooled: Pro Tools-style horizontal zoom presets\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.1" author="Brendan Baker">
         <source file="ReaTooled_Recall zoom preset 1.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Zoom/ReaTooled_Recall%20zoom%20preset%201.lua</source>
         <source file="ReaTooled_Recall zoom preset 2.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Zoom/ReaTooled_Recall%20zoom%20preset%202.lua</source>
@@ -708,27 +1824,83 @@
       </version>
     </reapack>
     <reapack name="ReaTooled_Zoom Horizontally (Mousewheel).lua" type="script" desc="Zoom Horizontally by Mousewheel (ReaTooled-Compatible)">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 Zooms horizontally using the mousewheel. Honors ReaTooled scroll inversion setting via ExtState.\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.2" author="Brendan Baker">
+        <changelog><![CDATA[Switched to Command ID 1012/1011 for proper zoom control]]></changelog>
         <source file="ReaTooled_Zoom Horizontally (Mousewheel).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Zoom/ReaTooled_Zoom%20Horizontally%20%28Mousewheel%29.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Zoom Out Horizontally to Entire Project (Preserve Vertical Zoom).lua" type="script" desc="ReaTooled_Zoom Out Horizontally to Entire Project">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 Horizontally zooms out to fit the entire project using REAPER's native action. Vertical zoom is preserved.\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.0" author="Brendan Baker">
         <source file="ReaTooled_Zoom Out Horizontally to Entire Project (Preserve Vertical Zoom).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Zoom/ReaTooled_Zoom%20Out%20Horizontally%20to%20Entire%20Project%20%28Preserve%20Vertical%20Zoom%29.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Zoom Tool - Zoom in.lua" type="script" desc="ReaTooled - Zoom Tool - Zoom in">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Zooms the arrange view in horizontally, like a Pro Tools Zoomer click.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 Centers on the mouse position (or the play/edit cursor, see SETTINGS). Used by the Zoom Tool's left-click mouse modifier. Requires SWS for the mouse position; falls back to the play/edit cursor without it.\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.0" author="Brendan Baker">
+        <changelog><![CDATA[Initial version (replaces Archie's View zoom scripts in the Zoom Tool)]]></changelog>
         <source file="ReaTooled_Zoom Tool - Zoom in.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Zoom/ReaTooled_Zoom%20Tool%20-%20Zoom%20in.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Zoom Tool - Zoom out.lua" type="script" desc="ReaTooled - Zoom Tool - Zoom out">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Zooms the arrange view out horizontally, like a Pro Tools Zoomer Option-click.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 Centers on the mouse position (or the play/edit cursor, see SETTINGS). Used by the Zoom Tool's Option/Alt-click mouse modifier. Requires SWS for the mouse position; falls back to the play/edit cursor without it.\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
       <version name="1.0" author="Brendan Baker">
+        <changelog><![CDATA[Initial version (replaces Archie's View zoom scripts in the Zoom Tool)]]></changelog>
         <source file="ReaTooled_Zoom Tool - Zoom out.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Zoom/ReaTooled_Zoom%20Tool%20-%20Zoom%20out.lua</source>
       </version>
     </reapack>
   </category>
   <metadata>
+    <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 ReaTooled: The Pro Tools Alternative\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 ReaTooled brings Pro Tools' editing features and workflow to REAPER while staying true to REAPER. Your projects stay normal REAPER projects, and ReaTooled works with any REAPER project, made with it or not.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 {\b Note:} ReaTooled changes REAPER's appearance, preferences, shortcuts, menus, toolbars and mouse behavior. Setup backs up your current settings first and asks before replacing any of your shortcuts.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 {\b Easy installation:} an illustrated installation guide and automated installer are available at {\field{\*\fldinst{HYPERLINK "https://8071910392990.gumroad.com/l/ReaTooled3"}}{\fldrslt{\ul https://8071910392990.gumroad.com/l/ReaTooled3}}}\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 {\b Manual installation:} install every package in this repository, then restart REAPER and "Set up ReaTooled" starts by itself. (You can also run "Script: ReaTooled_Set up ReaTooled.lua" from the Actions list.)\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 {\b Updates:} ReaTooled checks for a new version once a day and asks before updating. To update at any time, run "Script: ReaTooled_Update ReaTooled.lua".\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 {\b Going back:} run "Script: ReaTooled_Restore settings from a backup.lua" to restore your previous settings.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 ReaTooled is a one-person project, built over 13 years of customizing REAPER for my radio and podcast work, so I can't offer individual support. If you find it useful, tips are always appreciated:\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab {\field{\*\fldinst{HYPERLINK "https://venmo.com/brendanpbaker?txn=pay&audience=private&note=ReaTooled%20v3"}}{\fldrslt{\ul Venmo}}}\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab {\field{\*\fldinst{HYPERLINK "https://www.paypal.com/paypalme/brendanpbaker"}}{\fldrslt{\ul PayPal}}}\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab {\field{\*\fldinst{HYPERLINK "https://www.buymeacoffee.com/BrendanPBaker"}}{\fldrslt{\ul Buy me a coffee}}}\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 Many thanks, Brendan\par}
+}]]></description>
     <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+    <link rel="donation" href="https://venmo.com/brendanpbaker?txn=pay&amp;audience=private&amp;note=ReaTooled%20v3">Venmo</link>
+    <link rel="donation" href="https://www.paypal.com/paypalme/brendanpbaker">PayPal</link>
+    <link rel="donation" href="https://www.buymeacoffee.com/BrendanPBaker">Buy me a coffee</link>
   </metadata>
 </index>

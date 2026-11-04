@@ -19,6 +19,10 @@
     When you click OK at the end, REAPER quits, the helper writes those files,
     and the same copy of REAPER opens again by itself.
 -- CHANGELOG
+-- v2.3.10 Toolbar merge: a button is matched by its action (command), not by its action
+--         plus label, so a relabelled button stays ONE button: ReaTooled's new label is
+--         applied unless the user relabelled it too (then the user's label stays). Before,
+--         a button relabelled by both came out twice.
 -- v2.3.9 An update doesn't call ReaPack (Update ReaTooled has just used it: calling it again
 --        while it might still be busy crashed REAPER on Windows); a full setup still sets
 --        up the ReaTooled repository.
@@ -151,7 +155,7 @@ local FOLDERS = {
 ------------------------------------------------------------
 
 local TITLE        = "Set up ReaTooled"
-local SETUP_VER    = "2.3.9"
+local SETUP_VER    = "2.3.10"
 local RES          = reaper.GetResourcePath():gsub("\\", "/")
 local CONFIG       = RES .. "/Data/ReaTooled/Config"
 local PENDING      = RES .. "/Data/ReaTooled/Pending"
@@ -1269,12 +1273,17 @@ local function parse_menu(lines)
       end
     end
   end
+  -- (a button is its action; its label is one of its settings, like its icon)
   local list, seen = {}, {}
   for i = 0, max do
     if items[i] then
       local v = items[i]
-      seen[v] = (seen[v] or 0) + 1
-      list[#list + 1] = { v = v, attr = attrs[i] or {}, id = v .. "#" .. seen[v] }
+      local cmd, label = v:match("^(%S+)%s?(.*)$")
+      cmd = cmd or v
+      seen[cmd] = (seen[cmd] or 0) + 1
+      local attr = attrs[i] or {}
+      attr["\0label"] = label or ""
+      list[#list + 1] = { cmd = cmd, attr = attr, id = cmd .. "#" .. seen[cmd] }
     end
   end
   return list, other
@@ -1295,7 +1304,7 @@ local function menu_merge(ul, nl, bl)
     if inB[e.id] and not inN[e.id] then
       removed = removed + 1                        -- ReaTooled took it out
     else
-      local c = { v = e.v, attr = copy_attr(e.attr), id = e.id }
+      local c = { cmd = e.cmd, attr = copy_attr(e.attr), id = e.id }
       local b, n = inB[e.id], inN[e.id]
       if b and n then
         -- a button setting (icon, display flags) ReaTooled changed, that the user hadn't
@@ -1318,7 +1327,7 @@ local function menu_merge(ul, nl, bl)
       for j = i - 1, 1, -1 do
         if pos[N[j].id] then at = pos[N[j].id]; break end
       end
-      table.insert(res, at + 1, { v = e.v, attr = copy_attr(e.attr), id = e.id })
+      table.insert(res, at + 1, { cmd = e.cmd, attr = copy_attr(e.attr), id = e.id })
       added = added + 1
       reindex()
     end
@@ -1338,11 +1347,14 @@ local function menu_merge(ul, nl, bl)
   end
   for i, e in ipairs(res) do
     local names = {}
-    for k in pairs(e.attr) do names[#names + 1] = k end
+    for k in pairs(e.attr) do if k ~= "\0label" then names[#names + 1] = k end end
     table.sort(names)
     for _, k in ipairs(names) do out[#out + 1] = k .. "_" .. (i - 1) .. "=" .. e.attr[k] end
   end
-  for i, e in ipairs(res) do out[#out + 1] = "item_" .. (i - 1) .. "=" .. e.v end
+  for i, e in ipairs(res) do
+    local label = e.attr["\0label"] or ""
+    out[#out + 1] = "item_" .. (i - 1) .. "=" .. e.cmd .. (label ~= "" and (" " .. label) or "")
+  end
   return out, added, removed
 end
 
