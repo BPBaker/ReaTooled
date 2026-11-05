@@ -1,6 +1,6 @@
--- @description Item Body Drag to Trim Edge v7.8.2 (Group/Track-Group Safe, Native Fades, Native Edge-Safe Ripple)
--- @version 7.8.2
--- @date 2026-10-29
+-- @description Item Body Drag to Trim Edge v7.8.5 (Group/Track-Group Safe, Native Fades, Native Edge-Safe Ripple)
+-- @version 7.8.5
+-- @date 2026-11-05
 -- @author Brendan Baker (with assistant)
 -- @about
 --   ReaScript: REAPER 7.48+ | Requires SWS + JS_ReaScript API
@@ -67,6 +67,17 @@
 --         priority over snap — delta returns 0 inside the deadband even at a grid point.
 --       - pertrack_first_downstream_and_anchor() rewritten with a single O(N) index pass
 --         instead of O(N²) nested loops.
+--   • v7.8.5 – An edge can be grabbed from just outside the item too, where REAPER already
+--         shows its edge cursor (its edge zone reaches a few pixels past the item): the
+--         press there used to find no item under the mouse, so nothing happened
+--   • v7.8.4 – An item edge with a razor area's edge right on it (e.g. after a click made a razor
+--         area the size of the item) can be grabbed again: REAPER shows its razor-edge cursor
+--         there and would move the razor edge, so while the mouse is over such an edge
+--         REAPER's plain razor-edge drag is switched off and the item edge is trimmed
+--   • v7.8.3 – Lighter on CPU while you hover: SWS's "what's under the mouse" and the item
+--               under the mouse are looked up again only when the mouse moves or a key or
+--               button changes (or 10 times a second), instead of every frame. While a
+--               button is down or a trim is going on, every frame as before.
 --   • v7.8.2 – Snap offset stays on the same spot in the audio when the start edge moves
 --       (as REAPER's own trim does; it stays at the start if the item has none).
 --       SELECT_EDGE_MATCHED: whether items trimmed only because their edge is at the
@@ -1720,11 +1731,81 @@ local function in_fade_halo(it, tRaw)
   return false
 end
 
+-- A razor area's edge on the item's track right at time t (within tol): REAPER then
+-- shows its razor-edge cursor over the item's edge, and a plain drag there would move
+-- the razor edge instead of the item's
+local function razor_edge_at(it, t, tol)
+  local tr = item_track_safe(it)
+  if not tr then return false end
+  local _, str = reaper.GetSetMediaTrackInfo_String(tr, "P_RAZOREDITS", "", false)
+  if not str or str == "" then return false end
+  for a, b, guid in str:gmatch('(%S+)%s+(%S+)%s+(%S+)') do
+    local s2, e2 = tonumber(a), tonumber(b)
+    if guid == '""' and s2 and e2 and (math.abs(s2 - t) <= tol or math.abs(e2 - t) <= tol) then return true end
+  end
+  return false
+end
+
+-- Which edge of the item the mouse is at (within EDGE_GRAB_PX), when a razor edge sits
+-- right there too: "start" / "end", or nil. Not in the item's top quarter, where
+-- REAPER's fade handles are.
+local arrangeHwnd = nil
+local function razor_covered_edge(it, tRaw)
+  if not valid_item(it) then return nil end
+  local tol = px_to_time(EDGE_GRAB_PX)
+  local s, e = item_start(it), item_end(it)
+  local ds, de = math.abs(tRaw - s), math.abs(tRaw - e)
+  if ds > tol and de > tol then return nil end   -- (not at an edge: nothing more to look at)
+  if reaper.JS_Window_ScreenToClient then
+    arrangeHwnd = arrangeHwnd or reaper.JS_Window_FindChildByID(reaper.GetMainHwnd(), 1000)
+    local tr = item_track_safe(it)
+    if arrangeHwnd and tr then
+      local mx, my = reaper.GetMousePosition()
+      local _, cy = reaper.JS_Window_ScreenToClient(arrangeHwnd, mx, my)
+      local top = reaper.GetMediaTrackInfo_Value(tr, "I_TCPY") + reaper.GetMediaItemInfo_Value(it, "I_LASTY")
+      local h = reaper.GetMediaItemInfo_Value(it, "I_LASTH")
+      if cy and h > 0 and cy - top < math.max(8, h * 0.25) then return nil end
+    end
+  end
+  if ds <= tol and ds <= de and razor_edge_at(it, s, tol) then return "start" end
+  if de <= tol and razor_edge_at(it, e, tol) then return "end" end
+  return nil
+end
+
+-- REAPER's edge zone reaches a few pixels past an item's edge, where there's no item under
+-- the mouse: the item on the track under (x, y) whose edge is within EDGE_GRAB_PX of t
+-- (the nearest one), or nil
+local function item_at_edge_near(x, y, t)
+  local tr = reaper.GetTrackFromPoint(x, y)
+  if not (tr and reaper.JS_Window_ScreenToClient) then return nil end
+  arrangeHwnd = arrangeHwnd or reaper.JS_Window_FindChildByID(reaper.GetMainHwnd(), 1000)
+  if not arrangeHwnd then return nil end
+  local _, cy = reaper.JS_Window_ScreenToClient(arrangeHwnd, x, y)
+  if not cy then return nil end
+  local ty = reaper.GetMediaTrackInfo_Value(tr, "I_TCPY")
+  local tol = px_to_time(EDGE_GRAB_PX)
+  local best, bestD = nil, math.huge
+  for i = 0, reaper.CountTrackMediaItems(tr) - 1 do
+    local it = reaper.GetTrackMediaItem(tr, i)
+    local top = ty + reaper.GetMediaItemInfo_Value(it, "I_LASTY")
+    local h = reaper.GetMediaItemInfo_Value(it, "I_LASTH")
+    if cy >= top and cy < top + h and not is_locked(it) then   -- (its lane, at this height)
+      local d = math.min(math.abs(t - item_start(it)), math.abs(t - item_end(it)))
+      if d <= tol and d < bestD then best, bestD = it, d end
+    end
+  end
+  return best
+end
+
 -- zone: what REAPER's cursor says is under the mouse ("body", "edge", "native" for
 -- one of REAPER's own handles, or nil if unknown). mods: modifier keys held.
 -- Returns nil when the click is REAPER's.
 local function classify_press(it, tRaw, zone, mods)
-  if zone == "native" then return nil end   -- fade handle, volume handle ...: REAPER's
+  if zone == "native" then
+    -- (a razor edge on the item's edge: the item's edge is meant, and REAPER's razor-edge
+    -- drag is off there; anything else is one of REAPER's handles: fade, volume ...)
+    if razor_covered_edge(it, tRaw) then zone = "edge" else return nil end
+  end
 
   local s = item_start(it)
   local e = item_end(it)
@@ -2244,7 +2325,12 @@ end
 local function pick_cursor_for_hover(hov, tRaw)
   if not valid_item(hov) or is_locked(hov) then return nil end
   local zone = reaper_zone()
-  if zone == "native" or zone == "edge" or zone == "joint" then return nil end   -- REAPER's own cursor shows
+  if zone == "native" then
+    local edge = razor_covered_edge(hov, tRaw)   -- (an item edge under a razor edge: ours)
+    if edge then return cursor_for_mode(edge) end
+    return nil
+  end
+  if zone == "edge" or zone == "joint" then return nil end   -- REAPER's own cursor shows
 
   if in_fade_halo(hov, tRaw) then
     return nil
@@ -2292,6 +2378,33 @@ local NS         = "ReaTooled"
 local RUN_KEY    = "TrimToolWorkerRunning"
 local KILL_KEY   = "KillTrimTool"
 local HEARTBEAT  = "TrimToolHeartbeat"
+
+-- While the mouse is over an item edge with a razor edge on it, REAPER's plain razor-edge
+-- drag is switched off (so the press trims the item, not the razor area); back as soon
+-- as it leaves. The setting is kept on disk while it's off, and put back on the next
+-- start if this script stopped before it could.
+local RAZOR_EDGE_SAVED = "TrimRazorEdgeSaved"
+local razorEdgeBlocked = false
+local function block_razor_edge(on)
+  if on == razorEdgeBlocked or not reaper.SetMouseModifier then return end
+  if on then
+    local cur = reaper.GetMouseModifier and reaper.GetMouseModifier("MM_CTX_AREASEL_EDGE", 0) or ""
+    reaper.SetExtState(NS, RAZOR_EDGE_SAVED, (cur ~= "" and cur) or "-1", true)
+    reaper.SetMouseModifier("MM_CTX_AREASEL_EDGE", 0, "0")   -- (no action)
+  else
+    local saved = reaper.GetExtState(NS, RAZOR_EDGE_SAVED)
+    if saved ~= "" then reaper.SetMouseModifier("MM_CTX_AREASEL_EDGE", 0, saved) end
+    reaper.DeleteExtState(NS, RAZOR_EDGE_SAVED, true)
+  end
+  razorEdgeBlocked = on
+end
+do   -- left switched off by a copy that stopped without putting it back
+  local saved = reaper.GetExtState(NS, RAZOR_EDGE_SAVED)
+  if saved ~= "" and reaper.SetMouseModifier and not reaper.HasExtState(NS, RUN_KEY) then
+    reaper.SetMouseModifier("MM_CTX_AREASEL_EDGE", 0, saved)
+    reaper.DeleteExtState(NS, RAZOR_EDGE_SAVED, true)
+  end
+end
 
 local __edgeRipplePrev    = nil
 local __edgeRippleForced  = false
@@ -2378,6 +2491,7 @@ local function rt_cleanup()
   if __rt_cleanup_done then return end
   __rt_cleanup_done = true
   if cursor_default and lastSetByUs then reaper.JS_Mouse_SetCursor(cursor_default) end
+  block_razor_edge(false)
   release_click_msgs()
   if G and G.undoOpen then end_undo() end
   if G and G.mode == "body" then reaper.Undo_OnStateChange("Trim items") end   -- stopped mid-drag
@@ -2788,6 +2902,9 @@ local mode_handlers = {
 ----------------------------------------------------------------
 -- MAIN LOOP
 ----------------------------------------------------------------
+local hoverLook = { key = nil, t = 0, item = nil }   -- (see main)
+local HOVER_REREAD = 0.1   -- seconds
+
 local function main()
   if not G then G = new_G() end
 
@@ -2806,12 +2923,22 @@ local function main()
   end
 
   -- Refresh cursor context exactly once per frame.
-  refresh_cursor_context()
-  read_reaper_cursor()
-
   local mouseDown = reaper.JS_Mouse_GetState(1) == 1
   local mods      = reaper.JS_Mouse_GetState(4 | 8 | 16 | 32)   -- Ctrl/Cmd, Shift, Alt/Opt, Win/Ctrl
-  local hov       = hovered_item()
+  -- what's under the mouse (SWS's context and the item): looked up again only when the
+  -- mouse moves or a key/button changes, or every HOVER_REREAD seconds (scrolling);
+  -- every frame while a button is down or a trim is going on
+  local now = reaper.time_precise()
+  local mx, my = reaper.GetMousePosition()
+  local hkey = table.concat({ mx, my, mods }, "|")
+  if mouseDown or prevMouseDown or G.mode ~= "none"
+     or hkey ~= hoverLook.key or now - hoverLook.t >= HOVER_REREAD then
+    hoverLook.key, hoverLook.t = hkey, now
+    refresh_cursor_context()
+    hoverLook.item = hovered_item()
+  end
+  read_reaper_cursor()
+  local hov       = valid_item(hoverLook.item) and hoverLook.item or nil
   local mTimeRaw  = get_mouse_time_raw()
   -- What REAPER showed before the button went down (it can change its cursor on the press)
   local pressZone = hoverZone
@@ -2819,6 +2946,9 @@ local function main()
 
   -- Cursor over items, only with the button up (not during REAPER's own drags)
   if G.mode == "none" and not mouseDown then
+    local edgeIt = hov
+    if not edgeIt and reaper_zone() == "native" then edgeIt = item_at_edge_near(mx, my, mTimeRaw) end
+    block_razor_edge(edgeIt ~= nil and razor_covered_edge(edgeIt, mTimeRaw) ~= nil)
     handle_hover(hov, mTimeRaw)
   end
 
@@ -2828,15 +2958,23 @@ local function main()
     if c then
       local px, py, tClick, useCtx = click_point(c, mouseDown)
       local it = reaper.GetItemFromPoint(px, py, false)
+      if not valid_item(it) and (pressZone == "edge" or pressZone == "joint" or pressZone == "native") then
+        it = item_at_edge_near(px, py, tClick or mTimeRaw)   -- (just past an item's edge)
+        if it and pressZone == "native" and not razor_covered_edge(it, tClick or mTimeRaw) then it = nil end
+      end
       if valid_item(it) and not is_locked(it) then
         handle_press(it, tClick or mTimeRaw, pressZone, mods)
         pressed = true
         -- Pressed and released between two checks: finish the click now
         if G.mode == "body" and not mouseDown then handle_release() end
       end
-    elseif (not MSG_OK) and mouseDown and not prevMouseDown
-       and valid_item(hov) and not is_locked(hov) then
-      handle_press(hov, mTimeRaw, pressZone, mods)
+    elseif (not MSG_OK) and mouseDown and not prevMouseDown then
+      local it = hov
+      if not it and (pressZone == "edge" or pressZone == "joint") then
+        local x, y = reaper.GetMousePosition()
+        it = item_at_edge_near(x, y, mTimeRaw)
+      end
+      if valid_item(it) and not is_locked(it) then handle_press(it, mTimeRaw, pressZone, mods) end
     end
   end
 

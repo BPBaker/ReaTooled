@@ -1,6 +1,6 @@
 -- @description ReaTooled - Grid & Nudge Settings (Dockable GUI)
--- @version 3.3.3
--- @date 2026.11.03
+-- @version 3.3.6
+-- @date 2026.11.04
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -34,6 +34,21 @@
 --     the label shown when the project's grid can't be matched to a menu entry.
 --
 -- @changelog
+--   v3.3.6 (2026-11-05)
+--     • Changing the nudge unit converts with the project's sample rate (it was always
+--       44.1 kHz) and the grid's real size (grid values came out four times off)
+--     • Dotted and triplet "1 bar" is right in REAPER's measures.beats notation (dotted was
+--       1.5, which REAPER reads as 1 measure + 5 beats; now 1.2 in 4/4, i.e. 6 beats), and
+--       switching dotted/triplet on and off converts the value the same way
+--   v3.3.5 (2026-11-05)
+--     • Dotted and triplet: picking a measures/beats preset applies the dotted (x1.5) or
+--       triplet (x2/3) length once, not twice (a dotted 1/8 note was 1.5 x 1.5 x 1/8)
+--   v3.3.4 (2026-11-04)
+--     • Transport: no more stutter in the rest of REAPER while it runs. Attached to the
+--       selection display, it measured that display all over again every 2 seconds
+--       (thousands of "what's under this point?" questions to REAPER at once); now it
+--       only checks the display's edge twice a second, and measures again when the
+--       Transport changes size.
 --   v3.3.3 (2026-11-03)
 --     • ReaPack's About text describes the Transport mode.
 --   v3.3.2 (2026-11-02)
@@ -404,12 +419,22 @@ local function ConvertNudgeValue(old_unit, new_unit, val)
     return val
   end
 
-  local _, sr = reaper.GetSetProjectInfo(0, "PROJECT_SRATE", 0, false)
-  if not sr or sr == 0 then sr = 44100 end
+  -- the project's sample rate (the audio device's when the project doesn't set its own)
+  local sr = reaper.GetSetProjectInfo(0, "PROJECT_SRATE", 0, false)
+  if (reaper.GetSetProjectInfo(0, "PROJECT_SRATE_USE", 0, false) == 0 or not sr or sr <= 0)
+     and reaper.GetAudioDeviceInfo then
+    local ok, v = reaper.GetAudioDeviceInfo("SRATE", "")
+    if ok and tonumber(v) and tonumber(v) > 0 then sr = tonumber(v) end
+  end
+  if not sr or sr <= 0 then sr = 44100 end
   local fps = reaper.TimeMap_curFrameRate(0)
 
-  local _, grid_beats = reaper.GetSetProjectGrid(0, false)
-  local grid_secs     = reaper.TimeMap2_beatsToTime(0, grid_beats)
+  -- the grid's division is in whole notes (0.25 = a quarter note): its length in seconds
+  -- at the edit cursor
+  local _, grid_div = reaper.GetSetProjectGrid(0, false)
+  local cur = reaper.GetCursorPosition()
+  local grid_secs = reaper.TimeMap2_QNToTime(0, reaper.TimeMap2_timeToQN(0, cur) + grid_div * 4) - cur
+  if not grid_secs or grid_secs <= 0 then grid_secs = 1 end
 
   -- normalize old → seconds
   if old_unit == 0 then            val = val / 1000
@@ -425,6 +450,22 @@ local function ConvertNudgeValue(old_unit, new_unit, val)
   elseif new_unit == 5 then        val = val * fps
   end
   return val
+end
+
+-- REAPER's measures.beats notation (1.15 = 1 measure + 1.5 beats) <-> beats of the time
+-- signature at the edit cursor. Dotted and triplet scale the beats, then go back to the
+-- notation (a dotted bar in 4/4 is 6 beats = 1.2, not 1.5).
+local function timesig_num()
+  local num = reaper.TimeMap_GetTimeSigAtTime(0, reaper.GetCursorPosition())
+  return (num and num > 0) and num or 4
+end
+local function mb_to_beats(v, num)
+  local m = math.floor(v + 1e-9)
+  return m * num + (v - m) * 10
+end
+local function beats_to_mb(b, num)
+  local m = math.floor(b / num + 1e-9)
+  return m + (b - m * num) / 10
 end
 
 local selected_modifier    = reaper.GetExtState("ReaTooled", "nudge_modifier")
@@ -450,20 +491,21 @@ local unit_presets = {
     { label = "0.0001 second",value = 0.0001 },
   },
   [3] = function()
-    local base_presets = {
-      { label = "1 bar",      value = 1.0     },
-      { label = "1/2 note",   value = 0.2     },
-      { label = "1/4 note",   value = 0.1     },
-      { label = "1/8 note",   value = 0.05    },
-      { label = "1/16 note",  value = 0.025   },
-      { label = "1/32 note",  value = 0.0125  },
-      { label = "1/64 note",  value = 0.00625 },
+    local num = timesig_num()
+    local base_presets = {   -- (in beats; keep in step with next_larger in ReaTooled_SmartNudge_Core.lua)
+      { label = "1 bar",      beats = num    },
+      { label = "1/2 note",   beats = 2      },
+      { label = "1/4 note",   beats = 1      },
+      { label = "1/8 note",   beats = 0.5    },
+      { label = "1/16 note",  beats = 0.25   },
+      { label = "1/32 note",  beats = 0.125  },
+      { label = "1/64 note",  beats = 0.0625 },
     }
     local mul = (selected_modifier == "dotted")  and 1.5
              or (selected_modifier == "triplet") and (2/3) or 1.0
     local t = {}
     for _, p in ipairs(base_presets) do
-      t[#t+1] = { label = p.label, value = p.value * mul }
+      t[#t+1] = { label = p.label, value = beats_to_mb(p.beats * mul, num) }
     end
     return t
   end,
@@ -557,7 +599,7 @@ local function DrawPresetsPopup()
 
   if presets then
     for _, preset in ipairs(presets) do
-      local expected_val = preset.value * modifier_multipliers[selected_modifier]
+      local expected_val = preset.value   -- (the measures/beats presets include dotted/triplet already)
       local is_selected  = math.abs(expected_val - nudge_val) < 0.00001
       if is_selected then
         reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_Text(), IM(P.accent))
@@ -584,7 +626,8 @@ local function DrawPresetsPopup()
         local prev_mul    = modifier_multipliers[selected_modifier]
         selected_modifier = (is_selected and "none" or mod)
         local new_mul     = modifier_multipliers[selected_modifier]
-        nudge_val         = (nudge_val / prev_mul) * new_mul
+        local num         = timesig_num()
+        nudge_val         = beats_to_mb(mb_to_beats(nudge_val, num) / prev_mul * new_mul, num)
         reaper.SetExtState(EXT_SECTION, "nudge_modifier", selected_modifier, true)
         reaper.SetExtState(EXT_SECTION, EXT_KEY_VAL, tostring(nudge_val), true)
         reaper.ImGui_CloseCurrentPopup(ctx)
@@ -1198,7 +1241,9 @@ local close_requested = false
 -- The selection display (start/end/length) isn't a window of its own: REAPER paints it
 -- into the Transport. Its edges are found the way Gridbox finds empty space: asking
 -- REAPER what's under points across the Transport (GetThingFromPoint says "trans.sel"
--- there). Measured again when the Transport's size changes, or every 2 s.
+-- there). Measured when the Transport's size changes; otherwise its left edge is only
+-- checked (two lookups) twice a second. (Re-measuring all of it every 2 s, as before,
+-- asked REAPER about thousands of points at once: everything in REAPER stuttered.)
 local sel_cache = { key = nil, t = 0, l = nil, r = nil, y = nil }
 
 local function sel_at(cx, cy)
@@ -1246,7 +1291,19 @@ local function selection_edges()
   local _, ww, wh = reaper.JS_Window_GetClientSize(TR.hwnd)
   local key = ww .. "x" .. wh
   local now = reaper.time_precise()
-  if sel_cache.l and sel_cache.key == key and now - sel_cache.t < 2 then return sel_cache.l, sel_cache.r end
+  if sel_cache.l and sel_cache.key == key then
+    if now - sel_cache.t < 0.5 then return sel_cache.l, sel_cache.r end
+    sel_cache.t = now
+    local l, y = sel_cache.l, sel_cache.y
+    if y and sel_at(l, y) and (l == 0 or not sel_at(l - 1, y)) then return sel_cache.l, sel_cache.r end
+    -- (it moved without the Transport changing size, e.g. a theme or layout change)
+    local nl = selection_follow(ww)
+    if nl then
+      sel_cache.r = sel_cache.r and (sel_cache.r + (nl - sel_cache.l)) or nil
+      sel_cache.l = nl
+      return sel_cache.l, sel_cache.r
+    end
+  end
   if sel_cache.l and sel_cache.key ~= key then
     local l = selection_follow(ww)
     if l then

@@ -32,7 +32,7 @@
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="3.2026.1104.1321" author="Brendan Baker" time="2026-11-04T18:21:42Z">
+      <version name="3.2026.1105.1503" author="Brendan Baker" time="2026-11-05T20:03:31Z">
         <changelog><![CDATA[v3.0 - November 03, 2026
 
 HIGHLIGHTS
@@ -217,6 +217,7 @@ DETAILS
         <source file="ReaTooled/Config/extstate.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/extstate.ini</source>
         <source file="ReaTooled/Config/version.txt">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/version.txt</source>
         <source file="ReaTooled/Config/reaper_sections.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/reaper_sections.ini</source>
+        <source file="ReaTooled/Config/update_rules.txt">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/update_rules.txt</source>
         <source file="ReaTooled/Config/screensets.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/screensets.ini</source>
         <source file="ReaTooled/Config/sws/S&amp;M.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/sws/S%26M.ini</source>
         <source file="ReaTooled/Config/sws/sws-autocoloricon.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/sws/sws-autocoloricon.ini</source>
@@ -355,7 +356,7 @@ DETAILS
 {\pard \ql \f0 \sa180 \li0 \fi0 ReaTooled's themes, installed into REAPER's ColorThemes folder. "Default_7.0 ReaTooled v3 Dark" is the default.\par}
 }]]></description>
       </metadata>
-      <version name="3.2026.1104.1321" author="Brendan Baker" time="2026-11-04T18:21:42Z">
+      <version name="3.2026.1105.1503" author="Brendan Baker" time="2026-11-05T20:03:31Z">
         <source file="Assembled_ReaTooled v1.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Assembled_ReaTooled%20v1.ReaperThemeZip</source>
         <source file="Default_7.0 ReaTooled v2 Light.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Default_7.0%20ReaTooled%20v2%20Light.ReaperThemeZip</source>
         <source file="Default_7.0 ReaTooled v3 Dark.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Default_7.0%20ReaTooled%20v3%20Dark.ReaperThemeZip</source>
@@ -376,7 +377,8 @@ DETAILS
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="1.2.0" author="Brendan Baker">
+      <version name="1.3.1" author="Brendan Baker" time="2026-11-05T20:03:31Z">
+        <changelog><![CDATA[ReaTooled_SmartNudge_Core: Fixes: a track with several razor areas keeps them all (only the first was read, the others were dropped); items nudge by samples and frames (they moved by 256th notes and by the grid); the sample rate is the project's (it was always 44.1 kHz); grid units are the grid's size (they were a quarter of it); measures. beats move razor areas, the cursor and envelopes by the same amount as items; pixels work for razor areas, the cursor and envelopes; razor areas nudged left stop at the project start instead of shrinking]]></changelog>
         <source file="ReaTooled_Smart Nudge Left.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Smart%20Nudge%20Left.lua</source>
         <source file="ReaTooled_Smart Nudge Right.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Smart%20Nudge%20Right.lua</source>
         <source file="ReaTooled_SmartNudge_Core.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_SmartNudge_Core.lua</source>
@@ -422,7 +424,8 @@ DETAILS
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="1.0" author="Brendan Baker">
+      <version name="1.1" author="Brendan Baker" time="2026-11-05T20:03:31Z">
+        <changelog><![CDATA[The right item's audio stays in place (its take offset moved the wrong way, shifting it by the crossfade length); every take, at its playrate]]></changelog>
         <source file="ReaTooled_Auto crossfade at edit cursor.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Auto%20crossfade%20at%20edit%20cursor.lua</source>
       </version>
     </reapack>
@@ -755,8 +758,9 @@ DETAILS
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="3.3.3" author="Brendan Baker" time="2026-11-04T03:49:38Z">
-        <changelog><![CDATA[• ReaPack's About text describes the Transport mode.]]></changelog>
+      <version name="3.3.6" author="Brendan Baker" time="2026-11-05T20:03:31Z">
+        <changelog><![CDATA[• Changing the nudge unit converts with the project's sample rate (it was always 44.1 kHz) and the grid's real size (grid values came out four times off)
+• Dotted and triplet "1 bar" is right in REAPER's measures.beats notation (dotted was 1.5, which REAPER reads as 1 measure + 5 beats; now 1.2 in 4/4, i.e. 6 beats), and switching dotted/triplet on and off converts the value the same way]]></changelog>
         <source file="ReaTooled_Grid and Nudge Settings.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Grid%20and%20Nudge%20Settings.lua</source>
       </version>
     </reapack>
@@ -828,11 +832,11 @@ DETAILS
         <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
 {\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
 \widowctrl\hyphauto
-{\pard \ql \f0 \sa180 \li0 \fi0 Replaces selection with the item under the mouse (no 40529), expands to group via 40034 only if the user's 41156 option is ON, then moves the edit cursor to the earliest start of the current selection. If the link script (_RSed328eb507619b18c1154efa1b048d816cfc2d0c) is ON, also sets loop points to the full span of the selected items. UI stays frozen until the end; view is preserved. Razor mode (set CLICK_MAKES_RAZOR = true below): instead of moving the edit cursor and loop points, the click puts a razor area exactly over the selected item(s), and the Link Timeline and Edit Selection toggle decides whether the loop points follow it. Trade-offs: while the razor area is there, dragging in it does nothing, and with "Razor edits in media item lane affect all track envelopes" on, deleting also deletes the automation under it.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 Replaces selection with the item under the mouse (no 40529), expands to group via 40034 only if the user's 41156 option is ON, then moves the edit cursor to the earliest start of the current selection. If the link script (_RSed328eb507619b18c1154efa1b048d816cfc2d0c) is ON, also sets loop points to the full span of the selected items. UI stays frozen until the end; view is preserved. Set SET_TIME_SELECTION = false below to never set the time selection / loop points around the item, even when the Link Timeline and Edit Selection toggle is ON. Razor mode (set CLICK_MAKES_RAZOR = true below): instead of moving the edit cursor and loop points, the click puts a razor area exactly over the selected item(s), and the Link Timeline and Edit Selection toggle decides whether the loop points follow it. Trade-offs: while the razor area is there, dragging in it does nothing, and with "Razor edits in media item lane affect all track envelopes" on, deleting also deletes the automation under it.\par}
 }]]></description>
       </metadata>
-      <version name="5.10" author="Brendan Baker">
-        <changelog><![CDATA[Does nothing right after a Shuffle mode drag (REAPER runs this click when the drag is let go; the Shuffle move script already selected the item and made the undo step)]]></changelog>
+      <version name="5.11" author="Brendan Baker" time="2026-11-05T20:03:31Z">
+        <changelog><![CDATA[New setting SET_TIME_SELECTION at the top of the script: set it to false to stop the click from setting the time selection / loop points around the item (the edit cursor still moves to the item/group start)]]></changelog>
         <source file="ReaTooled_Move Tool Left Click (Select item under mouse cursor, move cursor to start of items).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Move%20Tool%20Left%20Click%20%28Select%20item%20under%20mouse%20cursor%2C%20move%20cursor%20to%20start%20of%20items%29.lua</source>
       </version>
     </reapack>
@@ -861,6 +865,20 @@ DETAILS
         <source file="ReaTooled_Nudge left by last nudge dialogue settings and move cursor.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Nudge%20left%20by%20last%20nudge%20dialogue%20settings%20and%20move%20cursor.lua</source>
       </version>
     </reapack>
+    <reapack name="ReaTooled_Nudge left by next larger setting.lua" type="script" desc="ReaTooled - Nudge left by next larger setting">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 Like Smart Nudge Left, but by the next larger of the Grid and Nudge Settings presets than the current nudge value (in the same unit): with 10 ms set, it nudges by 100 ms. At the largest preset (or in grid units, which have none) it nudges by twice the current value. The nudge setting itself doesn't change.\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
+      <version name="1.0" author="Brendan Baker" time="2026-11-05T20:03:31Z">
+        <changelog><![CDATA[First version]]></changelog>
+        <source file="ReaTooled_Nudge left by next larger setting.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Nudge%20left%20by%20next%20larger%20setting.lua</source>
+      </version>
+    </reapack>
     <reapack name="ReaTooled_Nudge right by last nudge dialogue settings and move cursor.lua" type="script" desc="ReaTooled_Nudge Items Right via Last Nudge Settings + Move Cursor to First Item">
       <metadata>
         <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
@@ -872,6 +890,20 @@ DETAILS
       </metadata>
       <version name="1.1" author="Brendan Baker">
         <source file="ReaTooled_Nudge right by last nudge dialogue settings and move cursor.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Nudge%20right%20by%20last%20nudge%20dialogue%20settings%20and%20move%20cursor.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Nudge right by next larger setting.lua" type="script" desc="ReaTooled - Nudge right by next larger setting">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 Like Smart Nudge Right, but by the next larger of the Grid and Nudge Settings presets than the current nudge value (in the same unit): with 10 ms set, it nudges by 100 ms. At the largest preset (or in grid units, which have none) it nudges by twice the current value. The nudge setting itself doesn't change.\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
+      <version name="1.0" author="Brendan Baker" time="2026-11-05T20:03:31Z">
+        <changelog><![CDATA[First version]]></changelog>
+        <source file="ReaTooled_Nudge right by next larger setting.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Nudge%20right%20by%20next%20larger%20setting.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Nudge Settings.lua" type="script" desc="ReaTooled_Nudge Settings">
@@ -1272,8 +1304,8 @@ DETAILS
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="4.6" author="Brendan Baker">
-        <changelog><![CDATA[Added continuous cursor position tracking to ExtState ("ReaTooled", "lastcursor") for use by ReaTooled razor scripts that need pre-click cursor position]]></changelog>
+      <version name="4.7" author="Brendan Baker" time="2026-11-05T20:03:31Z">
+        <changelog><![CDATA[Less flicker in other windows (Track Manager, Project Bay): after a click, only the items whose selection actually changes are touched (it used to deselect every item in the project and select again, on every mouse-up while razor areas exist); the cursor position is written only when it moves]]></changelog>
         <source file="ReaTooled_Link razor area and item selection.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Helpers/ReaTooled_Link%20razor%20area%20and%20item%20selection.lua</source>
       </version>
     </reapack>
@@ -1365,8 +1397,9 @@ DETAILS
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="2.4.22" author="Brendan Baker" time="2026-11-04T18:54:41Z">
-        <changelog><![CDATA[ReaTooled_Set up ReaTooled: Shortcut clashes are shown together in one window instead of Yes/No/Cancel boxes: each row says "Keep yours" or "Update to ReaTooled's" (Keep yours is the default), any row can be changed until Continue, and the shortcut that loses its key can be given another one there. The final message lists ReaTooled actions left without a shortcut. Without ReaImGui every clashing key is kept as yours. ReaSmoothPlayhead is no longer installed by ReaBoot: Set up adds its ReaPack repository, so it's installed with the rest after the restart, once the ReaTooled theme is in place (an earlier unsaved theme made it report "unsaved changes"). Font settings left in reaper.ini by an earlier theme are removed, so the ReaTooled theme's own fonts apply (they're in the backup, and Restore puts them back)]]></changelog>
+      <version name="2.4.24" author="Brendan Baker" time="2026-11-05T20:03:31Z">
+        <changelog><![CDATA[ReaTooled_Enable Link Edit Cursor and Play Cursor: Lighter on CPU: with the mouse button up, every track's razor areas are read only when the project has changed (or 4 times a second, to be safe), instead of every frame; while a button is down they're followed every frame as before
+ReaTooled_Set up ReaTooled: Updates merge preferences more completely: a preference ReaTooled no longer sets is removed (REAPER's default comes back) unless you changed it yourself; preferences that hold several on/off options in one number (Config/update_rules.txt "bits") are merged option by option, so ReaTooled's change to one option arrives even if you changed another; and preferences listed as "always" are set whatever you changed (each one named in the report)]]></changelog>
         <source file="ReaTooled_Earlier shortcuts.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Earlier%20shortcuts.lua</source>
         <source file="ReaTooled_Earlier toolbars.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Earlier%20toolbars.lua</source>
         <source file="ReaTooled_Enable Link Edit Cursor and Play Cursor.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Enable%20Link%20Edit%20Cursor%20and%20Play%20Cursor.lua</source>
@@ -1452,13 +1485,8 @@ DETAILS
 {\pard \ql \f0 \sa180 \li0 \fi0 Models and builds upon "Link track and clip selection" from PT.\par}
 }]]></description>
       </metadata>
-      <version name="2.22" author="Brendan Baker">
-        <changelog><![CDATA[- STRICT track-only selection:
-• Blocks all envelope/automation lanes via BR_GetMouseCursorContext_Envelope
-• Blocks env_point/env_segment/env_edge explicitly
-• Blocks track_divider and unknown detail zones
-• Rejects zero-height (folder compact) tracks
-- Removed unused GetTrackStateChunk() call]]></changelog>
+      <version name="2.24" author="Brendan Baker" time="2026-11-05T20:03:31Z">
+        <changelog><![CDATA[- Less flicker in other windows (Track Manager, mixer, Project Bay): only the tracks whose selection actually changes are touched (it used to deselect every track and select again), and the track lists are refreshed and the mixer scrolled only when the selection really changed]]></changelog>
         <source file="ReaTooled_Link Track and Item and Razor Selection.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Toggles/ReaTooled_Link%20Track%20and%20Item%20and%20Razor%20Selection.lua</source>
       </version>
     </reapack>
@@ -1666,14 +1694,16 @@ DETAILS
 {\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab ReaTooled - Toggle Shuffle mode\par}
 {\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab ReaTooled - Toggle Spot mode\par}
 {\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab ReaTooled - Toggle swap left and right drag\par}
-{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Item Body Drag to Trim Edge v7.8.2 (Group/Track-Group Safe, Native Fades, Native Edge-Safe Ripple)\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Item Body Drag to Trim Edge v7.8.5 (Group/Track-Group Safe, Native Fades, Native Edge-Safe Ripple)\par}
 {\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab ReaTooled - Scrub Tool\par}
 {\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab ReaTooled - Trim Tool (Controller)\par}
 {\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab ReaTooled - Zoom Tool (Zoomer Tool)\par}
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="7.8.6" author="Brendan Baker">
+      <version name="7.8.7" author="Brendan Baker" time="2026-11-05T20:03:31Z">
+        <changelog><![CDATA[ReaTooled_Shuffle move (background): With ripple editing all tracks, the other tracks' new junctions follow the same rule as the dragged track: a crossfade with auto-crossfade on, else a butt joint
+ReaTooled_Trim Tool (Background): – An edge can be grabbed from just outside the item too, where REAPER already shows its edge cursor (its edge zone reaches a few pixels past the item): the press there used to find no item under the mouse, so nothing happened]]></changelog>
         <source file="Default Multi Tool (Smart)_ReaTooled.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/Default%20Multi%20Tool%20%28Smart%29_ReaTooled.lua</source>
         <source file="Move Tool (Grabber)_ReaTooled.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/Move%20Tool%20%28Grabber%29_ReaTooled.lua</source>
         <source file="Pencil Tool_ReaTooled.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/Pencil%20Tool_ReaTooled.lua</source>

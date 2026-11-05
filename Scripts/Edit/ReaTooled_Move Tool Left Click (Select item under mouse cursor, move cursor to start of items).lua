@@ -1,17 +1,22 @@
 -- @description ReaTooled - Move Tool Left Click (Select Under Mouse + Cursor to Item/Group Start) [no-flicker + loop-if-linked]
--- @version 5.10
+-- @version 5.11
 -- @author Brendan Baker
 -- @about
 --   Replaces selection with the item under the mouse (no 40529), expands to group via 40034 only if
 --   the user's 41156 option is ON, then moves the edit cursor to the earliest start of the current selection.
 --   If the link script (_RSed328eb507619b18c1154efa1b048d816cfc2d0c) is ON, also sets loop points to the full span
 --   of the selected items. UI stays frozen until the end; view is preserved.
+--   Set SET_TIME_SELECTION = false below to never set the time selection / loop points around
+--   the item, even when the Link Timeline and Edit Selection toggle is ON.
 --   Razor mode (set CLICK_MAKES_RAZOR = true below): instead of moving the edit cursor and loop
 --   points, the click puts a razor area exactly over the selected item(s), and the Link Timeline
 --   and Edit Selection toggle decides whether the loop points follow it. Trade-offs: while the
 --   razor area is there, dragging in it does nothing, and with "Razor edits in media item lane
 --   affect all track envelopes" on, deleting also deletes the automation under it.
 -- @changelog
+--   v5.11 New setting SET_TIME_SELECTION at the top of the script: set it to false to stop the
+--        click from setting the time selection / loop points around the item (the edit cursor
+--        still moves to the item/group start)
 --   v5.10 Does nothing right after a Shuffle mode drag (REAPER runs this click when the
 --        drag is let go; the Shuffle move script already selected the item and made the
 --        undo step)
@@ -22,10 +27,14 @@
 --        the script.
 
 ------------------------------------------------------------
--- SETTING
+-- SETTINGS
 -- false = the click selects the item and moves the edit cursor to its start (default)
 -- true  = the click puts a razor area over the item instead (see @about for the trade-offs)
 local CLICK_MAKES_RAZOR = false
+
+-- true  = when the Link toggle is ON, set the time selection / loop points around the item (default)
+-- false = never set the time selection / loop points around the item
+local SET_TIME_SELECTION = false
 ------------------------------------------------------------
 
 local reaper = reaper
@@ -132,7 +141,7 @@ else
   local s,e = selection_span()
   if s then
     reaper.SetEditCurPos(s,false,false)
-    if link_toggle_is_on() and e and e > s then
+    if SET_TIME_SELECTION and link_toggle_is_on() and e and e > s then
       reaper.GetSet_LoopTimeRange(true,true, s, e, false)
     end
   end
@@ -142,5 +151,13 @@ end
 reaper.GetSet_ArrangeView2(0,true,0,0, vstart,vend)
 reaper.PreventUIRefresh(-1)
 reaper.UpdateArrange()
-reaper.Undo_EndBlock(razor_mode and "Select under mouse + razor area over item/group"
-  or "Select under mouse + cursor to item/group start (loop if linked)", 0)
+
+local undo_name
+if razor_mode then
+  undo_name = "Select under mouse + razor area over item/group"
+elseif SET_TIME_SELECTION then
+  undo_name = "Select under mouse + cursor to item/group start (loop if linked)"
+else
+  undo_name = "Select under mouse + cursor to item/group start"
+end
+reaper.Undo_EndBlock(undo_name, 0)

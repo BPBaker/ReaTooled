@@ -1,10 +1,22 @@
 -- @description ReaTooled Smart Nudge Core Logic
--- @version 1.2.0
+-- @version 1.3.1
 -- @about
 --   Shared logic for smart nudge, direction passed via wrapper script.
+--   NUDGE_LARGER = true in the wrapper: nudges by the next larger of the Grid and Nudge
+--   Settings presets than the current nudge value (same unit).
 --   Adds pairing: when a selected item is exactly covered by a razor edit on the same track,
 --   both the razor span and that item nudge together by the same offset.
---   Grid unit mode note: grid division is in beats; see comments in code.
+--   Measures.beats values use REAPER's notation (1.15 = 1 measure + 1.5 beats), as REAPER's
+--   own nudge does, for razor areas, the cursor and envelopes too.
+-- @changelog
+--   v1.3.1 Fixes: a track with several razor areas keeps them all (only the first was read,
+--          the others were dropped); items nudge by samples and frames (they moved by
+--          256th notes and by the grid); the sample rate is the project's (it was always
+--          44.1 kHz); grid units are the grid's size (they were a quarter of it); measures.
+--          beats move razor areas, the cursor and envelopes by the same amount as items;
+--          pixels work for razor areas, the cursor and envelopes; razor areas nudged left
+--          stop at the project start instead of shrinking
+--   v1.3.0 NUDGE_LARGER (the "by next larger setting" scripts)
 
 if not DIRECTION then
   reaper.ShowMessageBox("DIRECTION not set in wrapper script!", "Error", 0)
@@ -15,6 +27,68 @@ local EXT_SECTION = "ReaTooled"
 local nudge_val = tonumber(reaper.GetExtState(EXT_SECTION, "nudge_val")) or 0
 local unit_index = tonumber(reaper.GetExtState(EXT_SECTION, "nudge_unit")) or 0
 if nudge_val == 0 then return end
+
+-- REAPER's measures.beats notation (1.15 = 1 measure + 1.5 beats) <-> beats of the time
+-- signature at the edit cursor
+local function timesig_here()
+  local num, denom = reaper.TimeMap_GetTimeSigAtTime(0, reaper.GetCursorPosition())
+  num = (num and num > 0) and num or 4
+  denom = (denom and denom > 0) and denom or 4
+  return num, denom
+end
+local function mb_to_beats(v, num)
+  local m = math.floor(v + 1e-9)
+  return m * num + (v - m) * 10
+end
+local function beats_to_mb(b, num)
+  local m = math.floor(b / num + 1e-9)
+  return m + (b - m * num) / 10
+end
+
+-- The project's sample rate (the audio device's when the project doesn't set its own)
+local function project_srate()
+  local sr = reaper.GetSetProjectInfo(0, "PROJECT_SRATE", 0, false)
+  local use = reaper.GetSetProjectInfo(0, "PROJECT_SRATE_USE", 0, false)
+  if (use == 0 or not sr or sr <= 0) and reaper.GetAudioDeviceInfo then
+    local ok, v = reaper.GetAudioDeviceInfo("SRATE", "")
+    local n = ok and tonumber(v)
+    if n and n > 0 then return n end
+  end
+  return (sr and sr > 0) and sr or 44100
+end
+
+-- "Nudge ... by next larger setting": the smallest of the Grid and Nudge Settings presets
+-- for this unit that's larger than the current nudge value (keep these lists in step
+-- with unit_presets in ReaTooled_Grid and Nudge Settings.lua). Already at the largest,
+-- or a unit without presets (grid units): twice the current value.
+local function next_larger(val, unit)
+  local fps = reaper.TimeMap_curFrameRate(0)
+  local mod = reaper.GetExtState(EXT_SECTION, "nudge_modifier")
+  local mul = (mod == "dotted") and 1.5 or (mod == "triplet") and (2/3) or 1.0
+  local presets = ({
+    [0] = { 1000, 500, 100, 10, 1, 0.1 },                                -- ms
+    [1] = { 1.0, 0.5, 0.1, 0.01, 0.001, 0.0001 },                        -- seconds
+    [3] = (function()                                                    -- measures.beats
+            local num = timesig_here()
+            local t = {}
+            for _, b in ipairs({ num, 2, 1, 0.5, 0.25, 0.125, 0.0625 }) do t[#t + 1] = beats_to_mb(b * mul, num) end
+            return t
+          end)(),
+    [4] = { 10000, 1000, 100, 10, 2, 1 },                                -- samples
+    [5] = { fps, 6, 1, 0.5, 0.25, 1/80 },                                -- frames
+    [6] = { 100, 50, 10, 5, 1 },                                         -- pixels
+    [7] = { 8, 4, 2, 1, 0.5, 0.25 },                                     -- items
+    [8] = { 8, 4, 2, 1, 0.5, 0.25 },                                     -- selection
+  })[unit]
+  local best = nil
+  for _, v in ipairs(presets or {}) do
+    if v > val * (1 + 1e-6) + 1e-9 and (not best or v < best) then best = v end
+  end
+  if best then return best end
+  if unit == 3 then local num = timesig_here(); return beats_to_mb(mb_to_beats(val, num) * 2, num) end
+  return val * 2
+end
+if NUDGE_LARGER then nudge_val = next_larger(nudge_val, unit_index) end
 
 local DEBUG = false
 
@@ -31,44 +105,36 @@ local function get_seconds_from_unit(value, unit_index)
   elseif unit_index == 1 then
     return DIRECTION * value -- seconds
   elseif unit_index == 2 then
-    -- NOTE: Project grid division is in beats (QN), not measures.
-    -- If you intend "grid units" in beats: seconds = value * grid_div * (60/tempo)
-    local _, grid_division = reaper.GetSetProjectGrid(0, false) -- beats per grid
-    local tempo = reaper.Master_GetTempo()
-    local seconds = DIRECTION * value * grid_division * (60 / tempo)
-
+    -- grid units: the grid's division is in whole notes (0.25 = a quarter note), measured
+    -- from the edit cursor along the tempo map
+    local _, grid_division = reaper.GetSetProjectGrid(0, false)
+    local cur = reaper.GetCursorPosition()
+    local qn = reaper.TimeMap2_timeToQN(0, cur)
+    local seconds = reaper.TimeMap2_QNToTime(0, qn + DIRECTION * value * grid_division * 4) - cur
     if DEBUG then
-      reaper.ShowConsoleMsg("DEBUG: Grid division (beats) = " .. tostring(grid_division) .. "\n")
-      reaper.ShowConsoleMsg("DEBUG: Tempo = " .. tostring(tempo) .. "\n")
-      reaper.ShowConsoleMsg("DEBUG: Calculated offset in seconds = " .. tostring(seconds) .. "\n")
+      reaper.ShowConsoleMsg("DEBUG: Grid division (whole notes) = " .. tostring(grid_division) ..
+        ", offset in seconds = " .. tostring(seconds) .. "\n")
     end
-
     return seconds
   elseif unit_index == 4 then
-    local _, sr = reaper.GetSetProjectInfo(0, "PROJECT_SRATE", 0, false)
-    sr = tonumber(sr)
-    if not sr or sr == 0 then sr = 44100 end
-    return DIRECTION * value / sr -- samples
+    return DIRECTION * value / project_srate() -- samples
   elseif unit_index == 5 then
     local fps = reaper.TimeMap_curFrameRate(0)
     return DIRECTION * value / fps -- frames
+  elseif unit_index == 6 then
+    local pps = reaper.GetHZoomLevel()
+    return (pps and pps > 0) and (DIRECTION * value / pps) or 0 -- pixels at the current zoom
   else
     return 0
   end
 end
 
 local function get_measures_beats_offset(val)
-  -- Interprets decimal part as FRACTION OF A MEASURE, not 10ths.
+  -- REAPER's notation, as its own nudge reads it: 1.15 = 1 measure + 1.5 beats
   local cur_pos = reaper.GetCursorPosition()
   local cur_qn = reaper.TimeMap2_timeToQN(0, cur_pos)
-  local _, num, _ = reaper.TimeMap_GetTimeSigAtTime(0, cur_pos)
-
-  local measures = math.floor(val)
-  local frac = val - measures
-  local beats = frac * num
-  local beat_offset = measures * num + beats
-  local qn_offset = DIRECTION * beat_offset
-
+  local num, denom = timesig_here()
+  local qn_offset = DIRECTION * mb_to_beats(val, num) * (4 / denom)   -- (beats of the time signature, in quarter notes)
   local new_time = reaper.TimeMap2_QNToTime(0, cur_qn + qn_offset)
   return new_time - cur_pos
 end
@@ -86,7 +152,7 @@ local function get_razor_edits()
     local track = reaper.GetTrack(0, i)
     local _, chunk = reaper.GetSetMediaTrackInfo_String(track, "P_RAZOREDITS", "", false)
     if chunk ~= "" then
-      for start, ending, guid in chunk:gmatch("(.-) (.-) (%S+)") do
+      for start, ending, guid in chunk:gmatch("(%S+)%s+(%S+)%s+(%S+)") do
         table.insert(list, {
           track = track,
           start_time = tonumber(start),
@@ -105,16 +171,14 @@ local function move_razor_bounds(offset)
     local _, chunk = reaper.GetSetMediaTrackInfo_String(track, "P_RAZOREDITS", "", false)
     if chunk ~= "" then
       local rebuilt = ""
-      for start, ending, guid in chunk:gmatch("(.-) (.-) (%S+)") do
+      for start, ending, guid in chunk:gmatch("(%S+)%s+(%S+)%s+(%S+)") do
         local s = tonumber(start)
         local e = tonumber(ending)
 
         if s and e then
-          s = s + offset
-          e = e + offset
-          if s < 0 then s = 0 end
-          if e < 0 then e = 0 end
-          rebuilt = rebuilt .. s .. " " .. e .. " " .. guid .. " "
+          s = math.max(0, s + offset)   -- (offset is already limited so nothing goes before 0)
+          e = math.max(0, e + offset)
+          rebuilt = rebuilt .. string.format("%.15g %.15g ", s, e) .. guid .. " "
         else
           if DEBUG then
             reaper.ShowConsoleMsg(
@@ -300,7 +364,9 @@ local function nudge_specific_items_by_seconds(items, offset_sec)
 end
 
 -- === Execute ===
-local reaper_units = { [0]=0, [1]=1, [2]=2, [3]=16, [4]=3, [5]=2, [6]=19, [7]=20, [8]=21 }
+-- ApplyNudge's units: 0 ms, 1 seconds, 2 grid, 16 measures.beats, 17 samples, 18 frames,
+-- 19 pixels, 20 item lengths, 21 item selections
+local reaper_units = { [0]=0, [1]=1, [2]=2, [3]=16, [4]=17, [5]=18, [6]=19, [7]=20, [8]=21 }
 local is_beats = unit_index == 3
 local item_count = reaper.CountSelectedMediaItems(0)
 local razor = get_razor_edits()
@@ -317,6 +383,10 @@ reaper.Undo_BeginBlock()
 reaper.PreventUIRefresh(1)
 
 if #razor > 0 then
+  -- (nudging left stops at the project start: every area keeps its length)
+  local first = math.huge
+  for _, rz in ipairs(razor) do if rz.start_time and rz.start_time < first then first = rz.start_time end end
+  if offset_sec < 0 and first ~= math.huge and first + offset_sec < 0 then offset_sec = -first end
   -- NEW: If pairing is enabled, move matched items together with razor spans.
   if PAIR_ENABLED and item_count > 0 and offset_sec ~= 0 then
     local selected_items = get_selected_items()
@@ -355,4 +425,4 @@ else
 end
 
 reaper.PreventUIRefresh(-1)
-reaper.Undo_EndBlock("Smart Nudge", -1)
+reaper.Undo_EndBlock(NUDGE_LARGER and "Smart Nudge (next larger setting)" or "Smart Nudge", -1)

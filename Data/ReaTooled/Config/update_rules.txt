@@ -1,0 +1,3 @@
+; How "Update ReaTooled" merges preferences (made by ReaTooled_Export config.lua:
+; UPDATE_BIT_FLAGS, UPDATE_ALWAYS)
+bits osx_style

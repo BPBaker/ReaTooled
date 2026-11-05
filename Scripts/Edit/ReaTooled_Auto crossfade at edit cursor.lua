@@ -1,12 +1,15 @@
  -- @description ReaTooled - Convert Butt Joint to Centered Crossfade
- -- @version 1.0
- -- @date 2025.05.07
+ -- @version 1.1
+ -- @date 2026.11.05
  -- @author Brendan Baker
  -- @link https://brendanpatrickbaker.com/reatooled/
  -- @about
  --   Converts an existing butt joint at the edit cursor into a centered crossfade
  --   using REAPER's default crossfade length.
  --   WARNING: This necessarily modifies item boundaries (by design).
+ -- @changelog
+ --   v1.1 The right item's audio stays in place (its take offset moved the wrong way,
+ --        shifting it by the crossfade length); every take, at its playrate
  
  local EPS = 1e-9
  
@@ -81,15 +84,20 @@
      if nearly(lend, rpos) then
        local take = reaper.GetActiveTake(right)
        if take then
-         local startoffs = reaper.GetMediaItemTakeInfo_Value(take, "D_STARTOFFS")
- 
          -- Extend left
          reaper.SetMediaItemInfo_Value(left, "D_LENGTH", llen + half)
  
-         -- Move right earlier, compensate take offset
+         -- Move right earlier; its takes start earlier in their source by the same
+         -- amount, so its audio stays where it was
          reaper.SetMediaItemInfo_Value(right, "D_POSITION", rpos - half)
          reaper.SetMediaItemInfo_Value(right, "D_LENGTH", rlen + half)
-         reaper.SetMediaItemTakeInfo_Value(take, "D_STARTOFFS", startoffs + half)
+         for t = 0, reaper.CountTakes(right) - 1 do
+           local tk = reaper.GetTake(right, t)
+           if tk then
+             reaper.SetMediaItemTakeInfo_Value(tk, "D_STARTOFFS", reaper.GetMediaItemTakeInfo_Value(tk, "D_STARTOFFS")
+               - half * reaper.GetMediaItemTakeInfo_Value(tk, "D_PLAYRATE"))
+           end
+         end
  
          -- Apply fades
          reaper.SetMediaItemInfo_Value(left,  "D_FADEOUTLEN", xfade_len)

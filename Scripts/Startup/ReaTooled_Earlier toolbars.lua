@@ -22,7 +22,7 @@ return {
   ["Main options"] = { "c9a5025b" },
   ["Main toolbar"] = { "dc4dd508" },
   ["Main track"] = { "1d119295", "c042d40b" },
-  ["Main view"] = { "283df88c" },
+  ["Main view"] = { "283df88c", "d283af27" },
   ["Media item context"] = { "4ca699d7" },
   ["Track control panel context"] = { "3d232901", "e444f9a7" },
 }

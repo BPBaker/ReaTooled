@@ -1,116 +1,62 @@
 -- @description ReaTooled - Shuffle move (background, started in Shuffle mode)
--- @version 2.7.7
--- @date 2026.10.31
+-- @version 1.0.2
+-- @date 2026.11.05
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
---   Runs while Shuffle mode is on and the Move Tool (or the Multi tool) is selected;
---   stops by itself otherwise. Like Pro Tools' Shuffle: dragging an item reorders it
---   among the items on its track.
---     - The item leaves its place, and what comes after it closes up by its length.
---     - It goes back in at the item edge nearest where you drop it, pushing what
---       comes after that edge along by its length.
---     - Crossfades are kept: the edit point is the crossfade's centre, items keep the
---       audio that reaches past it, and crossfades form again where that audio meets
---       a new neighbor. Butted items stay butted (no crossfade is ever added).
---     - Gaps between items are kept, like empty items: they move along, and the item
---       can be dropped on either side of a gap. In a gap with room, it can also go
---       one item-length right or left of where it was (nothing else moves).
---     - The track shows the result while you drag, with what moves selected (it stays
---       selected after the drop); letting go makes one undo step.
---   Dragging a selected item moves the selected items on its track (and lane) as one
---   block, keeping their spacing; unselected items between them come along.
---   Tracks that follow the clicked track's group (media editing), other items in the
---   clicked item's group, and (if it's selected) selected items on other tracks
---   shuffle together: each of those tracks takes out the same time range and puts it
---   back at the same place, so they stay in sync. Drop points are item edges on any of
---   those tracks that aren't inside an item on another (empty space is fine; nothing
---   is ever split); if an item there crosses the start or end of what's moving, the
---   shuffle doesn't start.
---   With ripple editing all tracks, every track moves the same stretch of time (a
---   razor move of the whole project): items crossing it, or the drop point, are split
---   there with short fades, and markers and regions go along. Locked items never
---   move or split.
---   With "Move envelope points with media items" on, the tracks' automation follows:
---   the moved stretch's points go with it (to the envelope of the same name on
---   another track), the rest closes up or moves along like the items, and points are
---   added at the edit boundaries so the values stay exact around each edit. It moves
---   live while you drag.
---   Automation items aren't moved.
+--   Pro Tools' Shuffle for REAPER. Runs while Shuffle mode is on and the Move Tool or
+--   the Multi tool is selected (it stops by itself otherwise).
+--
+--   Dragging an item reorders it among the items on its track:
+--     - It leaves its place and what follows closes up; it goes back in at the item
+--       edge nearest where you drop it, pushing what follows along.
+--     - Gaps are kept, like empty items. In a gap with room, it can also go one
+--       item-length right or left of where it was (nothing else moves).
+--     - Dragged to another track, its own track closes up and it goes in at an item
+--       edge there (on an empty track, at its time).
+--     - The track shows the result while you drag; letting go makes one undo step and
+--       leaves what moved selected. A plain click still just selects the item.
+--     - Dragging a selected item moves the selected items on its track as one block
+--       (with whatever lies between them).
+--     - Option/Alt-drag copies: the copy goes in at the drop point, the original stays.
+--
+--   Crossfades:
+--     - The item moves whole, as REAPER shows it. Pressing it cuts its neighbors where
+--       it begins and ends, so its crossfades go (the audio stays in their sources);
+--       let go where it started, they come back. Crossfades inside a block stay.
+--     - Items crossfaded together stay together: the drop points there are the
+--       crossfade's start and end, never its centre.
+--     - Zoomed in, the inner edge of a fade is a drop point too (the item is split
+--       there; the fade stays whole).
+--     - Every new junction gets a crossfade of REAPER's default crossfade length while
+--       auto-crossfade is on (Options > Auto-crossfade media items when editing), from
+--       the audio past the cut; with it off, butt joints and no fades.
+--
+--   Razor areas: with Separation Mode on, dragging a razor area shuffles what's in it;
+--   Option/Alt-dragging one copies it (with or without Separation Mode). A piece cut
+--   out of a razor area keeps a fade only if the whole fade is inside the area; a fade
+--   the area cuts through ends at the cut on what's left outside; the cuts get a short
+--   safety fade.
+--
+--   Other tracks:
+--     - Tracks grouped with the clicked track (media editing), items grouped with the
+--       clicked item, and selected items on other tracks shuffle together, in sync.
+--       Drop points are only where none of them would have to be split.
+--     - With ripple editing all tracks, every track moves the same stretch of time:
+--       items crossing it or the drop point are split there, and markers and regions
+--       go along.
+--     - With "Move envelope points with media items" on, track automation follows,
+--       live (automation items don't move).
+--     - Locked items never move or split.
+--
 --   Move Tool: any plain drag on an item. Multi tool: plain drags on an item's lower
---   half (where it moves items); edges, fades and handles stay REAPER's.
---   Option/Alt-drag copies: the copy goes in at the drop point and pushes what follows
---   along, and the original stays. Other modifier drags stay REAPER's own. A plain click still selects
---   the item. Dragged to another track, the item leaves its track (which closes
---   up) and goes in at an item edge on the new track (on an empty track, at its
---   time). Tracks with locked items aren't shuffled.
+--   half; its upper half, edges, fades and handles stay REAPER's.
 -- @changelog
---   v2.6.1 Option/Alt-dragging a razor area in Shuffle copies it with or without Separation
---          Mode (the Selector too, and the Multi tool's upper half over a razor area); no
---          error when an undo removes items during a drag
---   v2.6 Option/Alt-drag copies, like Pro Tools' Option-drag in Shuffle: a copy goes in at
---        the drop point and pushes what follows along (items, grouped and selected
---        tracks, another track, all tracks, and razor areas with Separation Mode, where
---        the copy is trimmed to the area). Razor areas are re-read only when the project
---        changes. Drags switched off over a razor area are kept on disk and put back if
---        the script stops before it can. A tip when razor areas on other tracks cover a
---        different range (every track moves the clicked track's range)
---   v2.5 Multi tool in Shuffle: its upper half works again (drag makes a razor area, as
---        without Shuffle): while the mouse is over an item's upper half, the tool's own
---        drag there is put back; the lower half shuffles
---   v2.4.3 Separation: the placeholders for empty space are shaded like the track's
---          background and never shown selected
---   v2.4.2 Separation: while the mouse is over a razor area, the tool's own plain drags
---          on items and empty track space are off (no new razor area or marquee is
---          started under the Shuffle drag, e.g. with the Selector); back when it leaves
---   v2.4.1 Separation: the razor area is read from just before the press (REAPER can
---          clear it as the button goes down) and put back, so it can be dragged
---   v2.4 Separation mode: dragging a razor area shuffles what's in it (like Pro Tools'
---        Separation Grabber in Shuffle). Once the drag starts, items on the tracks with
---        that razor area are split at its edges and empty space in it is held by
---        temporary empty items; the pieces then shuffle like selected items (crossfades,
---        gaps, other tracks, grouped tracks, all tracks). Back home or cancelled,
---        everything is as it was; dropped, the empty space comes back, the razor area
---        is cleared and the pieces stay selected
---   v2.2 What moves is selected while dragging (on every track it moves on, with the
---        split pieces in all-tracks mode), so its bounds show; it stays selected
---        after the drop. Back home or cancelled, the selection is as it was.
---   v2.1 With ripple editing all tracks: every track moves the same stretch of time,
---        like a razor move of the whole project. Items on other tracks crossing its
---        start or end, or the drop point, are split there with short fades (REAPER's
---        default fade length); markers and regions go along (MOVE_MARKERS); all
---        tracks' automation follows (not the tempo map). Drop points come from the
---        clicked track only. Locked items never move or split: drop points that would
---        need that aren't offered.
---   v2.0 Crossfades are preserved: a crossfade's edit point is its centre, so what
---        moves runs from edit point to edit point and every track shifts by the same
---        amount. Neighbors that close up meet in a crossfade made of their own
---        extensions; an item with extensions keeps them where it lands (crossfades
---        form there, fades set to the overlap). Butted items stay butted. Grouped
---        crossfaded edits (drums) can now be shuffled.
---   v1.9 Automation follows live while dragging (not only on release)
---   v1.8 Restarts whenever a tool is applied, so an updated script always takes over
---   v1.7 Track automation follows (with "Move envelope points with media items" on):
---        the moved stretch's points go with it, the rest closes up or moves along,
---        and points are added at the edit boundaries so values stay exact
---   v1.6 Tracks shuffling together: an item edge on any of them is a drop point, as long
---        as it isn't inside an item on another (empty space is fine), so the moving
---        items can go where some tracks have edges and others have empty space
---   v1.5 Grouped tracks, item groups and selections across tracks shuffle together:
---        each of those tracks takes out the same time range and puts it back at the
---        same place. Only drop points that aren't inside an item on any of them.
---   v1.4 Dragging a selected item moves the selected items on its track as one block
---        (keeping their spacing; items between them come along)
---   v1.3 Items can be moved to another track: the track they leave closes up, and
---        they go in at an item edge on the new one (an empty track: at their time).
---        Tracks with locked items can't take them.
---   v1.2 An item sitting in a gap can also be dropped one item-length to the right or
---        left of where it was (its start where its end was, or its end where its start
---        was) when the gap has room; nothing else moves. One undo step with Link
---        Timeline on (the Move Tool's click no longer runs after a Shuffle drag).
---   v1.1 The item's starting place is always one it can be dropped back at (it
---        couldn't when it was the first item on its track with a gap after it)
---   v1.0 Initial version: one item, on its own track
+--   v1.0.2 With ripple editing all tracks, the other tracks' new junctions follow the same
+--          rule as the dragged track: a crossfade with auto-crossfade on, else a butt joint
+--   v1.0.1 Less flicker in other windows (Track Manager, Project Bay) while dragging: the
+--          item selection is changed only where it differs
+--   v1.0 First release
 
 local NS          = "ReaTooled"
 local TOOL_KEY    = "ShuffleMoveTool"    -- "grabber" / "smart" while wanted (set by the Tools library)
@@ -122,6 +68,12 @@ local DRAG_STAMP      = "ShuffleDragTime"   -- read by the Move Tool click: skip
 local AUTOSCROLL_RATE = 0.5    -- pixels scrolled per frame, per pixel past the arrange's side
 local MOVE_MARKERS    = true   -- ripple editing all tracks: markers and regions move along
 local RIPPLE_ALL      = 40311  -- Options: Set ripple editing all tracks
+-- Crossfades and cuts (see @about): the dragged item moves whole; its old neighbors are
+-- cut where it began and ended. Every new junction between two items: a crossfade of
+-- REAPER's default crossfade length while auto-crossfade is on, else a butt joint.
+local AUTO_XFADE      = 40041  -- Options: Auto-crossfade media items when editing
+local XFADE_SHAPE     = 1      -- fade shape of both sides of those crossfades
+local FADE_DROP_PX    = 12     -- a fade's inner edge is a drop point when it's this wide on screen
 
 local _, script_path = reaper.get_action_context()
 local dir = script_path:match("^(.*[/\\])") or ""
@@ -146,11 +98,12 @@ local G = nil   -- the drag in progress
 -- A track as a row of segments: items and the gaps between them
 --
 -- A crossfade's edit point is its centre: the two items' segments meet there, and
--- each item reaches past it by half the overlap (its extension, like Pro Tools'
--- handles under a crossfade). Moving a stretch takes out the segments between two
--- edit points, so every track shifts by exactly the same amount, and items keep
--- their extensions wherever they go: crossfades are preserved (and form again where
--- an item with an extension meets a new neighbor). Butted items stay butted.
+-- each item reaches past it by half the overlap (its extension). Moving a stretch takes
+-- out the segments between two edit points, so every track shifts by exactly the same
+-- amount. What's dragged is widened to its items' real edges (start_drag: the item moves
+-- whole, its old neighbors are cut there); everywhere else, an item that gets a new
+-- neighbor is cut at its segment's edge (junctions_for), and new junctions get a
+-- crossfade with auto-crossfade on. (Grouped tracks shuffling along keep the centres.)
 ------------------------------------------------------------
 local TOL = 1e-6
 
@@ -209,16 +162,6 @@ local function layout(segs)
     t = t + s.len
   end
   return pos
-end
-
--- The items of a row of segments, in order
-local function row_order(segs)
-  local list = {}
-  for _, s in ipairs(segs) do
-    if s.item then list[#list + 1] = s.item end
-    if s.members then for _, m in ipairs(s.members) do list[#list + 1] = m.item end end
-  end
-  return list
 end
 
 -- Where time T falls in a row: a drop point { k = segments before it, t = T,
@@ -294,7 +237,8 @@ end
 ------------------------------------------------------------
 -- Fades: crossfades follow the items
 ------------------------------------------------------------
-local FADE_KEYS = { "D_FADEINLEN", "D_FADEOUTLEN", "D_FADEINLEN_AUTO", "D_FADEOUTLEN_AUTO" }
+local FADE_KEYS = { "D_FADEINLEN", "D_FADEOUTLEN", "D_FADEINLEN_AUTO", "D_FADEOUTLEN_AUTO",
+                    "C_FADEINSHAPE", "C_FADEOUTSHAPE" }
 
 -- (with the length and take offsets: an item can be trimmed at the project start)
 local function snap_fades(list)
@@ -313,9 +257,21 @@ local function snap_fades(list)
   end
 end
 
+-- Items whose fades, length or take offsets this drag has changed: only these are put
+-- back each time the drop point changes
+local function touch(it)
+  if G.fadeSnap[it] then
+    G.dirty = G.dirty or {}
+    G.dirty[it] = true
+  end
+end
+
 local function restore_fades()
-  for it, f in pairs(G.fadeSnap) do
-    if reaper.ValidatePtr2(0, it, "MediaItem*") then
+  local dirty = G.dirty or {}
+  G.dirty = {}
+  for it in pairs(dirty) do
+    local f = G.fadeSnap[it]
+    if f and reaper.ValidatePtr2(0, it, "MediaItem*") then
       for k, v in pairs(f) do
         if math.abs(reaper.GetMediaItemInfo_Value(it, k) - v) > 1e-12 then reaper.SetMediaItemInfo_Value(it, k, v) end
       end
@@ -329,25 +285,14 @@ local function restore_fades()
   end
 end
 
+local clean_junctions_fwd, junction_xfades_fwd, all_xfades_fwd   -- (below)
+
 -- Items that are next to each other now but weren't at the click: where they overlap,
 -- that's a crossfade (from an item's extension), so both fades are set to the overlap
-local function crossfades_for(segs, pos)
-  local order = row_order(segs)
-  for i = 1, #order - 1 do
-    local A, B = order[i], order[i + 1]
-    local valid = reaper.ValidatePtr2(0, A, "MediaItem*") and reaper.ValidatePtr2(0, B, "MediaItem*")
-      and pos[A] and pos[B]                       -- (an undo during the drag can remove items)
-    if valid and G.nextOf[A] ~= B then
-      local aEnd = pos[A] + reaper.GetMediaItemInfo_Value(A, "D_LENGTH")
-      local ov = aEnd - pos[B]
-      if ov > TOL then
-        reaper.SetMediaItemInfo_Value(A, "D_FADEOUTLEN", ov)
-        reaper.SetMediaItemInfo_Value(B, "D_FADEINLEN", ov)
-        if reaper.GetMediaItemInfo_Value(A, "D_FADEOUTLEN_AUTO") >= 0 then reaper.SetMediaItemInfo_Value(A, "D_FADEOUTLEN_AUTO", ov) end
-        if reaper.GetMediaItemInfo_Value(B, "D_FADEINLEN_AUTO") >= 0 then reaper.SetMediaItemInfo_Value(B, "D_FADEINLEN_AUTO", ov) end
-      end
-    end
-  end
+-- (the extensions are cut off first, so now they never do)
+local function junctions_for(segs)
+  clean_junctions_fwd(segs)
+  junction_xfades_fwd(segs)
 end
 
 local function note_neighbors(list)
@@ -359,6 +304,16 @@ end
 -- razor move of the whole project. Items crossing its start or end, or the drop
 -- point, are split there (with short fades); markers and regions go along.
 ------------------------------------------------------------
+-- REAPER's default crossfade length (as "Auto crossfade at edit cursor" reads it)
+local function default_xfade()
+  local ok, v = reaper.get_config_var_string("defsplitxfadelen")
+  local n = ok and tonumber(v) or nil
+  if n and n > 0 then return (n > 10) and (n / 1000) or n end
+  ok, v = reaper.get_config_var_string("deffadelen")
+  n = ok and tonumber(v) or nil
+  return (n and n > 0) and n or 0.01
+end
+
 local function default_fade()
   local v
   if reaper.get_config_var_string then
@@ -426,10 +381,11 @@ local function set_marker(m, pos, rend)
 end
 
 -- Split an item at t (the cut gets short fades); remembered so it can be undone
-local function split_at(it, t)
+local function split_at(it, t, store, fade)
   local pos = reaper.GetMediaItemInfo_Value(it, "D_POSITION")
   local len = reaper.GetMediaItemInfo_Value(it, "D_LENGTH")
   if not (pos + TOL < t and pos + len - TOL > t) then return nil end
+  touch(it)
   local rec = { left = it, len = len,
                 fout = reaper.GetMediaItemInfo_Value(it, "D_FADEOUTLEN"),
                 foutA = reaper.GetMediaItemInfo_Value(it, "D_FADEOUTLEN_AUTO"),
@@ -437,7 +393,8 @@ local function split_at(it, t)
   local right = reaper.SplitMediaItem(it, t)
   if not right then return nil end
   rec.right = right
-  G.splits[#G.splits + 1] = rec
+  store = store or G.splits
+  store[#store + 1] = rec
   -- exactly at t, whatever REAPER's split preferences add (overlaps on split)
   reaper.SetMediaItemInfo_Value(it, "D_LENGTH", t - pos)
   local rpos = reaper.GetMediaItemInfo_Value(right, "D_POSITION")
@@ -452,7 +409,7 @@ local function split_at(it, t)
     reaper.SetMediaItemInfo_Value(right, "D_POSITION", t)
   end
   reaper.SetMediaItemInfo_Value(right, "D_LENGTH", pos + len - t)
-  local f = G.cutFade
+  local f = fade or G.cutFade
   local fl, fr = math.min(f, (t - pos) / 2), math.min(f, (pos + len - t) / 2)
   reaper.SetMediaItemInfo_Value(it, "D_FADEOUTLEN", fl)
   if reaper.GetMediaItemInfo_Value(it, "D_FADEOUTLEN_AUTO") >= 0 then reaper.SetMediaItemInfo_Value(it, "D_FADEOUTLEN_AUTO", fl) end
@@ -463,6 +420,19 @@ end
 
 -- Every other track back as it was at the click
 local function all_restore()
+  for i = #(G.allXRec or {}), 1, -1 do   -- (their crossfades undone)
+    local r = G.allXRec[i]
+    if reaper.ValidatePtr2(0, r.it, "MediaItem*") then
+      for _, k in ipairs({ "D_POSITION", "D_LENGTH", "D_FADEINLEN", "D_FADEOUTLEN", "D_FADEINLEN_AUTO",
+                           "D_FADEOUTLEN_AUTO", "C_FADEINSHAPE", "C_FADEOUTSHAPE" }) do
+        reaper.SetMediaItemInfo_Value(r.it, k, r[k])
+      end
+      for tk, v in pairs(r.offs) do
+        if reaper.ValidatePtr2(0, tk, "MediaItem_Take*") then reaper.SetMediaItemTakeInfo_Value(tk, "D_STARTOFFS", v) end
+      end
+    end
+  end
+  G.allXRec, G.allXSeen = nil, nil
   for _, o in ipairs(G.others) do
     if reaper.ValidatePtr2(0, o.it, "MediaItem*")
        and math.abs(reaper.GetMediaItemInfo_Value(o.it, "D_POSITION") - o.pos) > 1e-9 then
@@ -531,6 +501,7 @@ local function split_row(row)
       local key = tostring(row.tr) .. "@" .. T
       G.midSplits, G.midBy = G.midSplits or {}, G.midBy or {}
       local rec = G.midBy[key]
+      touch(r.it)
       if not rec then
         reaper.SetMediaItemInfo_Value(r.it, "D_POSITION", r.pos)
         reaper.SetMediaItemInfo_Value(r.it, "D_LENGTH", r.len)
@@ -587,6 +558,391 @@ local function split_row(row)
   return build_row(list)
 end
 
+------------------------------------------------------------
+-- Fade drop points: the inner edge of a fade or crossfade.
+-- A fade-in's end or a fade-out's start: the item is split there (the fade stays
+-- whole in its piece). A crossfade's end: the next item is trimmed to it (the
+-- crossfade stays with the earlier item); its start: the earlier item is trimmed to it
+-- (the crossfade stays with the next). Done only while
+-- that drop point is used: undone as soon as the drag goes anywhere else.
+------------------------------------------------------------
+-- (The old neighbors as they are once what moves has left, cut where
+-- it began and ended; not when copying, where they stay as they were)
+local function claimed(it)
+  return G.claimSnap and not G.copy and G.claimSnap[it] or nil
+end
+
+local function snap_val(it, k)
+  local c = claimed(it)
+  if c and c[k] ~= nil then return c[k] end
+  local f = G.fadeSnap[it]
+  if f and f[k] ~= nil then return f[k] end
+  return reaper.GetMediaItemInfo_Value(it, k)
+end
+
+local function fade_len(it, which)
+  local au = snap_val(it, which == "in" and "D_FADEINLEN_AUTO" or "D_FADEOUTLEN_AUTO")
+  if au and au > 0 then return au end
+  return snap_val(it, which == "in" and "D_FADEINLEN" or "D_FADEOUTLEN") or 0
+end
+
+-- A row's fade drop points { k = -3, t =, fade = "in"/"out", x = crossfade?, w = fade length }
+local function fade_bounds(R, list)
+  local out = {}
+  -- A crossfade's start and end are drop points instead of its
+  -- centre (whatever the zoom); what's dropped there goes between the two items, the
+  -- one on the other side keeps the whole crossfade's length, the near one is cut
+  -- (not with grouped tracks, where the drag uses the crossfades' centres)
+  local keepX = G.claim ~= nil
+  local skip = {}   -- (copying a razor area: items split at its edges have none)
+  if G.splitTs and list then
+    for _, T in ipairs(G.splitTs) do
+      for _, r in ipairs(mid_covering(list, T)) do skip[r.it] = true end
+    end
+  end
+  local st = seg_starts(R)
+  for j, sg in ipairs(R) do
+    local Z = sg.item
+    if Z and not skip[Z] and reaper.ValidatePtr2(0, Z, "MediaItem*") then
+      local s, L = st[j], sg.len
+      local p = s + sg.off
+      local e = p + snap_val(Z, "D_LENGTH")
+      local P, N = R[j - 1], R[j + 1]
+      local tin, xin, win, tout, xout, wout
+      if P and P.item then
+        local pe = st[j - 1] + P.off + snap_val(P.item, "D_LENGTH")
+        if pe > p + TOL then
+          if keepX then tin, xin, win = pe, true, pe - p else tin = false end
+        end
+      end
+      if tin == nil then
+        local f = fade_len(Z, "in")
+        if f > TOL then tin, win = p + f, f end
+      end
+      if N and N.item then
+        local np = st[j + 1] + N.off
+        if e > np + TOL then
+          if keepX then tout, xout, wout = np, true, e - np else tout = false end
+        end
+      end
+      if tout == nil then
+        local f = fade_len(Z, "out")
+        if f > TOL then tout, wout = e - f, f end
+      end
+      if tin and tout and tin > tout + TOL then tin, tout = nil, nil end   -- (the fades overlap)
+      if tin == false then tin = nil end
+      if tout == false then tout = nil end
+      if tin and tin > s + TOL and tin < s + L - TOL then
+        out[#out + 1] = { k = -3, t = tin, fade = "in", x = xin, w = win }
+      end
+      if tout and tout > s + TOL and tout < s + L - TOL and not (tin and math.abs(tout - tin) <= TOL) then
+        out[#out + 1] = { k = -3, t = tout, fade = "out", x = xout, w = wout }
+      end
+    end
+  end
+  return out
+end
+
+-- No drop points at the centre of a crossfade (items crossfaded together stay together)
+local function drop_xfade_centres(bounds, R)
+  if not G.claim then return bounds end
+  local st = seg_starts(R)
+  local out = {}
+  for _, b in ipairs(bounds) do
+    local centre = false
+    if not (b.fade or b.split or b.tail) and b.k and b.k >= 1 then
+      local P, N = R[b.k], R[b.k + 1]
+      if P and P.item and N and N.item then
+        local c = st[b.k + 1]
+        local pe = st[b.k] + P.off + snap_val(P.item, "D_LENGTH")
+        centre = pe > c + TOL and (c + N.off) < c - TOL
+      end
+    end
+    if not centre then out[#out + 1] = b end
+  end
+  return out
+end
+
+local function add_fade_bounds(bounds, R, list)
+  for _, fb in ipairs(fade_bounds(R, list)) do bounds[#bounds + 1] = fb end
+  return bounds
+end
+
+local function razor_drag_on() return G.wrap ~= nil or G.razorClear ~= nil end
+
+-- The fade at a cut Shuffle makes: REAPER's default fade length for razor areas, else none
+-- (junctions get crossfades instead, with auto-crossfade on)
+local function safety_fade()
+  if not G.safeFade then
+    G.safeFade = razor_drag_on() and default_fade() or 0
+  end
+  return G.safeFade
+end
+
+local function set_fade(it, which, v)
+  touch(it)
+  local k = which == "in" and "D_FADEINLEN" or "D_FADEOUTLEN"
+  reaper.SetMediaItemInfo_Value(it, k, v)
+  if reaper.GetMediaItemInfo_Value(it, k .. "_AUTO") >= 0 then reaper.SetMediaItemInfo_Value(it, k .. "_AUTO", v) end
+end
+
+-- The start of an item cut off (its audio stays in place)
+local function trim_start(it, cut)
+  touch(it)
+  local len = snap_val(it, "D_LENGTH") - cut
+  reaper.SetMediaItemInfo_Value(it, "D_LENGTH", len)
+  for t = 0, reaper.CountTakes(it) - 1 do
+    local tk = reaper.GetTake(it, t)
+    if tk then
+      local o = (G.offsSnap[it] and G.offsSnap[it][tk]) or reaper.GetMediaItemTakeInfo_Value(tk, "D_STARTOFFS")
+      local c = claimed(it)
+      reaper.SetMediaItemTakeInfo_Value(tk, "D_STARTOFFS", o + ((c and c.shift or 0) + cut) * reaper.GetMediaItemTakeInfo_Value(tk, "D_PLAYRATE"))
+    end
+  end
+  set_fade(it, "in", math.min(safety_fade(), len / 2))
+end
+
+local function trim_end(it, keep)
+  touch(it)
+  reaper.SetMediaItemInfo_Value(it, "D_LENGTH", keep)
+  set_fade(it, "out", math.min(safety_fade(), keep / 2))
+end
+
+-- Wherever an item's neighbor (the next segment) isn't the one
+-- it had at the click, what reaches past its segment is cut off, with a safety fade
+local function clip_item(it, s0, s1, keepL, keepR)
+  if not reaper.ValidatePtr2(0, it, "MediaItem*") then return end
+  local p = reaper.GetMediaItemInfo_Value(it, "D_POSITION")
+  local e = p + reaper.GetMediaItemInfo_Value(it, "D_LENGTH")
+  local ns = (not keepL and p < s0 - TOL) and s0 or p
+  local ne = (not keepR and e > s1 + TOL) and s1 or e
+  if (ns == p and ne == e) or ne <= ns + TOL then return end
+  touch(it)
+  local f = math.min(safety_fade(), (ne - ns) / 2)
+  if ns > p then
+    for t = 0, reaper.CountTakes(it) - 1 do
+      local tk = reaper.GetTake(it, t)
+      if tk then
+        reaper.SetMediaItemTakeInfo_Value(tk, "D_STARTOFFS", reaper.GetMediaItemTakeInfo_Value(tk, "D_STARTOFFS")
+          + (ns - p) * reaper.GetMediaItemTakeInfo_Value(tk, "D_PLAYRATE"))
+      end
+    end
+    reaper.SetMediaItemInfo_Value(it, "D_POSITION", ns)
+    set_fade(it, "in", f)
+  end
+  reaper.SetMediaItemInfo_Value(it, "D_LENGTH", ne - ns)
+  if ne < e then set_fade(it, "out", f) end
+end
+
+local function first_last(sg)   -- a segment's first and last item
+  if not sg then return nil, nil end
+  if sg.item then return sg.item, sg.item end
+  if sg.members and #sg.members > 0 then return sg.members[1].item, sg.members[#sg.members].item end
+  return nil, nil
+end
+
+local function clean_junctions(segs)
+  local st = seg_starts(segs)
+  for j, sg in ipairs(segs) do
+    local s0, s1 = st[j], st[j] + sg.len
+    local _, prevLast = first_last(segs[j - 1])
+    local nextFirst = first_last(segs[j + 1])
+    if sg.item then
+      local kl = prevLast ~= nil and G.nextOf[prevLast] == sg.item
+      local kr = nextFirst ~= nil and G.nextOf[sg.item] == nextFirst
+      if not (kl and kr) then clip_item(sg.item, s0, s1, kl, kr) end   -- (same neighbors: nothing to cut)
+    elseif sg.members then
+      local n = #sg.members
+      for i, m in ipairs(sg.members) do
+        local kl = i > 1 or (prevLast ~= nil and G.nextOf[prevLast] == m.item)
+        local kr = i < n or (nextFirst ~= nil and G.nextOf[m.item] == nextFirst)
+        if not (kl and kr) then clip_item(m.item, s0, s1, kl, kr) end
+      end
+    end
+  end
+end
+clean_junctions_fwd = clean_junctions
+
+-- Source audio an item has before its start and after its end (seconds)
+local function handle_room(it)
+  local tk = reaper.GetActiveTake(it)
+  if not tk then return 0, 0 end
+  if reaper.GetMediaItemInfo_Value(it, "B_LOOPSRC") == 1 then return math.huge, math.huge end
+  local src = reaper.GetMediaItemTake_Source(tk)
+  if not src then return 0, 0 end
+  local srclen, qn = reaper.GetMediaSourceLength(src)
+  if qn or not srclen then return 0, 0 end
+  local rate = reaper.GetMediaItemTakeInfo_Value(tk, "D_PLAYRATE")
+  if rate <= 0 then return 0, 0 end
+  local offs = reaper.GetMediaItemTakeInfo_Value(tk, "D_STARTOFFS")
+  local len = reaper.GetMediaItemInfo_Value(it, "D_LENGTH")
+  return math.max(0, offs / rate), math.max(0, (srclen - offs) / rate - len)
+end
+
+-- A crossfade of REAPER's default crossfade length at c, where A ends and B starts (butted):
+-- centred when both have audio past the cut, else from the side that has some, else none.
+-- before(it): called before an item is changed (to note how it was)
+local function xfade_pair(A, B, c, before)
+  local aPos, aLen = reaper.GetMediaItemInfo_Value(A, "D_POSITION"), reaper.GetMediaItemInfo_Value(A, "D_LENGTH")
+  local bPos, bLen = reaper.GetMediaItemInfo_Value(B, "D_POSITION"), reaper.GetMediaItemInfo_Value(B, "D_LENGTH")
+  if math.abs(aPos + aLen - c) > 1e-6 or math.abs(bPos - c) > 1e-6 then return end   -- (not butted there)
+  G.xfadeLen = G.xfadeLen or default_xfade()
+  local half = G.xfadeLen / 2
+  local _, aAfter = handle_room(A)
+  local bBefore = handle_room(B)
+  local ra = math.max(0, math.min(aAfter, bLen / 2))        -- (A reaches over B's start)
+  local rb = math.max(0, math.min(bBefore, aLen / 2, c))    -- (B reaches back over A's end)
+  local hA = math.min(half, ra)
+  local hB = math.min(half, rb)
+  if hA < half then hB = math.min(2 * half - hA, rb) end
+  if hB < half then hA = math.min(2 * half - hB, ra) end
+  local x = hA + hB
+  if x <= 1e-4 then return end
+  if before then before(A); before(B) end
+  if hA > 0 then reaper.SetMediaItemInfo_Value(A, "D_LENGTH", aLen + hA) end
+  set_fade(A, "out", x)
+  reaper.SetMediaItemInfo_Value(A, "C_FADEOUTSHAPE", XFADE_SHAPE)
+  if hB > 0 then
+    for t = 0, reaper.CountTakes(B) - 1 do
+      local tk = reaper.GetTake(B, t)
+      if tk then
+        reaper.SetMediaItemTakeInfo_Value(tk, "D_STARTOFFS", reaper.GetMediaItemTakeInfo_Value(tk, "D_STARTOFFS")
+          - hB * reaper.GetMediaItemTakeInfo_Value(tk, "D_PLAYRATE"))
+      end
+    end
+    reaper.SetMediaItemInfo_Value(B, "D_POSITION", c - hB)
+    reaper.SetMediaItemInfo_Value(B, "D_LENGTH", bLen + hB)
+  end
+  set_fade(B, "in", x)
+  reaper.SetMediaItemInfo_Value(B, "C_FADEINSHAPE", XFADE_SHAPE)
+end
+
+-- Auto-crossfade on (not for razor areas): every junction between items that weren't next
+-- to each other at the click gets a crossfade of REAPER's default crossfade length, from
+-- the audio past the cut (else it stays a butt joint)
+local function junction_xfades(segs)
+  if razor_drag_on() then return end
+  if G.autoX == nil then G.autoX = reaper.GetToggleCommandState(AUTO_XFADE) == 1 end
+  if not G.autoX then return end
+  local st = seg_starts(segs)
+  for j = 1, #segs - 1 do
+    local _, A = first_last(segs[j])
+    local B = first_last(segs[j + 1])
+    if A and B and G.nextOf[A] ~= B and reaper.ValidatePtr2(0, A, "MediaItem*") and reaper.ValidatePtr2(0, B, "MediaItem*") then
+      local c = st[j + 1]
+      xfade_pair(A, B, st[j + 1])
+    end
+  end
+end
+junction_xfades_fwd = junction_xfades
+
+-- Ripple editing all tracks: the other tracks' new junctions (where the moved stretch
+-- starts and ends, and where the gap it left closes up) follow the same rule as the
+-- dragged track: a crossfade with auto-crossfade on, else a butt joint. How the items
+-- were is noted, so all_restore puts them back.
+local ALLX_KEYS = { "D_POSITION", "D_LENGTH", "D_FADEINLEN", "D_FADEOUTLEN", "D_FADEINLEN_AUTO",
+                    "D_FADEOUTLEN_AUTO", "C_FADEINSHAPE", "C_FADEOUTSHAPE" }
+local function all_rec(it)
+  G.allXSeen = G.allXSeen or {}
+  if G.allXSeen[it] then return end
+  G.allXSeen[it] = true
+  local r = { it = it, offs = {} }
+  for _, k in ipairs(ALLX_KEYS) do r[k] = reaper.GetMediaItemInfo_Value(it, k) end
+  for t = 0, reaper.CountTakes(it) - 1 do
+    local tk = reaper.GetTake(it, t)
+    if tk then r.offs[tk] = reaper.GetMediaItemTakeInfo_Value(tk, "D_STARTOFFS") end
+  end
+  G.allXRec = G.allXRec or {}
+  G.allXRec[#G.allXRec + 1] = r
+end
+
+local function all_xfades(times)
+  if razor_drag_on() then return end
+  if G.autoX == nil then G.autoX = reaper.GetToggleCommandState(AUTO_XFADE) == 1 end
+  if not G.autoX then return end
+  local rows = {}   -- (items by track and lane)
+  local function add(it)
+    if it and reaper.ValidatePtr2(0, it, "MediaItem*") then
+      local key = tostring(reaper.GetMediaItem_Track(it)) .. ":" .. reaper.GetMediaItemInfo_Value(it, "I_FIXEDLANE")
+      rows[key] = rows[key] or {}
+      rows[key][#rows[key] + 1] = it
+    end
+  end
+  for _, o in ipairs(G.others) do if not o.locked then add(o.it) end end
+  for _, sp in ipairs(G.splits) do add(sp.right) end
+  for _, c in ipairs(G.allCopies or {}) do add(c.it) end
+  for _, list in pairs(rows) do
+    for _, J in ipairs(times) do
+      local L, R
+      for _, it in ipairs(list) do
+        local p = reaper.GetMediaItemInfo_Value(it, "D_POSITION")
+        if math.abs(p - J) <= 1e-6 then R = it end
+        if math.abs(p + reaper.GetMediaItemInfo_Value(it, "D_LENGTH") - J) <= 1e-6 then L = it end
+      end
+      if L and R and L ~= R then xfade_pair(L, R, J, all_rec) end
+    end
+  end
+end
+all_xfades_fwd = all_xfades
+
+
+
+local function heal_fade()
+  if not (G and G.fadeSplits) then return end
+  for i = #G.fadeSplits, 1, -1 do
+    local s = G.fadeSplits[i]
+    if reaper.ValidatePtr2(0, s.right, "MediaItem*") then
+      reaper.DeleteTrackMediaItem(reaper.GetMediaItem_Track(s.right), s.right)
+    end
+    -- (the left piece's length and fades are put back with everyone's fades)
+  end
+  G.fadeSplits = nil
+end
+
+-- Row R cut at fade drop point b: the new row and the drop point in it (nil if it can't be)
+local function fade_row(R, b)
+  local st = seg_starts(R)
+  for j, sg in ipairs(R) do
+    if sg.item and b.t > st[j] + TOL and b.t < st[j] + sg.len - TOL then
+      local Z, s, L, T = sg.item, st[j], sg.len, b.t
+      local p = s + sg.off
+      local F = {}
+      for i = 1, j - 1 do F[i] = R[i] end
+      local nb, nextI
+      if b.x and b.fade == "in" then          -- crossfade's end: this item starts there
+        local P = R[j - 1]
+        if not (P and P.item) then return nil end
+        trim_start(Z, T - p)
+        set_fade(P.item, "out", math.min(safety_fade(), snap_val(P.item, "D_LENGTH") / 2))
+        F[j - 1] = { item = P.item, len = P.len + (T - s), off = P.off, pos0 = P.pos0 }
+        F[j] = { item = Z, len = s + L - T, off = 0, pos0 = sg.pos0 }
+        nb, nextI = { k = j - 1, t = T }, j + 1
+      elseif b.x and b.fade == "out" then     -- crossfade's start: this item ends there
+        local N = R[j + 1]
+        if not (N and N.item) then return nil end
+        trim_end(Z, T - p)
+        set_fade(N.item, "in", math.min(safety_fade(), snap_val(N.item, "D_LENGTH") / 2))
+        F[j] = { item = Z, len = T - s, off = sg.off, pos0 = sg.pos0 }
+        local ns = st[j + 1]
+        F[j + 1] = { item = N.item, len = ns + N.len - T, off = ns + N.off - T, pos0 = N.pos0 }
+        nb, nextI = { k = j, t = T }, j + 2
+      else                                    -- a fade's inner edge: split there
+        local cur = reaper.GetMediaItemInfo_Value(Z, "D_POSITION")
+        G.fadeSplits = G.fadeSplits or {}
+        local Y = split_at(Z, cur + (T - p), G.fadeSplits, safety_fade())
+        if not Y then return nil end
+        G.nextOf[Y] = G.nextOf[Z]
+        F[j] = { item = Z, len = T - s, off = sg.off, pos0 = sg.pos0 }
+        F[j + 1] = { item = Y, len = s + L - T, off = 0, pos0 = T }
+        nb, nextI = { k = j, t = T }, j + 1
+      end
+      for i = nextI, #R do F[#F + 1] = R[i] end
+      return F, nb
+    end
+  end
+  return nil
+end
+
 -- Every other track with the stretch moved to T (T: time with the stretch taken out)
 local function all_apply(T)
   local cur = {}
@@ -609,6 +965,8 @@ local function all_apply(T)
       reaper.SetMediaItemInfo_Value(it, "D_POSITION", p)
     end
   end
+  -- new junctions: the moved stretch's start and end, and where the gap it left closed
+  all_xfades_fwd({ T, T + G.len, (G.a >= T - TOL) and (G.a + G.len) or G.a })
   for _, m in ipairs(G.markSnap or {}) do
     if m.isrgn then
       local s, e = all_map(m.pos, T), all_map_end(m.rend, T)
@@ -687,6 +1045,7 @@ local upper_half_fwd                                    -- (Multi tool upper hal
 -- An item's crossfade audio can't go before the project start: it is trimmed there
 -- (the timing of everything stays the same)
 local function trim_at_start(it, cut)
+  touch(it)
   local f = G.fadeSnap[it]
   local len = (f and f.D_LENGTH) or reaper.GetMediaItemInfo_Value(it, "D_LENGTH")
   cut = math.min(cut, len - TOL)
@@ -733,10 +1092,22 @@ end
 
 -- While dragging, what moves is selected (on every track it moves on), so its
 -- bounds show; back home or cancelled, the selection is as it was at the click
+-- (only what differs is changed: every selection change makes other windows, such as the
+-- Track Manager and Project Bay, redraw)
 local function select_only(list)
-  reaper.SelectAllMediaItems(0, false)
+  local want = {}
   for _, it in ipairs(list) do
-    if reaper.ValidatePtr2(0, it, "MediaItem*") then reaper.SetMediaItemSelected(it, true) end
+    if reaper.ValidatePtr2(0, it, "MediaItem*") then want[it] = true end
+  end
+  local cur = {}
+  for i = 0, reaper.CountSelectedMediaItems(0) - 1 do cur[#cur + 1] = reaper.GetSelectedMediaItem(0, i) end
+  local was = {}
+  for _, it in ipairs(cur) do
+    was[it] = true
+    if not want[it] then reaper.SetMediaItemSelected(it, false) end
+  end
+  for it in pairs(want) do
+    if not was[it] then reaper.SetMediaItemSelected(it, true) end
   end
 end
 
@@ -767,6 +1138,7 @@ local function restore()
   if not G then return end
   reaper.PreventUIRefresh(1)
   heal_mid()
+  heal_fade()
   put_D_on(G.src.tr)
   for _, row in pairs(G.rows) do if row then restore_list(row.list) end end
   for _, F in ipairs(G.followers or {}) do restore_list(F.list) end
@@ -787,7 +1159,7 @@ local function target_row(tr)
   if not list then G.rows[tr] = false return nil end
   snap_fades(list); note_neighbors(list)
   local R = build_row(list, G.memberSet)
-  local bounds = row_bounds(R, nil)
+  local bounds = drop_xfade_centres(add_fade_bounds(row_bounds(R, nil), R, list), R)
   if #R == 0 then                                -- empty track: D keeps its time
     R = { { gap = true, len = G.a } }
     bounds = { { k = 1, t = G.a } }
@@ -833,6 +1205,56 @@ local function start_drag(D, pressTime)
   local R = {}
   for i = 1, i1 - 1 do R[#R + 1] = segs[i] end
   for i = i2 + 1, #segs do R[#R + 1] = segs[i] end
+  -- What moves runs from the first item's start to the last one's end (crossfades and all);
+  -- the neighbors it was crossfaded with are cut there once it moves
+  local all0 = reaper.GetToggleCommandState(RIPPLE_ALL) == 1
+  local fset = all0 and {} or follower_tracks(D, tr)
+  local claim = nil
+  if not razor_starting and next(fset) == nil then
+    local first, last = segs[i1], segs[i2]
+    local fPos = st[i1] + first.off
+    local lEnd = st[i2] + last.off + reaper.GetMediaItemInfo_Value(last.item, "D_LENGTH")
+    local bEnd = a + len
+    local ns, ne = math.min(a, fPos), math.max(bEnd, lEnd)
+    local ok, P, N = true, nil, nil
+    if ns < a - TOL then
+      P = segs[i1 - 1]
+      ok = P and P.item and ns > st[i1 - 1] + TOL and (st[i1 - 1] + P.off) < ns - TOL
+    end
+    if ok and ne > bEnd + TOL then
+      N = segs[i2 + 1]
+      local nEnd = N and N.item and (st[i2 + 1] + N.off + reaper.GetMediaItemInfo_Value(N.item, "D_LENGTH"))
+      ok = N and N.item and ne < st[i2 + 1] + N.len - TOL and nEnd > ne + TOL
+    end
+    if ok then
+      claim = {}
+      local R2 = {}
+      for i = 1, i1 - 2 do R2[#R2 + 1] = segs[i] end
+      if i1 > 1 then
+        local pv = segs[i1 - 1]
+        if P then
+          R2[#R2 + 1] = { item = pv.item, len = pv.len - (a - ns), off = pv.off, pos0 = pv.pos0 }
+          claim.P, claim.pKeep = pv.item, ns - (st[i1 - 1] + pv.off)
+        else
+          R2[#R2 + 1] = pv
+        end
+      end
+      if i2 < #segs then
+        local nx = segs[i2 + 1]
+        if N then
+          R2[#R2 + 1] = { item = nx.item, len = nx.len - (ne - bEnd), off = 0, pos0 = nx.pos0 }
+          claim.N, claim.nCut = nx.item, ne - (st[i2 + 1] + nx.off)
+        else
+          R2[#R2 + 1] = nx
+        end
+      end
+      for i = i2 + 2, #segs do R2[#R2 + 1] = segs[i] end
+      for _, m in ipairs(block.members) do m.off = m.off + (a - ns) end
+      a, len = ns, ne - ns
+      block.pos0, block.len = a, len
+      R = R2
+    end
+  end
   local bounds = row_bounds(R, a)
   -- Its own edges, when it sits in a gap with room: one length right (its start where
   -- its end was) or left (its end where its start was). The gap is split, so nothing
@@ -843,7 +1265,24 @@ local function start_drag(D, pressTime)
   end
 
   G = { fadeSnap = {}, offsSnap = {}, nextOf = {}, envSnap = {} }   -- (filled below; needed by the helpers)
+  G.claim = claim
   snap_fades(list); note_neighbors(list)
+  if claim and (claim.P or claim.N) then
+    G.claimSnap = {}
+    local sf = safety_fade()
+    local function cs(it, which, len, shift)
+      local f = G.fadeSnap[it]
+      local k = which == "in" and "D_FADEINLEN" or "D_FADEOUTLEN"
+      local c = { D_LENGTH = len, shift = shift or 0, p0 = reaper.GetMediaItemInfo_Value(it, "D_POSITION") }
+      c[k] = math.min(sf, len / 2)
+      c[k .. "_AUTO"] = (f[k .. "_AUTO"] >= 0) and c[k] or f[k .. "_AUTO"]
+      G.claimSnap[it] = c
+    end
+    if claim.P then cs(claim.P, "out", claim.pKeep) end
+    if claim.N then cs(claim.N, "in", G.fadeSnap[claim.N].D_LENGTH - claim.nCut, claim.nCut) end
+  end
+  add_fade_bounds(bounds, R, list)
+  bounds = drop_xfade_centres(bounds, R)
 
   local all = reaper.GetToggleCommandState(RIPPLE_ALL) == 1
   if all then
@@ -864,13 +1303,13 @@ local function start_drag(D, pressTime)
     end
     if #ok < #bounds and #ok <= 1 then tip("locked items on other tracks are in the way") end
     bounds = ok
-    G.all, G.splits, G.cutFade = true, {}, (razor_starting and 0 or default_fade())   -- (razor areas: plain cuts, like the lead track)
+    G.all, G.splits, G.cutFade = true, {}, 0   -- (plain cuts)
     if MOVE_MARKERS then G.markSnap = snap_markers() end
   end
 
   -- Tracks that shuffle along: the same stretch out, the same place back in
   local followers = {}
-  for ftr in pairs(all and {} or follower_tracks(D, tr)) do
+  for ftr in pairs(fset) do
     local flist = lane_items(ftr, lane)
     if not flist then G = nil tip("a grouped track has locked items") return end
     local FR, fblk = extract(build_row(flist), a, a + len)
@@ -912,7 +1351,6 @@ local function start_drag(D, pressTime)
   G.followers, G.a, G.len = followers, a, len
   G.track, G.b, G.grab, G.active = tr, nil, pressTime - a, false
   G.pressX, G.pressY = mouse.mouse()
-  G.wasSelected = reaper.IsMediaItemSelected(D)
   G.selSnap = {}
   for i = 0, reaper.CountSelectedMediaItems(0) - 1 do G.selSnap[#G.selSnap + 1] = reaper.GetSelectedMediaItem(0, i) end
 end
@@ -1017,7 +1455,7 @@ local function copy_at_start_pick(bounds, a, len)
   local ins, prev = nil, nil
   for _, bd in ipairs(bounds) do
     if bd.ins and not bd.endpt then ins = bd
-    elseif bd.t < a - TOL and (not prev or bd.t > prev) then prev = bd.t end
+    elseif not bd.fade and bd.t < a - TOL and (not prev or bd.t > prev) then prev = bd.t end
   end
   if not ins then return end
   local half = a - len / 2
@@ -1091,9 +1529,10 @@ local function make_copy()
     end
     F.blk = { { members = fm, len = G.len } }
   end
-  local bounds = row_bounds(G.src.R, G.a)
+  local bounds = drop_xfade_centres(add_fade_bounds(row_bounds(G.src.R, G.a), G.src.R, G.src.list), G.src.R)
   bounds[#bounds + 1] = { k = -1, t = G.a }   -- back home: no copy
-  bounds = add_copy_at_start(bounds, G.src.R, G.a, G.src.list)
+  -- (its start may be inside the item before it: no split there)
+  bounds = add_copy_at_start(bounds, G.src.R, G.a, (not G.claim) and G.src.list or nil)
   bounds = copy_follower_filter(bounds)
   if G.all then bounds = copy_all_setup(bounds) end
   copy_at_start_pick(bounds, G.a, G.len)
@@ -1126,6 +1565,7 @@ local function all_apply_copy(T)
     reaper.SetMediaItemInfo_Value(c.it, "D_POSITION", T + c.off)
     G.allMoving[#G.allMoving + 1] = c.it
   end
+  all_xfades_fwd({ T, T + G.len })   -- (the copy's start and end)
   for _, m in ipairs(G.markSnap or {}) do
     local s1 = (m.pos >= T - TOL) and (m.pos + G.len) or m.pos
     local e1 = m.isrgn and ((m.rend >= T + TOL) and (m.rend + G.len) or m.rend) or m.rend
@@ -1141,15 +1581,57 @@ end
 
 local function nearest_bound(bounds, desired)
   local best, bestD = nil, math.huge
+  local zoom = reaper.GetHZoomLevel()   -- (pixels per second)
   for _, b in ipairs(bounds) do
-    local d = math.abs((b.pick or b.t) - desired)
-    if d < bestD then best, bestD = b, d end
+    if not b.dead and (not b.fade or b.x or b.w * zoom >= FADE_DROP_PX) then
+      local d = math.abs((b.pick or b.t) - desired)
+      if d < bestD then best, bestD = b, d end
+    end
   end
   return best
 end
 
 local function at_start(tr, b)
   return tr == G.src.tr and b and not b.split and not b.ins and math.abs(b.t - G.a) <= TOL
+end
+
+-- The old neighbors cut where what moves began and ended, and its own
+-- crossfades gone (from the press on; put back only if it's let go where it started)
+local function apply_claim()
+  if not G.copy then
+    for it, c in pairs(G.claimSnap or {}) do   -- (cut where what moves began and ended)
+      if reaper.ValidatePtr2(0, it, "MediaItem*") then
+        touch(it)
+        for k, v in pairs(c) do
+          if k ~= "shift" and k ~= "p0" then reaper.SetMediaItemInfo_Value(it, k, v) end
+        end
+        if c.shift > 0 then
+          reaper.SetMediaItemInfo_Value(it, "D_POSITION", c.p0 + c.shift)   -- (its audio stays in place)
+          for t = 0, reaper.CountTakes(it) - 1 do
+            local tk = reaper.GetTake(it, t)
+            if tk and G.offsSnap[it] and G.offsSnap[it][tk] then
+              reaper.SetMediaItemTakeInfo_Value(tk, "D_STARTOFFS", G.offsSnap[it][tk] + c.shift * reaper.GetMediaItemTakeInfo_Value(tk, "D_PLAYRATE"))
+            end
+          end
+        end
+      end
+    end
+  end
+  local ms = G.Dslot.members
+  local f1, f2 = ms[1] and ms[1].item, ms[#ms] and ms[#ms].item
+  if G.claim.P and f1 and reaper.ValidatePtr2(0, f1, "MediaItem*") then
+    set_fade(f1, "in", math.min(safety_fade(), reaper.GetMediaItemInfo_Value(f1, "D_LENGTH") / 2))
+  end
+  if G.claim.N and f2 and reaper.ValidatePtr2(0, f2, "MediaItem*") then
+    set_fade(f2, "out", math.min(safety_fade(), reaper.GetMediaItemInfo_Value(f2, "D_LENGTH") / 2))
+  end
+end
+
+-- (a fade drop point that can't be used after all: never offered again)
+local function fade_failed(b)
+  b.dead = true
+  G.b = nil
+  reaper.PreventUIRefresh(-1)
 end
 
 -- Show D at drop point b of track tr (and the source track closed up)
@@ -1160,14 +1642,20 @@ local function place(tr, b)
   -- inside are split at its edges (showing what was copied), until it's back home
   local splitting = G.splitTs ~= nil and not home
   if not splitting then heal_mid() end
+  heal_fade()
   if G.all then all_restore() end
   restore_fades()
+  local claimHome = home and G.claim ~= nil and not G.copy   -- (its crossfades stay gone, even at home)
+  if G.claim and (not home or claimHome) then apply_claim() end
   for t2, row in pairs(G.rows) do
     if row and t2 ~= tr and t2 ~= G.src.tr then restore_list(row.list) end   -- tracks left behind
   end
   local SR = splitting and split_row(G.src) or G.src.R
   automation_apply(tr, (not home) and b or nil)
-  if home then
+  if home and claimHome then
+    put_D_on(G.src.tr)                                  -- (where it was, its old neighbors cut)
+    apply_positions(layout(insert(G.src.R, b, { G.Dslot })))
+  elseif home then
     put_D_on(G.src.tr)
     restore_list(G.src.list)
     for _, F in ipairs(G.followers) do restore_list(F.list) end
@@ -1175,14 +1663,17 @@ local function place(tr, b)
   elseif tr == G.src.tr then
     put_D_on(tr)
     local sb = b
-    if splitting then sb = cut_at(SR, b.t) or b end   -- (the same drop point in the split row)
+    if b.fade then
+      SR, sb = fade_row(SR, b)                         -- (a fade's inner edge: cut there)
+      if not SR then return fade_failed(b) end
+    elseif splitting then sb = cut_at(SR, b.t) or b end   -- (the same drop point in the split row)
     local F1 = insert(SR, sb, { G.Dslot })
-    local pos = layout(F1); apply_positions(pos); crossfades_for(F1, pos)
+    local pos = layout(F1); apply_positions(pos); junctions_for(F1)
     for _, F in ipairs(G.followers) do
       local FR = splitting and split_row(F) or F.R
       local fb = cut_at(FR, b.t)
       local FF = insert(FR, fb, F.blk)
-      local fpos = layout(FF); apply_positions(fpos); crossfades_for(FF, fpos)
+      local fpos = layout(FF); apply_positions(fpos); junctions_for(FF)
     end
     if G.all then
       if G.copy then all_apply_copy(b.t) else all_apply(b.t) end
@@ -1192,12 +1683,17 @@ local function place(tr, b)
       restore_list(G.src.list)
       if splitting then apply_positions(layout(SR)) end                                 -- (split, in place)
     else
-      local spos = layout(G.src.R); apply_positions(spos); crossfades_for(G.src.R, spos) -- source closes up
+      local spos = layout(G.src.R); apply_positions(spos); junctions_for(G.src.R) -- source closes up
     end
     local row = G.rows[tr]
     put_D_on(tr)
-    local F1 = insert(row.R, b, { G.Dslot })
-    local pos = layout(F1); apply_positions(pos); crossfades_for(F1, pos)              -- target opens a slot
+    local RR, rb = row.R, b
+    if b.fade then
+      RR, rb = fade_row(row.R, b)
+      if not RR then return fade_failed(b) end
+    end
+    local F1 = insert(RR, rb, { G.Dslot })
+    local pos = layout(F1); apply_positions(pos); junctions_for(F1)              -- target opens a slot
   end
   -- (a razor area dragged back home: its pieces stay selected, not what was selected
   -- before, which may be the whole item it was cut from)
@@ -1460,16 +1956,10 @@ local function razor_areas(tr)
   return list, str or ""
 end
 
-local function razor_at(tr, t)
-  for _, ar in ipairs((razor_areas(tr))) do
-    if ar[1] and ar[2] and t >= ar[1] - TOL and t <= ar[2] + TOL then return ar[1], ar[2] end
-  end
-end
-
 -- Split items, fill the empty space and select the pieces; returns the undo record
 -- and the piece to drag (nil and a reason if it can't be done)
 local function razor_prepare(tr, a, b, pressTime)
-  local W = { created = {}, chunks = {}, temps = {}, razorSnap = {}, selSnap = {} }
+  local W = { created = {}, chunks = {}, temps = {}, razorSnap = {}, selSnap = {}, recreate = {} }
   for i = 0, reaper.CountSelectedMediaItems(0) - 1 do W.selSnap[#W.selSnap + 1] = reaper.GetSelectedMediaItem(0, i) end
   -- The tracks with this razor area
   -- (all of them move this track's range, so the tracks stay in sync, as with a
@@ -1501,6 +1991,9 @@ local function razor_prepare(tr, a, b, pressTime)
   end
   for _, t2 in ipairs(tracks) do W.razorSnap[t2] = select(2, razor_areas(t2)) end
   -- Split at the edges
+  local cutIn, cutOut = {}, {}   -- pieces whose start / end is one of those cuts
+  local origOf, leftRem, rightRem = {}, {}, {}   -- (the item each piece came from, as it was;
+                                                 --  what's left outside the area on each side)
   for _, t2 in ipairs(tracks) do
     for _, cut in ipairs({ a, b }) do
       local list = {}
@@ -1513,12 +2006,139 @@ local function razor_prepare(tr, a, b, pressTime)
             local ok, chunk = reaper.GetItemStateChunk(it, "", false)
             if ok then W.chunks[it] = chunk end
           end
+          local o = origOf[it] or {
+            p = p, e = e,
+            fin = math.max(reaper.GetMediaItemInfo_Value(it, "D_FADEINLEN"), reaper.GetMediaItemInfo_Value(it, "D_FADEINLEN_AUTO")),
+            fout = math.max(reaper.GetMediaItemInfo_Value(it, "D_FADEOUTLEN"), reaper.GetMediaItemInfo_Value(it, "D_FADEOUTLEN_AUTO")),
+          }
           local right = reaper.SplitMediaItem(it, cut)
-          if right then W.created[right] = true end
+          if right then
+            W.created[right] = true
+            origOf[it], origOf[right] = o, o
+            if cut == a then cutIn[right] = true; leftRem[it] = true
+            else cutOut[it] = true; rightRem[right] = true end
+          end
         end
       end
     end
   end
+  -- Fades inside the area: a razor area has no fades of its own, so a piece keeps a fade
+  -- (or crossfade) only if the whole of it is inside the area; a fade the area cuts
+  -- through, and the cut edges themselves, get only a short safety fade
+  do
+    local safe = default_fade()
+    local function cap(it, key)
+      for _, k in ipairs({ key, key .. "_AUTO" }) do
+        local v = reaper.GetMediaItemInfo_Value(it, k)
+        if v > safe then reaper.SetMediaItemInfo_Value(it, k, safe) end
+      end
+    end
+    for _, t2 in ipairs(tracks) do
+      for i = 0, reaper.CountTrackMediaItems(t2) - 1 do
+        local it = reaper.GetTrackMediaItem(t2, i)
+        local p = reaper.GetMediaItemInfo_Value(it, "D_POSITION")
+        local e = p + reaper.GetMediaItemInfo_Value(it, "D_LENGTH")
+        if p >= a - TOL and e <= b + TOL then
+          local fin = math.max(reaper.GetMediaItemInfo_Value(it, "D_FADEINLEN"),
+                               reaper.GetMediaItemInfo_Value(it, "D_FADEINLEN_AUTO"))
+          local fout = math.max(reaper.GetMediaItemInfo_Value(it, "D_FADEOUTLEN"),
+                                reaper.GetMediaItemInfo_Value(it, "D_FADEOUTLEN_AUTO"))
+          local trimIn = cutIn[it] or p + fin > b + TOL     -- (cut edge, or runs out of the area)
+          local trimOut = cutOut[it] or e - fout < a - TOL
+          if (trimIn and fin > safe) or (trimOut and fout > safe) then
+            if not W.created[it] and not W.chunks[it] then   -- (so dropping it back home restores it)
+              local ok, chunk = reaper.GetItemStateChunk(it, "", false)
+              if ok then W.chunks[it] = chunk end
+            end
+            if trimIn then cap(it, "D_FADEINLEN") end
+            if trimOut then cap(it, "D_FADEOUTLEN") end
+          end
+        end
+      end
+    end
+    -- What's left outside the area: a fade the cut went through now ends at the cut
+    -- (the part of it that's left, from where it began); no fade there, a safety fade
+    local function set_len(it, key, v)
+      reaper.SetMediaItemInfo_Value(it, key, v)
+      if reaper.GetMediaItemInfo_Value(it, key .. "_AUTO") >= 0 then reaper.SetMediaItemInfo_Value(it, key .. "_AUTO", v) end
+    end
+    for it in pairs(leftRem) do   -- (ends at a)
+      if reaper.ValidatePtr2(0, it, "MediaItem*") then
+        local o = origOf[it]
+        local fs = o.e - o.fout
+        if o.fout > 0 and fs < a - TOL then set_len(it, "D_FADEOUTLEN", a - math.max(fs, o.p))
+        else cap(it, "D_FADEOUTLEN") end
+      end
+    end
+    for it in pairs(rightRem) do   -- (starts at b)
+      if reaper.ValidatePtr2(0, it, "MediaItem*") then
+        local o = origOf[it]
+        local fe = o.p + o.fin
+        if o.fin > 0 and fe > b + TOL then set_len(it, "D_FADEINLEN", math.min(fe, o.e) - b)
+        else cap(it, "D_FADEINLEN") end
+      end
+    end
+  end
+  -- A crossfade the area's edge cuts through: on each side of the cut only the item that
+  -- carries on away from it stays; the sliver of the other one is removed (outside: the
+  -- next item's start under the end of the one before; inside: the end of the item
+  -- before under the next one's start). Clean cuts, no half crossfades.
+  do
+    local function lane_of(it)
+      return reaper.GetMediaItemInfo_Value(it, "I_FIXEDLANE") or 0
+    end
+    local function remove(it)
+      if not reaper.ValidatePtr2(0, it, "MediaItem*") then return end
+      if W.created[it] then
+        W.created[it] = nil
+      elseif W.chunks[it] then   -- (an original item: put back whole if the drag is undone)
+        W.recreate[#W.recreate + 1] = { tr = reaper.GetMediaItem_Track(it), chunk = W.chunks[it] }
+        W.chunks[it] = nil
+      else
+        local ok, chunk = reaper.GetItemStateChunk(it, "", false)
+        if ok then W.recreate[#W.recreate + 1] = { tr = reaper.GetMediaItem_Track(it), chunk = chunk } end
+      end
+      reaper.DeleteTrackMediaItem(reaper.GetMediaItem_Track(it), it)
+    end
+    for _, t2 in ipairs(tracks) do
+      for _, cut in ipairs({ a, b }) do
+        local ending, starting = {}, {}   -- per lane: pieces that end / start at the cut
+        for i = 0, reaper.CountTrackMediaItems(t2) - 1 do
+          local it = reaper.GetTrackMediaItem(t2, i)
+          local p = reaper.GetMediaItemInfo_Value(it, "D_POSITION")
+          local e = p + reaper.GetMediaItemInfo_Value(it, "D_LENGTH")
+          local ln = lane_of(it)
+          if math.abs(e - cut) <= TOL then ending[ln] = ending[ln] or {}; table.insert(ending[ln], { it = it, p = p, e = e }) end
+          if math.abs(p - cut) <= TOL then starting[ln] = starting[ln] or {}; table.insert(starting[ln], { it = it, p = p, e = e }) end
+        end
+        local doomed = {}
+        -- (only pieces of two items that overlapped at their ends, a crossfade: an item
+        -- lying entirely on top of another isn't touched)
+        for _, list in pairs(ending) do       -- keep the one reaching furthest back
+          if #list > 1 then
+            table.sort(list, function(x, y) return x.p < y.p end)
+            local oK = origOf[list[1].it]
+            for k = 2, #list do
+              local oX = origOf[list[k].it]
+              if oK and oX and oX ~= oK and oX.p > oK.p + TOL and oX.e > oK.e + TOL then doomed[#doomed + 1] = list[k].it end
+            end
+          end
+        end
+        for _, list in pairs(starting) do     -- keep the one reaching furthest on
+          if #list > 1 then
+            table.sort(list, function(x, y) return x.e > y.e end)
+            local oK = origOf[list[1].it]
+            for k = 2, #list do
+              local oX = origOf[list[k].it]
+              if oK and oX and oX ~= oK and oX.e < oK.e - TOL and oX.p < oK.p - TOL then doomed[#doomed + 1] = list[k].it end
+            end
+          end
+        end
+        for _, it in ipairs(doomed) do remove(it) end
+      end
+    end
+  end
+
   -- Empty space inside the area on the clicked track: temporary empty items
   local inside = {}
   for i = 0, reaper.CountTrackMediaItems(tr) - 1 do
@@ -1584,6 +2204,12 @@ local function wrap_restore(W)
   end
   for it, chunk in pairs(W.chunks) do
     if reaper.ValidatePtr2(0, it, "MediaItem*") then reaper.SetItemStateChunk(it, chunk, false) end
+  end
+  for _, r in ipairs(W.recreate or {}) do   -- (items removed from a crossfade the area cut through)
+    if reaper.ValidatePtr2(0, r.tr, "MediaTrack*") then
+      local it = reaper.AddMediaItemToTrack(r.tr)
+      if it then reaper.SetItemStateChunk(it, r.chunk, false) end
+    end
   end
   for tr, str in pairs(W.razorSnap) do
     if reaper.ValidatePtr2(0, tr, "MediaTrack*") then reaper.GetSetMediaTrackInfo_String(tr, "P_RAZOREDITS", str, true) end
@@ -1877,6 +2503,7 @@ local function razor_copy_begin(P, px, py)
   bounds = add_copy_at_start(bounds, R, a, list)
   bounds = add_copy_at_end(bounds, R, b, list)
   G.splitTs = { a, b }
+  add_fade_bounds(bounds, R, list)
   G.Dslot = { members = members, pos0 = a, len = len }
   G.memberSet, G.lane = set, 0
   G.src = { tr = tr, list = list, R = R, bounds = bounds }
@@ -1900,7 +2527,6 @@ local function razor_copy_begin(P, px, py)
   G.src.bounds = bounds
   G.track, G.b, G.grab, G.active = tr, nil, P.t - a, true
   G.pressX, G.pressY = px, py
-  G.wasSelected = false
   G.selSnap = sel
   G.razorClear = razorTracks
 end
@@ -2087,6 +2713,13 @@ local function release()
     end
     reaper.Undo_EndBlock(name, -1)
   else
+    if G.claim and not G.copy then   -- let go where it started: its crossfades come back
+      reaper.PreventUIRefresh(1)
+      put_D_on(G.src.tr)
+      restore_list(G.src.list)
+      restore_fades()
+      reaper.PreventUIRefresh(-1)
+    end
     restore_selection()
     if G.copies then delete_copies_fwd() end    -- back home: no copy
     if G.wrap then wrap_restore_fwd(G.wrap) end -- back home: splits undone
@@ -2171,6 +2804,10 @@ local function stop()
   reaper.DeleteExtState(NS, HEARTBEAT, false)
 end
 
+-- what the hover part of the loop last read (see loop)
+local hover = { pkey = nil, read = 0, ver = 0, mkey = nil, hit = 0, over = false, upper = false }
+local HOVER_REREAD, HIT_REREAD = 0.25, 0.1   -- seconds
+
 local function loop()
   if wanted_tool() == "" or not tools.shuffle_on() then stop() return end
   local now = reaper.time_precise()
@@ -2183,12 +2820,32 @@ local function loop()
   local cursorBefore = hoverCursor
   if not down and not G then
     hoverCursor = mouse.current_cursor()
-    cache_razors()   -- (Option-drag copies razor areas even without Separation Mode)
-    note_undo_top()
-    local overRazor = razorCache ~= nil and mouse_over_razor()
+    -- razor areas (Option-drag copies them even without Separation Mode) and the undo
+    -- history: read again only when something changed, or every HOVER_REREAD seconds
+    local ls, le = reaper.GetSet_LoopTimeRange(false, true, 0, 0, false)
+    local ts, te = reaper.GetSet_LoopTimeRange(false, false, 0, 0, false)
+    local pkey = table.concat({ tostring(reaper.EnumProjects(-1)), reaper.GetProjectStateChangeCount(0),
+                                ls, le, ts, te }, "|")
+    -- (also on the first frame after a button is let go: a razor area just drawn must be
+    -- in the copy before the next click. NOT at the click itself: by then REAPER may
+    -- already have cleared the area being clicked)
+    if pkey ~= hover.pkey or prevDown or now - hover.read >= HOVER_REREAD then
+      hover.pkey, hover.read, hover.ver = pkey, now, hover.ver + 1
+      cache_razors()
+      note_undo_top()
+    end
+    -- what's under the mouse: only when it moved (or every HIT_REREAD seconds, for scrolling)
+    local mx, my = reaper.GetMousePosition()
+    local mkey = table.concat({ mx, my, mods or 0, hover.ver }, "|")
+    if mkey ~= hover.mkey or now - hover.hit >= HIT_REREAD then
+      hover.mkey, hover.hit = mkey, now
+      hover.over = razorCache ~= nil and mouse_over_razor()
+      hover.upper = mouse_upper_half()
+    end
+    local overRazor = hover.over
     -- Multi tool's upper half: its own drags, except where a razor area takes them
     -- (Option/Alt-drags always over a razor area; plain ones with Separation Mode)
-    local upper = mouse_upper_half()
+    local upper = hover.upper
     multi_upper_half(upper and { [0] = not (overRazor and separation_on()), [4] = not overRazor } or nil)
     hover_razor(overRazor)
     show_copy_cursor(overRazor and mods == ALT)
@@ -2225,6 +2882,9 @@ local function loop()
           local cx = reaper.JS_Window_ScreenToClient(mouse.ARRANGE, sx, sy)
           start_drag(it, mouse.time_at(cx))
           if G and copy then G.copy = true end
+          if G and G.claim and not G.copy then   -- (its crossfades go as soon as it's pressed)
+            reaper.PreventUIRefresh(1); apply_claim(); reaper.PreventUIRefresh(-1); reaper.UpdateArrange()
+          end
         end
       end
     end

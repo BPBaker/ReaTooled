@@ -1,6 +1,6 @@
 --[[
 -- @description ReaTooled - Set up ReaTooled
--- @version 2.2.7
+-- @version 2.3.13
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -19,11 +19,21 @@
     When you click OK at the end, REAPER quits, the helper writes those files,
     and the same copy of REAPER opens again by itself.
 -- CHANGELOG
+-- v2.3.13 Updates merge preferences more completely: a preference ReaTooled no longer sets is
+--         removed (REAPER's default comes back) unless you changed it yourself; preferences
+--         that hold several on/off options in one number (Config/update_rules.txt "bits")
+--         are merged option by option, so ReaTooled's change to one option arrives even if
+--         you changed another; and preferences listed as "always" are set whatever you
+--         changed (each one named in the report)
+-- v2.3.12 The restart at the end doesn't ask "Save changes?" for a project that's untitled
+--         and empty (no tracks, items, markers or regions): there's nothing in it to keep
 -- v2.3.11 Started by the package installer (beta), it skips its "Set up ReaTooled now?" question:
 --         the installer's own message asked already. Scripts already in the Actions list
 --         (ReaPack registers them as it installs them) get ReaTooled's options too, so
 --         toggles that keep running end when run again instead of asking "Terminate
---         instances / New instance"
+--         instances / New instance". After the package installer it leaves ReaPack alone
+--         (no repository, no extra synchronize): calling ReaPack while it was finishing
+--         crashed REAPER
 -- v2.3.10 Toolbar merge: a button is matched by its action (command), not by its action
 --         plus label, so a relabelled button stays ONE button: ReaTooled's new label is
 --         applied unless the user relabelled it too (then the user's label stays). Before,
@@ -191,6 +201,21 @@ local function write_file(path, data)
   f:write(data)
   f:close()
   return true
+end
+
+-- Before the restart: an untitled project with nothing in it (no tracks, items, markers or
+-- regions) is replaced by an empty one without asking, so quitting doesn't ask "Save
+-- changes?" about it (startup scripts can mark it changed: grid, cursor...)
+local function discard_empty_project()
+  local _, path = reaper.EnumProjects(-1)
+  if path and path ~= "" then return end
+  if reaper.CountTracks(0) > 0 or reaper.CountMediaItems(0) > 0 then return end
+  local _, nm, nr = reaper.CountProjectMarkers(0)
+  if (nm or 0) + (nr or 0) > 0 then return end
+  if reaper.IsProjectDirty and reaper.IsProjectDirty(0) == 0 then return end
+  local blank = RES .. "/Data/ReaTooled/empty project.RPP"
+  if not write_file(blank, "<REAPER_PROJECT 0.1 \"7.0\" 0\n>\n") then return end
+  reaper.Main_openProject("noprompt:template:" .. blank)   -- (as a template: stays untitled)
 end
 
 local function copy_file(src, dst)
@@ -1210,7 +1235,28 @@ end
 ------------------------------------------------------------
 
 local upd = { menus_updated = {}, menus_kept = {}, menus_merged = {}, keys_updated = 0, keys_kept = 0, kept_names = {},
-              files_kept = 0, ext_added = 0 }
+              files_kept = 0, ext_added = 0, keys_removed = 0, forced_names = {} }
+
+-- How updates merge preferences (Config/update_rules.txt, written by the export):
+--   bits <key>    several on/off options in one number: merged option by option
+--   always <key>  ReaTooled's value is set even if the user changed it
+local function update_rules()
+  local r = { bits = {}, always = {} }
+  for _, l in ipairs(lines_of(read_file(CONFIG .. "/update_rules.txt") or "")) do
+    local kind, k = l:match("^%s*(%a+)%s+(%S+)")
+    if kind and r[kind] then r[kind][k] = true end
+  end
+  return r
+end
+
+-- Three-way merge of a bit-flag number: the options ReaTooled changed since the
+-- baseline are applied, except the ones the user changed themselves
+local function bits_merge(user, base, new)
+  user, base, new = math.tointeger(tonumber(user)), math.tointeger(tonumber(base)), math.tointeger(tonumber(new))
+  if not (user and base and new) then return nil end
+  local apply = (base ~ new) & ~(user ~ base)
+  return (user & ~apply) | (new & apply)
+end
 
 local function same_value(a, b)
   if a == b then return true end
@@ -1262,6 +1308,23 @@ local function three_way_patch(user_text, new_text, base_text, label)
       end
     end
     if #lines > 0 then out.sec[name] = lines; out.order[#out.order + 1] = name end
+  end
+  -- Keys ReaTooled set last time but no longer does: removed (back to the default),
+  -- unless the user changed them
+  for _, name in ipairs(b.order) do
+    local uk, nk = kv(u.sec[name]), kv(n.sec[name])
+    local dels = {}
+    for _, l in ipairs(b.sec[name]) do
+      local k, bv = l:match("^([^=]+)=(.*)$")
+      if k and nk[k] == nil and uk[k] ~= nil and same_value(uk[k], bv) then
+        dels[#dels + 1] = "!delete " .. k
+        upd.keys_removed = upd.keys_removed + 1
+      end
+    end
+    if #dels > 0 then
+      if not out.sec[name] then out.sec[name] = {}; out.order[#out.order + 1] = name end
+      for _, d in ipairs(dels) do table.insert(out.sec[name], d) end
+    end
   end
   if #out.order == 0 then return nil end
   return ini_text(out)
@@ -1900,14 +1963,32 @@ finish_setup = function()
     if UPDATE then
       -- setting by setting: only where the user still has what ReaTooled set last time
       local base = kv(lines_of(base_prefs() or ""))
+      local rules = update_rules()
       local keep, theme_kept = { "[REAPER]" }, false
+      local listed = {}
       for i = 2, #prefs do
         local l = prefs[i]
         local k, v = l:match("^([^=!]+)=(.*)$")
         if k then
+          listed[k] = true
           local cur = user_pref(k)
+          local merged = (rules.bits[k] and cur ~= nil and base[k] ~= nil) and bits_merge(cur, base[k], v) or nil
           if same_value(cur, v) then
             if k == "lastthemefn5" then theme_kept = true end
+          elseif rules.always[k] then
+            keep[#keep + 1] = l
+            upd.keys_updated = upd.keys_updated + 1
+            upd.forced_names[#upd.forced_names + 1] = k
+          elseif merged then
+            -- option by option: ReaTooled's changed options in, the user's own kept
+            if not same_value(cur, merged) then
+              keep[#keep + 1] = k .. "=" .. merged
+              upd.keys_updated = upd.keys_updated + 1
+            end
+            if not same_value(merged, v) then
+              upd.keys_kept = upd.keys_kept + 1
+              if #upd.kept_names < 40 then upd.kept_names[#upd.kept_names + 1] = "Preferences " .. k .. " (some options)" end
+            end
           elseif cur == nil or (base[k] ~= nil and same_value(cur, base[k])) then
             keep[#keep + 1] = l
             upd.keys_updated = upd.keys_updated + 1
@@ -1921,6 +2002,23 @@ finish_setup = function()
       -- (the theme's fonts only go if the theme is ReaTooled's)
       if theme_kept then
         for i = 2, #prefs do if prefs[i]:match("^!delete ") then keep[#keep + 1] = prefs[i] end end
+      end
+      -- Preferences ReaTooled set last time but no longer does: removed (REAPER's default
+      -- comes back), unless the user changed them
+      if BASE_REC then
+        for _, name in ipairs({ "prefs.ini", "prefs_offline.ini" }) do
+          for _, l in ipairs(lines_of(read_file(BASE_REC .. "/config/" .. name) or "")) do
+            local k, bv = l:match("^([^;=!][^=]*)=(.*)$")
+            if k and not listed[k] and k ~= "lastthemefn5" and k ~= "ui_img" then
+              listed[k] = true
+              local cur = user_pref(k)
+              if cur ~= nil and same_value(cur, bv) then
+                keep[#keep + 1] = "!delete " .. k
+                upd.keys_removed = upd.keys_removed + 1
+              end
+            end
+          end
+        end
       end
       prefs = keep
     end
@@ -2028,8 +2126,10 @@ finish_setup = function()
   end
 
   -- ReaPack: install every ReaTooled package, now and when new ones are added
+  -- (not after the package installer: it added the repository and ReaPack has just
+  -- installed everything; calling ReaPack again while it's finishing crashed REAPER)
   local repo_ok = false
-  if not UPDATE then repo_ok = reaper.ReaPack_AddSetRepository(REPO_NAME, REPO_URL, true, 1, "") end
+  if not UPDATE and not FROM_PACKAGE then repo_ok = reaper.ReaPack_AddSetRepository(REPO_NAME, REPO_URL, true, 1, "") end
   if repo_ok then reaper.ReaPack_ProcessQueue(true) end
 
   reaper.SetExtState("ReaTooled", "SetupVersion", SETUP_VER, true)
@@ -2146,6 +2246,13 @@ finish_setup = function()
     end
     details[#details + 1] = "Settings updated: " .. upd.keys_updated .. ", kept as you changed them: " .. upd.keys_kept ..
       (#upd.kept_names > 0 and (" (" .. table.concat(upd.kept_names, "; ") .. (upd.keys_kept > #upd.kept_names and "; ..." or "") .. ")") or "")
+    if upd.keys_removed > 0 then
+      details[#details + 1] = "Settings ReaTooled no longer sets, back to REAPER's default: " .. upd.keys_removed
+    end
+    if #upd.forced_names > 0 then
+      details[#details + 1] = "Set by ReaTooled even though you'd changed them (fixes everyone needs): " ..
+        table.concat(upd.forced_names, ", ")
+    end
     details[#details + 1] = "Script settings: only new ones added (" .. ext_count .. ")." ..
       (upd.files_kept > 0 and (" Your changed cursors/menu sets kept: " .. upd.files_kept .. ".") or "")
   end
@@ -2211,7 +2318,10 @@ finish_setup = function()
     return
   end
 
-  if restart_now then reaper.Main_OnCommand(quit_cmd, 0) end
+  if restart_now then
+    discard_empty_project()
+    reaper.Main_OnCommand(quit_cmd, 0)
+  end
 end
 
 if #conflicts > 0 then

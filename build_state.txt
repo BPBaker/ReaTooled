@@ -1,8 +1,8 @@
 Clipboard Manager/ReaTooled Clipboard Manager	1.0	531ad001
-Edit/ReaTooled Smart Nudge	1.2.0	e361a091
+Edit/ReaTooled Smart Nudge	1.3.1	80b9d50c
 Edit/ReaTooled_Add Stretch Marker (Hover Mode Dependent).lua	1.1	39dfcc0c
 Edit/ReaTooled_Add Sync Point (Hover Mode Dependent).lua	1.0	abf30402
-Edit/ReaTooled_Auto crossfade at edit cursor.lua	1.0	c940760e
+Edit/ReaTooled_Auto crossfade at edit cursor.lua	1.1	432e8aca
 Edit/ReaTooled_Clear take envelopes and Reset Volume to 0db.lua	1.0	0c39558b
 Edit/ReaTooled_Coalesce Clip Gain to Track Volume.lua	1.0	1607e072
 Edit/ReaTooled_Coalesce Track Volume to Clip Gain.lua	1.0	187d8605
@@ -23,15 +23,17 @@ Edit/ReaTooled_Fade In to Edit Cursor Or Mouse (Hover Mode Dependent).lua	1.2	a5
 Edit/ReaTooled_Fade Out From Edit Cursor Or Mouse (Hover Mode Dependent).lua	1.2	7730e49d
 Edit/ReaTooled_Glide Envelope Points.lua	3.0	5a04e65f
 Edit/ReaTooled_Glue items with handles.lua	1.1	12b11d72
-Edit/ReaTooled_Grid and Nudge Settings.lua	3.3.3	5fca6629
+Edit/ReaTooled_Grid and Nudge Settings.lua	3.3.6	77b755ba
 Edit/ReaTooled_Magic Zero Crossing Loop Copy Buffer Maker.lua	1.0	12cca528
-Edit/ReaTooled_Move Tool Left Click (Select item under mouse cursor, move cursor to start of items).lua	5.10	9f9922ed
+Edit/ReaTooled_Move Tool Left Click (Select item under mouse cursor, move cursor to start of items).lua	5.11	30ec4cb0
 Edit/ReaTooled_Move Tool Left Shift-Click (Select item and extend razor edit).lua	6.3	f06929f3
 Edit/ReaTooled_Move edit cursor to next (right) transient or item edge (Tab to Transient toggle dependent).lua	1.17	3ff181d8
 Edit/ReaTooled_Move edit cursor to previous (left) transient or item edge (Tab to Transient toggle dependent).lua	1.17	5daa363b
 Edit/ReaTooled_Nudge Settings.lua	1.0	304d28b7
 Edit/ReaTooled_Nudge left by last nudge dialogue settings and move cursor.lua	1.1	bb81b2f1
+Edit/ReaTooled_Nudge left by next larger setting.lua	1.0	4ec50089
 Edit/ReaTooled_Nudge right by last nudge dialogue settings and move cursor.lua	1.1	291dfae9
+Edit/ReaTooled_Nudge right by next larger setting.lua	1.0	fb873099
 Edit/ReaTooled_Paste Special - Repeat to fill selection.lua	1.1	f418021a
 Edit/ReaTooled_Remove item under mouse cursor ignoring groups.lua	1.0	f0bb4c95
 Edit/ReaTooled_Render item(s) and store original in lane.lua	1.4	5d106a19
@@ -57,19 +59,19 @@ Edit/ReaTooled_Trim Item Right Edge to Next Item (with Loop Item Source On).lua	
 Edit/ReaTooled_Trim left side of items (Hover Mode Dependent).lua	1.0	f33b13e7
 Edit/ReaTooled_Trim right side of items (Hover Mode Dependent).lua	1.0	061b97a6
 Helpers/ReaTooled - AGC to Volume envelope.lua	1.0	84656ade
-Helpers/ReaTooled_Link razor area and item selection.lua	4.6	2eff8b3f
+Helpers/ReaTooled_Link razor area and item selection.lua	4.7	a09fcd5d
 Helpers/ReaTooled_Show Spectrogram on Selected Track(s).lua	1.4	d02c6905
 Mouse Actions/ReaTooled_Mousewheel adjust pitch of item under cursor.lua	1.1	7c4881e5
 Mouse Actions/ReaTooled_Mousewheel to change take volume for selected items.lua	1.1	b7729828
 Mouse Actions/ReaTooled_Mousewheel to zoom items peaks view gain.lua	1.1	e6939720
-Startup/ReaTooled Startup	2.4.22	4b2f214f
+Startup/ReaTooled Startup	2.4.24	c0f72f58
 Toggles/ReaTooled - Ripple Off (Slip).lua	1.2	55e703da
 Toggles/ReaTooled MULTI Icon toggle.lua	1.0	e80a68cc
 Toggles/ReaTooled_At loop end, move cursor to loop end and clear selection (only when loop button is off).lua	2.8	ab09eee2
 Toggles/ReaTooled_Cycle Peaks Display Mode.lua	1.0	395c748d
 Toggles/ReaTooled_Hover Edit Mode.lua	1.0	8525efb2
 Toggles/ReaTooled_Invert mousewheel direction (for natural scrolling).lua	1.1	ea2bc6b6
-Toggles/ReaTooled_Link Track and Item and Razor Selection.lua	2.22	5433a8b1
+Toggles/ReaTooled_Link Track and Item and Razor Selection.lua	2.24	cdeca652
 Toggles/ReaTooled_Loudness normalize new items.lua	1.0	4f7959cd
 Toggles/ReaTooled_Recall ReaTooled Button States.lua	1.8	e8484436
 Toggles/ReaTooled_Recall ReaTooled Keymap State.lua	1.0	8f4e193a
@@ -85,7 +87,7 @@ Toggles/ReaTooled_Toggle Tab to Transient.lua	1.0	22d4150f
 Toggles/ReaTooled_Toggle envelope lanes visible or in lane.lua	1.0	8075ba1e
 Toggles/ReaTooled_Toggle item volume envelope for all items.lua	1.0	bb7b25b0
 Toggles/ReaTooled_Toggle pre-roll (playback and recording).lua	1.5	7c554cf9
-Tools/ReaTooled Tools	7.8.6	c13cd366
+Tools/ReaTooled Tools	7.8.7	84804e05
 Tracks/ReaTooled_Toggle selected tracks inactive.lua	1.0	effb180d
 Transport/ReaTooled_Go to marker by number (keypad . number .).lua	1.1	c4a952d2
 Transport/ReaTooled_Play-Stop (with memory, edit-play toggles, and no undo).lua	2.7.6	ada81617

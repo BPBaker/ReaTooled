@@ -1,6 +1,6 @@
 -- @description ReaTooled - Link Loop Points and Razor Areas
--- @version 2.4.5
--- @date 2026.04.13
+-- @version 2.4.6
+-- @date 2026.11.04
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -12,6 +12,9 @@
 --   # Ignores scripted changes or repeat toggle.
 --   # Also clears loop points when user left-clicks on an item (arrange only).
 -- @changelog
+--   v2.4.6 - Lighter on CPU: with the mouse button up, every track's razor areas are read
+--            only when the project has changed (or 4 times a second, to be safe), instead
+--            of every frame; while a button is down they're followed every frame as before
 --   v2.4.5 - Fix: removed razor area clearing from clear_loop_if_click_on_item(); REAPER clears
 --            razor areas natively on plain left click, making manual clearing redundant and
 --            causing conflicts with external razor-area scripts that run on mouse modifier clicks
@@ -24,6 +27,8 @@ local mouse_down_in_ruler = false
 local last_update_time = 0
 local DEBOUNCE_INTERVAL = 0.05 -- seconds
 local was_loop_set_before_mouse_down = false
+local razor_key, razor_check = nil, 0   -- (when the razor areas were last read)
+local RAZOR_RECHECK = 0.25              -- seconds, with nothing changing
 
 local function clear_all_razor_areas_and_loop()
   for i = 0, reaper.CountTracks(0) - 1 do
@@ -132,7 +137,13 @@ local function main()
     end
 
   else
-    local razor_ok, min_pos, max_pos = get_razor_bounds()
+    -- (reading every track's razor areas each frame added up in big sessions: only when
+    -- something changed, while a button is down, or every RAZOR_RECHECK seconds)
+    local key = tostring(reaper.EnumProjects(-1)) .. "|" .. reaper.GetProjectStateChangeCount(0)
+    local look = is_mouse_down or key ~= razor_key or now - razor_check >= RAZOR_RECHECK
+    if look then razor_key, razor_check = key, now end
+    local razor_ok, min_pos, max_pos = false
+    if look then razor_ok, min_pos, max_pos = get_razor_bounds() end
     if razor_ok and (min_pos ~= last_loop_start or max_pos ~= last_loop_end) then
       reaper.GetSet_LoopTimeRange2(0, true, true, min_pos, max_pos, false)
       last_loop_start = min_pos

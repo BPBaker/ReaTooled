@@ -1,12 +1,21 @@
 --[[
 @description ReaTooled - Link Track and Item and Razor Selection (Main Function)
-@version 2.22
-@date 2026-04-17
+@version 2.24
+@date 2026-11-05
 @author Brendan Baker
 @about
  Models and builds upon "Link track and clip selection" from PT.
 
 CHANGELOG
+v2.24
+  - Less flicker in other windows (Track Manager, mixer, Project Bay): only the tracks whose
+    selection actually changes are touched (it used to deselect every track and select
+    again), and the track lists are refreshed and the mixer scrolled only when the
+    selection really changed
+v2.23
+  - Lighter on CPU: with the mouse buttons up, the razor areas and selected items are read
+    again only when the project, the track selection or the item selection has changed
+    (or 4 times a second, to be safe), instead of every frame
 v2.22
   - STRICT track-only selection:
     • Blocks all envelope/automation lanes via BR_GetMouseCursorContext_Envelope
@@ -58,11 +67,21 @@ local function MouseJustPressed(mask)
   return (state & mask == mask) and (prev_mouse_state & mask == 0)
 end
 
-local function DeselectAllTracks()
-  local n = reaper.CountTracks(0)
-  for i = 0, n - 1 do
-    reaper.SetTrackSelected(reaper.GetTrack(0, i), false)
+-- Exactly these tracks selected, changing only the ones that differ (every selection change
+-- makes other windows redraw). Returns true if anything changed.
+local function SelectOnlyTracks(list)
+  local want = {}
+  for _, t in ipairs(list) do want[t] = true end
+  local changed = false
+  for i = 0, reaper.CountTracks(0) - 1 do
+    local t = reaper.GetTrack(0, i)
+    local on = want[t] == true
+    if reaper.IsTrackSelected(t) ~= on then
+      reaper.SetTrackSelected(t, on)
+      changed = true
+    end
   end
+  return changed
 end
 
 -- =========================================================
@@ -80,14 +99,12 @@ local function GetRazorTracks()
 end
 
 local function ProcessTracks(tracks)
-  if #tracks == 0 then return end
+  if #tracks == 0 then return false end
   reaper.PreventUIRefresh(1)
-  DeselectAllTracks()
-  for _, t in ipairs(tracks) do
-    reaper.SetTrackSelected(t, true)
-  end
-  reaper.TrackList_AdjustWindows(false)
+  local changed = SelectOnlyTracks(tracks)
+  if changed then reaper.TrackList_AdjustWindows(false) end
   reaper.PreventUIRefresh(-1)
+  return changed
 end
 
 -- =========================================================
@@ -169,19 +186,19 @@ local function HandleTrackClick()
     if last then
       local a = reaper.GetMediaTrackInfo_Value(last,  "IP_TRACKNUMBER")
       local b = reaper.GetMediaTrackInfo_Value(track, "IP_TRACKNUMBER")
-      DeselectAllTracks()
+      local range = {}
       for i = math.min(a, b) - 1, math.max(a, b) - 1 do
         local t = reaper.GetTrack(0, i)
-        if t then reaper.SetTrackSelected(t, true) end
+        if t then range[#range + 1] = t end
       end
+      SelectOnlyTracks(range)
     end
 
   elseif cmd then
     reaper.SetTrackSelected(track, not reaper.IsTrackSelected(track))
 
   else
-    DeselectAllTracks()
-    reaper.SetTrackSelected(track, true)
+    SelectOnlyTracks({ track })
   end
 
   prev_mouse_state = state
@@ -191,8 +208,34 @@ end
 -- Main loop
 -- =========================================================
 
+-- Nothing changed since the last full look? (cheap: counts, the first and last selected
+-- track and item, and REAPER's project change counter)
+local quiet_sig, quiet_check, quiet_seen = nil, 0, 0
+local QUIET_RECHECK = 0.25   -- seconds
+local function nothing_changed()
+  local now = reaper.time_precise()
+  if reaper.JS_Mouse_GetState(3) ~= 0 then quiet_sig = nil; return false end   -- (a button is down)
+  local nt, ni = reaper.CountSelectedTracks(0), reaper.CountSelectedMediaItems(0)
+  local sig = table.concat({
+    tostring(reaper.EnumProjects(-1)), reaper.GetProjectStateChangeCount(0), nt, ni,
+    tostring(nt > 0 and reaper.GetSelectedTrack(0, 0)), tostring(nt > 0 and reaper.GetSelectedTrack(0, nt - 1)),
+    tostring(ni > 0 and reaper.GetSelectedMediaItem(0, 0)), tostring(ni > 0 and reaper.GetSelectedMediaItem(0, ni - 1)),
+  }, "|")
+  -- (skipped once the same state has been looked at twice in a row: the main loop
+  -- sometimes needs a second frame to act on a change it has just noted)
+  if sig == quiet_sig then
+    quiet_seen = quiet_seen + 1
+    if quiet_seen >= 2 and now - quiet_check < QUIET_RECHECK then return true end
+    if quiet_seen >= 2 then quiet_check = now end
+    return false
+  end
+  quiet_sig, quiet_seen, quiet_check = sig, 0, now
+  return false
+end
+
 local function Main()
   HandleTrackClick()
+  if nothing_changed() then reaper.defer(Main) return end
 
   local cur_tracks = {}
   for i = 0, reaper.CountSelectedTracks(0) - 1 do
@@ -226,9 +269,7 @@ local function Main()
             tracks[#tracks + 1] = reaper.GetMediaItem_Track(it)
           end
 
-          ProcessTracks(tracks)
-
-          if scroll_mixer_to_first_selected then
+          if ProcessTracks(tracks) and scroll_mixer_to_first_selected then
             reaper.SetMixerScroll(reaper.GetSelectedTrack(0, 0))
           end
         end

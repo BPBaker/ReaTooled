@@ -1,6 +1,6 @@
 -- @description ReaTooled - Link Razor Area to Item Selection (Context-Aware)
--- @version 4.6
--- @date 2026.04.13
+-- @version 4.7
+-- @date 2026.11.05
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -11,6 +11,10 @@
 --   - Designed for seamless compatibility with ReaTooled Move Tool Left Click.
 --   - Continuously tracks edit cursor position to ExtState for use by other ReaTooled scripts.
 -- @changelog
+--   v4.7 - Less flicker in other windows (Track Manager, Project Bay): after a click, only the
+--          items whose selection actually changes are touched (it used to deselect every item
+--          in the project and select again, on every mouse-up while razor areas exist); the
+--          cursor position is written only when it moves
 --   v4.6 - Added continuous cursor position tracking to ExtState ("ReaTooled", "lastcursor")
 --          for use by ReaTooled razor scripts that need pre-click cursor position
 
@@ -49,16 +53,9 @@ function GetRazorEdits()
   return areaMap
 end
 
-function DeselectAllMediaItems()
-  for i = 0, reaper.CountMediaItems(0) - 1 do
-    reaper.SetMediaItemSelected(reaper.GetMediaItem(0, i), false)
-  end
-end
-
 function SelectItemsInRazorEdits()
   local selections = GetRazorEdits()
-  reaper.PreventUIRefresh(1)
-  DeselectAllMediaItems()
+  local want = {}   -- the items that should end up selected
   for _, areaData in ipairs(selections) do
     if not areaData.isEnvelope then
       local track = areaData.track
@@ -77,25 +74,37 @@ function SelectItemsInRazorEdits()
           table.insert(overlapMatches, item)
         end
       end
-      if #clickMatches > 0 then
-        for _, item in ipairs(clickMatches) do
-          reaper.SetMediaItemSelected(item, true)
-        end
-      else
-        for _, item in ipairs(overlapMatches) do
-          reaper.SetMediaItemSelected(item, true)
-        end
+      for _, item in ipairs((#clickMatches > 0) and clickMatches or overlapMatches) do
+        want[item] = true
       end
     end
   end
+  -- Only what differs is changed (every selection change makes other windows, such as the
+  -- Track Manager and Project Bay, redraw)
+  local was, changed = {}, false
+  local cur = {}
+  for i = 0, reaper.CountSelectedMediaItems(0) - 1 do cur[#cur + 1] = reaper.GetSelectedMediaItem(0, i) end
+  reaper.PreventUIRefresh(1)
+  for _, item in ipairs(cur) do
+    was[item] = true
+    if not want[item] then reaper.SetMediaItemSelected(item, false); changed = true end
+  end
+  for item in pairs(want) do
+    if not was[item] then reaper.SetMediaItemSelected(item, true); changed = true end
+  end
   reaper.PreventUIRefresh(-1)
-  reaper.UpdateArrange()
+  if changed then reaper.UpdateArrange() end
 end
 
 local lastMouseState = reaper.JS_Mouse_GetState(1)
+local lastCursor = nil
 
 function Main()
-  reaper.SetExtState("ReaTooled", "lastcursor", tostring(reaper.GetCursorPosition()), false)
+  local cursor = reaper.GetCursorPosition()
+  if cursor ~= lastCursor then
+    reaper.SetExtState("ReaTooled", "lastcursor", tostring(cursor), false)
+    lastCursor = cursor
+  end
 
   local currentMouseState = reaper.JS_Mouse_GetState(1)
   if lastMouseState == 1 and currentMouseState == 0 then
