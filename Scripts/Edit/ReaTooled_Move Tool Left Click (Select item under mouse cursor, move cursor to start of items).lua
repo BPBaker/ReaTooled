@@ -34,7 +34,7 @@ local CLICK_MAKES_RAZOR = false
 
 -- true  = when the Link toggle is ON, set the time selection / loop points around the item (default)
 -- false = never set the time selection / loop points around the item
-local SET_TIME_SELECTION = false
+local SET_TIME_SELECTION = true
 ------------------------------------------------------------
 
 local reaper = reaper

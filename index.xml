@@ -32,7 +32,7 @@
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="3.2026.1105.1512" author="Brendan Baker" time="2026-11-05T20:13:01Z">
+      <version name="3.2026.1105.2240" author="Brendan Baker" time="2026-11-06T03:41:07Z">
         <changelog><![CDATA[v3.0 - November 03, 2026
 
 HIGHLIGHTS
@@ -44,7 +44,7 @@ HIGHLIGHTS
  * Clipboard Manager: New panel of saved clipboard states. Copy items, keep working, then click an earlier entry to put it back on REAPER's clipboard and paste as usual
  * Smart Nudge: Nudging ("," and ".") now moves whatever you're working on: items, razor areas, envelope points or the edit cursor
  * Linking: Overhauled "Link Timeline and Edit Selection" (loop points, razor areas and the edit cursor) to work much more like Pro Tools
- * Shuffle mode: Like Pro Tools' Shuffle. Dragging an item with the Move Tool (or the Multi tool's lower half) reorders it: what came after it closes up, and it goes in at the item edge nearest where you drop it. Crossfades are kept, and grouped tracks and selections shuffle together
+ * Shuffle mode: Like Pro Tools' Shuffle. Dragging an item with the Move Tool (or the Multi tool's lower half) reorders it: what came after it closes up, and it goes in at the item edge nearest where you drop it. The item moves whole, as you see it: its crossfades with its neighbors are cut where it begins and ends, and new joins get a short crossfade with auto-crossfade on (butt joints with it off). Grouped tracks and selections shuffle together
  * Trim Tool: Rebuilt from scratch to trim like Pro Tools: click anywhere in an item to trim its nearest edge, the audio stays in place, and groups, selections, ripple and butt joints all follow
  * Updating: New "Update ReaTooled" action updates ReaTooled in one step, and once a day ReaTooled tells you when a new release is out and asks whether to update now. Your own shortcuts, toolbar and menu changes and settings are kept, your window layout and screensets are left alone, and everything is backed up first
  * Grid and Nudge: The Grid and Nudge Settings can now sit inside REAPER's Transport bar, like Pro Tools' Edit window grid and nudge displays
@@ -61,6 +61,7 @@ DETAILS
  + Updating: "ReaTooled_Update ReaTooled.lua" checks GitHub for a newer release, has ReaPack download it, waits until ReaPack has finished, then applies it and restarts REAPER
  + Updating: Once a day, when REAPER starts, ReaTooled checks quietly for a newer release and only says something if there is one, with a Yes/No choice to update now
  + Updating: Set up in update mode compares your files with the release you had and the new one: shortcuts, toolbar buttons, menu items and preferences you changed stay yours, and ReaTooled's own changes are added. Shortcut clashes are asked about as in a first setup
+ + Updating: A preference ReaTooled no longer sets goes back to REAPER's default (unless you changed it), and preferences that hold several on/off options are merged option by option, so ReaTooled's change to one option arrives even if you changed another
  + Updating: Toolbar buttons are matched by their action, so a button ReaTooled relabels or gets a new icon for is updated in place (a label you changed yourself is kept), and a toolbar you never changed simply becomes the new one
  + Updating: Scripts ReaTooled renames keep their shortcuts, toolbar buttons and menu items
  + Installation: The ReaTooled toolbar button tooltip shows the installed ReaTooled version (v3.0)
@@ -77,7 +78,7 @@ DETAILS
  + Zoom: New Pro Tools-style zoom presets: CTRL+1 to CTRL+5 recall, with scripts to save each preset and reset them to default
  + Zoom: New "Zoom Tool - Zoom in" and "Zoom Tool - Zoom out" scripts (used by the Zoom Tool)
  + Zoom: New "Zoom Horizontally (Mousewheel)" script, mapped to OPT+mousewheel and OPT+SHIFT+mousewheel (follows the mousewheel invert toggle)
- + Grid/Nudge: New dockable "Grid and Nudge Settings" window, mapped to M (replaces the nudge dialog and the Grid and Nudge toolbar buttons)
+ + Grid/Nudge: New dockable "Grid and Nudge Settings" window (replaces the nudge dialog and the Grid and Nudge toolbar buttons)
  + Grid/Nudge: Transport mode: Grid and Nudge shows in REAPER's Transport bar as two rows (Grid above Nudge), drawn sharp on Retina/HiDPI screens in your theme's colors. Attach it to an edge of the Transport, either side of the time display or left of the selection display, lock it in place and set its size from its menu. It follows the Transport as you resize the window, never covers the transport buttons or time display, moves to free space when it runs out of room and hides when there is none
  + Clipboard Manager: "Copy and capture" mapped to CMD+CTRL+C; "Capture selection" stores a selection without touching the clipboard (requires ReaImGui)
  + Script: ReaTooled_Glue items with handles.lua, mapped to CMD+OPT+SHIFT+3. Glues like AudioSuite: one continuous file per track or individual files, with handles you choose (2 seconds by default, or the whole file), so you can still trim the edges back out
@@ -95,9 +96,11 @@ DETAILS
  + Tool: Pencil Tool (F10): draws automation and clip gain freehand, adds clip gain points with a click (creating the clip gain line if needed), redraws the waveform when zoomed in to sample level (sample edits, turned on for the item you draw on if they were bypassed), and draws empty MIDI items
  + Edit mode: ReaTooled_Toggle Shuffle mode.lua: each press goes to the next of Shuffle per track (per-track ripple), Shuffle all tracks (all-tracks ripple) and off (Slip). Turned on while REAPER is already in a ripple mode, it starts in that mode; choosing a ripple mode in REAPER switches between the two, and ripple off, Slip or Spot turns it off. Spot and Shuffle are exclusive. Kept when REAPER restarts
  + Tool: Shuffle drags (Move Tool, or the Multi tool's lower half, in Shuffle mode): gaps move along like empty items, and an item in a gap can also drop one item-length left or right of where it was. Dragging a selected item moves the selected items on its track as one block. Drag to another track: the track it leaves closes up and it goes in at an item edge there (on an empty track, at its time). Tracks with locked items aren't shuffled
- + Tool: Shuffle drags keep crossfades: the edit point is the crossfade's centre, so items keep the audio under it and crossfade again with their new neighbors. Butted items stay butted (no crossfade is ever added)
+ + Tool: Shuffle drags move the item whole, crossfades and all. As soon as you press it, its crossfades with its neighbors go: they're cut where it begins and ends (the audio stays in their files). Let go where it started, and they come back. Crossfades inside a selected block stay
+ + Tool: Shuffle drags: every new join between two items (where it lands, and where the gap it left closes up) gets a crossfade of REAPER's default crossfade length while auto-crossfade is on (Options > Auto-crossfade media items when editing), made from the audio past the cut; with it off, butt joints with no fades. Crossfades between items that stay together are never touched
+ + Tool: Shuffle drags: items crossfaded with each other stay together. The drop points there are the crossfade's start and end (the item on the far side keeps the whole crossfade), never its centre. Zoomed in, the inner edge of a fade is a drop point too (the item is split there and the fade stays whole)
  + Tool: Shuffle drags move grouped tracks (media editing groups), the rest of an item group and selected items on other tracks together, so edited multitracks (drums) stay in sync. If an item on one of them crosses the start or end of what's moving, the move doesn't start
- + Tool: Shuffle all tracks: a Shuffle drag moves the same stretch of time on every track, like a razor move of the whole project. Items crossing its start or end or the drop point are split there with short fades, markers and regions move along, and locked items never move or split
+ + Tool: Shuffle all tracks: a Shuffle drag moves the same stretch of time on every track, like a razor move of the whole project. Items crossing its start or end or the drop point are split there (crossfaded with auto-crossfade on, butt joints with it off), markers and regions move along, and locked items never move or split
  + Tool: Option-drag in Shuffle mode copies, like Pro Tools: the copy goes in at the drop point and pushes what follows along, and the original stays (items, grouped tracks, another track, all tracks, and razor areas)
  + Tool: Option-drag a razor area in Shuffle mode (with or without Separation Mode) copies just what's in it: the items are split where the area starts and ends, and the copy can drop at an item edge or at the area's own start or end. Dragged back where it started, nothing is copied and the splits are healed. Shows REAPER's copy cursor and makes one undo step
  + Tool: Shuffle drags show the result live, with what's moving selected (it stays selected after the drop), automation following live (with "Move envelope points with media items" on), and make one undo step
@@ -125,6 +128,7 @@ DETAILS
  + Script: ReaTooled_Toggle item volume envelope for all items.lua, mapped to CTRL+SHIFT+- and OPT+SHIFT+V (replaces amagalma's script)
  + Script: ReaTooled_Magic Zero Crossing Loop Copy Buffer Maker.lua replaces the custom action, same shortcut (CMD+OPT+CTRL+SHIFT+T)
  + Script: ReaTooled_Auto crossfade at edit cursor.lua (turns a butt joint into a centered crossfade)
+ + Script: ReaTooled_Nudge left/right by next larger setting.lua, mapped to M and /: Smart Nudge by the next larger Grid and Nudge preset than the current nudge value (10 ms set: nudges 100 ms)
  + Script: ReaTooled_Render item(s) and store original in lane.lua (renders in place and keeps the original items, with their FX, on a hidden archive lane)
  + Script: ReaTooled_Save ripple mode.lua, ReaTooled_Restore ripple mode.lua and ReaTooled_Ripple left edge.lua
  + Script: ReaTooled_Region Shuffle.lua
@@ -150,7 +154,9 @@ DETAILS
  + Key map: Mapped F13 to "Normalize (Bypass Groups)" and F16 to "Mute Item (Bypass Groups)"
  + Key map: Mapped OPT+` to "Track: Pin tracks to top of arrange view"
  + Key map: Mapped CMD+OPT+CTRL+M to Media Explorer, CMD+NUMPAD 9 to Video window and CMD+OPT+CTRL+~ to "Spawn new instance of REAPER"
- + Key map: Mapped CMD+OPT+CTRL+N to "ReaTooled_Toggle Link Play Cursor to Edit Cursor"
+ + Key map: Mapped CTRL+SHIFT+/ to "ReaTooled_Toggle Link Play Cursor to Edit Cursor" (Link Timeline and Edit Selection)
+ + Key map: Mapped CTRL+N to "ReaTooled_Toggle Edit Cursor follows Playback on Stop" (Pro Tools' Insertion Follows Playback)
+ + Key map: Mapped M and / to "ReaTooled_Nudge left/right by next larger setting"
  + Key map: MIDI editor shortcuts are now part of Set up (zoom, vertical zoom and mute events). If one clashes with a shortcut of yours, you're asked which to keep
  + Mouse Modifiers: New contexts set: razor area edges, region, marker/region edges and marker/region double click
  + Mouse Modifiers: Added media item edge modifiers for REAPER's new ripple edge options
@@ -165,6 +171,7 @@ DETAILS
  # Tools: Trim Tool at a butt joint: with REAPER's double-edge cursor showing, both edges move together; otherwise only the edge under the cursor moves (what you see is what you get)
  # Tools: Trim Tool selects what it trimmed, moves the edit cursor to its start and sets the loop points to it with Link Timeline and Edit Selection on; one undo step ("Trim items")
  # Tools: Trim Tool: clicking empty track space deselects all items and moves the edit cursor
+ # Tools: Trim Tool grabs an item's edge even where a razor area's edge sits on it, and from just outside the item where REAPER already shows its edge cursor
  # Tools: Spot and Shuffle now change only the mouse modifiers they need and put the tool's own back when turned off (track, arrange and right-drag settings are never touched). In Shuffle mode the Multi tool's upper-half razor drag is off, so its lower half can shuffle
  # Tools: Zoom Tool click / OPT+click now use ReaTooled's own zoom scripts
  # Tools: Removed marquee zoom from Option-drag on the Selector, Multi and Move tools (Option-drag copies, like Pro Tools)
@@ -188,7 +195,7 @@ DETAILS
  # Key map: CMD+K now toggles pre-roll for both playback and recording (was pre-roll on playback only)
  # Key map: OPT+RETURN now "Go to end of project" (was Project settings)
  # Key map: CMD+OPT+CTRL+E now "Open items in secondary external editor" (view envelopes moved to SHIFT+CTRL+E)
- # Key map: N and OPT+N now "Normalize items using most recent settings"; normalize dialog moved to OPT+CTRL+N
+ # Key map: N now "Normalize items using most recent settings (as one long item)", OPT+N the same with each item normalized separately (was CTRL+N); normalize dialog moved to OPT+CTRL+N
  # Key map: OPT+X now toggles auto-crossfade (was crossfade on split)
  # Key map: SHIFT+G now groups items and prompts for a group name
  # Key map: CTRL+J now nudges item volume -12 dB (was normalize to -45 LU)
@@ -204,6 +211,7 @@ DETAILS
  # Appearance: Arrange background shading every 10 seconds (time) or 4 bars (beats); updated snap and grid defaults
  # Preferences: Items always replace earlier items (instead of enclosed items replacing enclosing items)
  # Preferences: Unchecked "Link loop points to time selection"
+ # Preferences (macOS): Unchecked "Use larger listview margins on Big Sur", which made the Track Manager and Project Bay flicker whenever the selection changed
  # Preferences/Audio/Playback: Unchecked "Scroll view to edit cursor on stop"
  # Preferences/Editing Behavior/Envelope Display: Disabled "Use relative mouse edits"
  # SWS: Auto-icon turned off and icons removed from templates]]></changelog>
@@ -356,7 +364,7 @@ DETAILS
 {\pard \ql \f0 \sa180 \li0 \fi0 ReaTooled's themes, installed into REAPER's ColorThemes folder. "Default_7.0 ReaTooled v3 Dark" is the default.\par}
 }]]></description>
       </metadata>
-      <version name="3.2026.1105.1512" author="Brendan Baker" time="2026-11-05T20:13:01Z">
+      <version name="3.2026.1105.2240" author="Brendan Baker" time="2026-11-06T03:41:07Z">
         <source file="Assembled_ReaTooled v1.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Assembled_ReaTooled%20v1.ReaperThemeZip</source>
         <source file="Default_7.0 ReaTooled v2 Light.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Default_7.0%20ReaTooled%20v2%20Light.ReaperThemeZip</source>
         <source file="Default_7.0 ReaTooled v3 Dark.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Default_7.0%20ReaTooled%20v3%20Dark.ReaperThemeZip</source>
@@ -835,7 +843,7 @@ DETAILS
 {\pard \ql \f0 \sa180 \li0 \fi0 Replaces selection with the item under the mouse (no 40529), expands to group via 40034 only if the user's 41156 option is ON, then moves the edit cursor to the earliest start of the current selection. If the link script (_RSed328eb507619b18c1154efa1b048d816cfc2d0c) is ON, also sets loop points to the full span of the selected items. UI stays frozen until the end; view is preserved. Set SET_TIME_SELECTION = false below to never set the time selection / loop points around the item, even when the Link Timeline and Edit Selection toggle is ON. Razor mode (set CLICK_MAKES_RAZOR = true below): instead of moving the edit cursor and loop points, the click puts a razor area exactly over the selected item(s), and the Link Timeline and Edit Selection toggle decides whether the loop points follow it. Trade-offs: while the razor area is there, dragging in it does nothing, and with "Razor edits in media item lane affect all track envelopes" on, deleting also deletes the automation under it.\par}
 }]]></description>
       </metadata>
-      <version name="5.11" author="Brendan Baker" time="2026-11-05T20:03:31Z">
+      <version name="5.12" author="Brendan Baker" time="2026-11-05T20:24:23Z">
         <changelog><![CDATA[New setting SET_TIME_SELECTION at the top of the script: set it to false to stop the click from setting the time selection / loop points around the item (the edit cursor still moves to the item/group start)]]></changelog>
         <source file="ReaTooled_Move Tool Left Click (Select item under mouse cursor, move cursor to start of items).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Move%20Tool%20Left%20Click%20%28Select%20item%20under%20mouse%20cursor%2C%20move%20cursor%20to%20start%20of%20items%29.lua</source>
       </version>
