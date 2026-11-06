@@ -32,8 +32,10 @@
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="3.2026.1106.1139" author="Brendan Baker" time="2026-11-06T16:39:24Z">
-        <changelog><![CDATA[v3.0 - November 03, 2026: the full release notes are in whatsnew.txt in the ReaTooled repository.]]></changelog>
+      <version name="3.2026.1106.1518" author="Brendan Baker" time="2026-11-06T20:19:01Z">
+        <changelog><![CDATA[Configuration updated (no new entries in the release notes).
+
+To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or run "Update ReaTooled").]]></changelog>
         <source file="ReaTooled/Config/keymap.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/keymap.ini</source>
         <source file="ReaTooled/Config/menus.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/menus.ini</source>
         <source file="ReaTooled/Config/mouse.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/mouse.ini</source>
@@ -183,7 +185,7 @@
 {\pard \ql \f0 \sa180 \li0 \fi0 ReaTooled's themes, installed into REAPER's ColorThemes folder. "Default_7.0 ReaTooled v3 Dark" is the default.\par}
 }]]></description>
       </metadata>
-      <version name="3.2026.1106.1139" author="Brendan Baker" time="2026-11-06T16:39:24Z">
+      <version name="3.2026.1106.1518" author="Brendan Baker" time="2026-11-06T20:19:01Z">
         <source file="Assembled_ReaTooled v1.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Assembled_ReaTooled%20v1.ReaperThemeZip</source>
         <source file="Default_7.0 ReaTooled v2 Light.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Default_7.0%20ReaTooled%20v2%20Light.ReaperThemeZip</source>
         <source file="Default_7.0 ReaTooled v3 Dark.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Default_7.0%20ReaTooled%20v3%20Dark.ReaperThemeZip</source>
@@ -585,9 +587,8 @@
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="3.3.7" author="Brendan Baker" time="2026-11-06T16:26:34Z">
-        <changelog><![CDATA[• Transport: no more lag in REAPER when the strip is attached next to the selection display but the Transport isn't showing one (too narrow, or a layout without it). It then searched the whole Transport for it on every frame, thousands of "what's under this point?" questions to REAPER, 30 times a second. Not finding it is now remembered until the Transport changes size (with a look every 5 seconds)
-• Transport: finding the selection display and the transport buttons asks REAPER about far fewer points (a coarse pass, then only the edges point by point)]]></changelog>
+      <version name="3.3.8" author="Brendan Baker" time="2026-11-06T20:19:01Z">
+        <changelog><![CDATA[• Optional timing report for testing: when "ReaTooled_DEV Interface smoothness monitor.lua" turns it on, it measures how long each part of the script takes per frame and shows it in the monitor. Off otherwise (no measuring, nothing written)]]></changelog>
         <source file="ReaTooled_Grid and Nudge Settings.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Grid%20and%20Nudge%20Settings.lua</source>
       </version>
     </reapack>
@@ -1224,9 +1225,9 @@
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="2.4.24" author="Brendan Baker" time="2026-11-05T20:03:31Z">
-        <changelog><![CDATA[ReaTooled_Enable Link Edit Cursor and Play Cursor: Lighter on CPU: with the mouse button up, every track's razor areas are read only when the project has changed (or 4 times a second, to be safe), instead of every frame; while a button is down they're followed every frame as before
-ReaTooled_Set up ReaTooled: Updates merge preferences more completely: a preference ReaTooled no longer sets is removed (REAPER's default comes back) unless you changed it yourself; preferences that hold several on/off options in one number (Config/update_rules.txt "bits") are merged option by option, so ReaTooled's change to one option arrives even if you changed another; and preferences listed as "always" are set whatever you changed (each one named in the report)]]></changelog>
+      <version name="2.4.25" author="Brendan Baker" time="2026-11-06T20:19:01Z">
+        <changelog><![CDATA[ReaTooled_Startup: On every start (not just once a day), checks whether ReaPack has downloaded a newer ReaTooled that hasn't been applied yet (a synchronize done by hand or by ReaPack itself) and asks whether to apply it. This needs no internet; the check for a newer release online is still once a day.
+ReaTooled_Update ReaTooled: ReaTooled's startup also runs it on every start without going online (REATOOLED_UPDATE_CHECK = "local"): if ReaPack has downloaded a newer ReaTooled that hasn't been applied, it asks whether to apply it. Answering No there isn't asked again for that version until the daily check. Applying a downloaded update also waits until ReaPack has finished]]></changelog>
         <source file="ReaTooled_Earlier shortcuts.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Earlier%20shortcuts.lua</source>
         <source file="ReaTooled_Earlier toolbars.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Earlier%20toolbars.lua</source>
         <source file="ReaTooled_Enable Link Edit Cursor and Play Cursor.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Enable%20Link%20Edit%20Cursor%20and%20Play%20Cursor.lua</source>

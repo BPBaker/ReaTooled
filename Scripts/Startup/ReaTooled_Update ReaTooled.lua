@@ -1,6 +1,6 @@
 --[[
 -- @description ReaTooled - Update ReaTooled
--- @version 1.0.2
+-- @version 1.0.3
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -13,6 +13,11 @@
     Also run by ReaTooled's startup once a day (quietly): if a newer release is out, it
     asks whether to update now.
     CHANGELOG
+    v1.0.3 ReaTooled's startup also runs it on every start without going online
+           (REATOOLED_UPDATE_CHECK = "local"): if ReaPack has downloaded a newer ReaTooled
+           that hasn't been applied, it asks whether to apply it. Answering No there isn't
+           asked again for that version until the daily check. Applying a downloaded update
+           also waits until ReaPack has finished
     v1.0.2 Waits until ReaPack has completely finished (its windows closed) before Set up
            applies the update. Starting it while ReaPack was still installing crashed
            REAPER on Windows.
@@ -35,7 +40,8 @@ local SETUP   = RES .. "/Scripts/ReaTooled/Startup/ReaTooled_Set up ReaTooled.lu
 local IS_WIN  = reaper.GetOS():match("Win") ~= nil
 
 -- Started by ReaTooled's startup (once a day): quiet unless there's an update
-local QUIET = _G.REATOOLED_UPDATE_CHECK == true
+local LOCAL_ONLY = _G.REATOOLED_UPDATE_CHECK == "local"   -- (every start: no internet, only a downloaded update)
+local QUIET = _G.REATOOLED_UPDATE_CHECK == true or LOCAL_ONLY
 _G.REATOOLED_UPDATE_CHECK = nil
 
 local function msg(text, buttons) return reaper.ShowMessageBox(text, TITLE, buttons or 0) end
@@ -119,6 +125,43 @@ local function apply_update()
   if not ok then msg("The update couldn't be applied:\n\n" .. tostring(err)) end
 end
 
+-- Is a ReaPack window still open (its progress, or its report when it's done)?
+local function reapack_busy()
+  if not reaper.JS_Window_ListFind then return false end
+  local main = reaper.GetMainHwnd()
+  local n, list = reaper.JS_Window_ListFind("ReaPack", false)
+  for addr in ((list or "") .. ","):gmatch("(.-),") do
+    local h = addr ~= "" and reaper.JS_Window_HandleFromAddress(addr)
+    if h and reaper.JS_Window_IsVisible(h) and (reaper.JS_Window_GetTitle(h) or ""):find("^ReaPack") then
+      local c, i = h, 0
+      while c and i < 50 do
+        if c == main then return true end
+        c = reaper.JS_Window_GetParent(c); i = i + 1
+      end
+    end
+  end
+  return false
+end
+
+-- Applies once ReaPack has completely finished (a synchronize at startup may still be
+-- installing other files, and starting Set up while it was busy crashed REAPER on Windows)
+local function apply_when_reapack_done()
+  local t0, told = reaper.time_precise(), false
+  local function wait()
+    local busy = reapack_busy()
+    if (busy or reaper.time_precise() - t0 < 2) and reaper.time_precise() - t0 < SYNC_WAIT then
+      if busy and not told and reaper.time_precise() - t0 > 4 then
+        told = true
+        msg("Close ReaPack's window when it has finished, and the update will be applied.")
+      end
+      reaper.defer(wait)
+      return
+    end
+    apply_update()
+  end
+  reaper.defer(wait)
+end
+
 -- ReaPack downloads the new release; once its configuration has arrived, it's applied
 local function download_then_apply(remote)
   if not reaper.APIExists("ReaPack_AddSetRepository") then
@@ -131,23 +174,6 @@ local function download_then_apply(remote)
   if sync == 0 then msg("ReaPack's \"Synchronize packages\" wasn't found.") return end
   reaper.Main_OnCommand(sync, 0)
   local start = reaper.time_precise()
-  -- Is a ReaPack window still open (its progress, or its report when it's done)?
-  local function reapack_busy()
-    if not reaper.JS_Window_ListFind then return false end
-    local main = reaper.GetMainHwnd()
-    local n, list = reaper.JS_Window_ListFind("ReaPack", false)
-    for addr in ((list or "") .. ","):gmatch("(.-),") do
-      local h = addr ~= "" and reaper.JS_Window_HandleFromAddress(addr)
-      if h and reaper.JS_Window_IsVisible(h) and (reaper.JS_Window_GetTitle(h) or ""):find("^ReaPack") then
-        local c, i = h, 0
-        while c and i < 50 do
-          if c == main then return true end
-          c = reaper.JS_Window_GetParent(c); i = i + 1
-        end
-      end
-    end
-    return false
-  end
   local arrived, told = nil, false
   local function wait()
     local have = downloaded()
@@ -192,10 +218,12 @@ local function decide(remote)
     if a == 6 then download_then_apply(remote) end
   elseif have and done and newer(have, done) then
     -- downloaded already (ReaPack synced) but not applied yet
+    -- (at an ordinary start, a version the user said No to waits for the daily check)
+    if LOCAL_ONLY and reaper.GetExtState("ReaTooled", "UpdateDeclined") == have then return end
     local a = msg("ReaTooled v" .. have .. " has been downloaded but isn't applied yet (you have v" .. done .. ").\n\n" ..
       "Update now? Your settings are backed up, your own changes and window layout are kept, " ..
       "and REAPER restarts at the end.", 4)
-    if a == 6 then apply_update() end
+    if a == 6 then apply_when_reapack_done() else reaper.SetExtState("ReaTooled", "UpdateDeclined", have, true) end
   elseif not QUIET then
     if remote then
       msg("ReaTooled is up to date (v" .. current .. ").")
@@ -206,7 +234,9 @@ local function decide(remote)
   end
 end
 
-if QUIET then
+if LOCAL_ONLY then
+  decide(nil)
+elseif QUIET then
   -- In the background: curl runs without REAPER waiting; its answer is read when it's done
   local tmp = (os.getenv(IS_WIN and "TEMP" or "TMPDIR") or "/tmp"):gsub("\\", "/"):gsub("/$", "") ..
               "/reatooled_latest_version.txt"

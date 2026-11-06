@@ -1,6 +1,6 @@
 -- @description ReaTooled - Grid & Nudge Settings (Dockable GUI)
--- @version 3.3.7
--- @date 2026.11.04
+-- @version 3.3.8
+-- @date 2026.11.06
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -34,6 +34,10 @@
 --     the label shown when the project's grid can't be matched to a menu entry.
 --
 -- @changelog
+--   v3.3.8 (2026-11-06)
+--     • Optional timing report for testing: when "ReaTooled_DEV Interface smoothness
+--       monitor.lua" turns it on, it measures how long each part of the script takes per
+--       frame and shows it in the monitor. Off otherwise (no measuring, nothing written)
 --   v3.3.7 (2026-11-06)
 --     • Transport: no more lag in REAPER when the strip is attached next to the selection
 --       display but the Transport isn't showing one (too narrow, or a layout without it).
@@ -256,6 +260,45 @@ local CMD_GRID_TOGGLE  = 40145
 --  CONSTANTS
 -- ===================================================================
 local EXT_SECTION  = "ReaTooled"
+
+-- Timing report, for testing only. Off unless the DEV monitor script sets
+-- ExtState ReaTooled/GridNudge_timing = "1"; then, once a second, it writes how long each
+-- part took to ReaTooled/GridNudge_timing_report (lines "name|ms per frame|worst ms|calls/s").
+local PROF = { on = false, checked = 0, since = 0, frames = 0, t = {}, n = {}, mx = {}, order = {} }
+function PROF.add(name, dt)
+  if not PROF.t[name] then PROF.t[name], PROF.n[name], PROF.mx[name] = 0, 0, 0; PROF.order[#PROF.order + 1] = name end
+  PROF.t[name], PROF.n[name] = PROF.t[name] + dt, PROF.n[name] + 1
+  if dt > PROF.mx[name] then PROF.mx[name] = dt end
+end
+function PROF.wrap(name, f)
+  return function(...)
+    if not PROF.on then return f(...) end
+    local t0 = reaper.time_precise()
+    local a, b, c, d = f(...)
+    PROF.add(name, reaper.time_precise() - t0)
+    return a, b, c, d
+  end
+end
+function PROF.tick(mode_name)
+  local now = reaper.time_precise()
+  if now - PROF.checked >= 0.5 then
+    PROF.checked = now
+    local on = reaper.GetExtState(EXT_SECTION, "GridNudge_timing") == "1"
+    if on ~= PROF.on then
+      PROF.on, PROF.since, PROF.frames, PROF.t, PROF.n, PROF.mx, PROF.order = on, now, 0, {}, {}, {}, {}
+    end
+  end
+  if PROF.on and now - PROF.since >= 1 and PROF.frames > 0 then
+    local secs = now - PROF.since
+    local out = { string.format("%s|%.1f|%.3f", mode_name, PROF.frames / secs, now) }
+    for _, k in ipairs(PROF.order) do
+      out[#out + 1] = string.format("%s|%.3f|%.2f|%.1f", k, PROF.t[k] * 1000 / PROF.frames,
+                                    PROF.mx[k] * 1000, PROF.n[k] / secs)
+    end
+    reaper.SetExtState(EXT_SECTION, "GridNudge_timing_report", table.concat(out, "\n"), false)
+    PROF.since, PROF.frames, PROF.t, PROF.n, PROF.mx, PROF.order = now, 0, {}, {}, {}, {}
+  end
+end
 local EXT_KEY_VAL  = "nudge_val"
 local EXT_KEY_UNIT = "nudge_unit"
 
@@ -1792,6 +1835,7 @@ local function transport_frame()
   end
 
   -- mouse
+  local pm = PROF.on and reaper.time_precise()
   local mx, my = reaper.GetMousePosition()
   local cx, cy = reaper.JS_Window_ScreenToClient(TR.hwnd, mx, my)
   local over = reaper.JS_Window_FromPoint(mx, my) == TR.hwnd
@@ -1841,6 +1885,7 @@ local function transport_frame()
   if TR.intercept and reaper.JS_Mouse_SetCursor then   -- (REAPER's own cursor is held back while over it)
     reaper.JS_Mouse_SetCursor(cursor_for(TR.drag and (TR.drag.resize and "resize" or "grip") or id))
   end
+  if pm then PROF.add("mouse, clicks and cursor", reaper.time_precise() - pm) end
 
   -- bitmap and position
   local size_changed = TR.bm_w ~= (TR.bm and reaper.JS_LICE_GetWidth(TR.bm) or -1)
@@ -1858,10 +1903,13 @@ local function transport_frame()
     reaper.JS_Composite_Delay(TR.hwnd, 0.03, 0.045, 2)
     reaper.JS_Composite(TR.hwnd, TR.x, TR.y, TR.w, TR.h, TR.bm, 0, 0, TR.bm_w, TR.bm_h)
     TR.linked, TR.key = true, nil
+    if PROF.on then PROF.add("re-attach to Transport (moved/resized)", 0) end
   end
+  local pk = PROF.on and reaper.time_precise()
   local key = table.concat({ reaper.GetToggleCommandState(CMD_GRID_TOGGLE), grid_index, nudge_val, unit_index,
                              selected_modifier, tostring(TR.hover), T.locked and 1 or 0, edit and 1 or 0,
                              TR.bm_w, TR.bm_h }, "|")
+  if pk then PROF.add("change check (toggle states)", reaper.time_precise() - pk) end
   if key ~= TR.key then
     TR.key = key
     draw()
@@ -1871,6 +1919,20 @@ local function transport_frame()
 end
 
 transport_teardown_fwd = transport_teardown
+
+-- (timing report: these names are wrapped so each call is measured while it's on)
+transport_frame  = PROF.wrap("Transport: all of it", transport_frame)
+find_transport   = PROF.wrap("find the Transport", find_transport)
+palette_changed  = PROF.wrap("theme colour check", palette_changed)
+fit_box          = PROF.wrap("fit to free space (incl. layout)", fit_box)
+layout           = PROF.wrap("layout", layout)
+protected_spans  = PROF.wrap("find transport buttons/time display", protected_spans)
+selection_edges  = PROF.wrap("find selection display", selection_edges)
+selection_scan   = PROF.wrap("full search for selection display", selection_scan)
+draw             = PROF.wrap("redraw the strip", draw)
+draw_edit        = PROF.wrap("typed value field", draw_edit)
+DrawFrame        = PROF.wrap("Window: draw (ImGui)", DrawFrame)
+update_grid_index_from_reaper = PROF.wrap("read project grid", update_grid_index_from_reaper)
 window_menu_can_transport = CAN_TRANSPORT
 
 -- ===================================================================
@@ -1940,6 +2002,18 @@ local function Main()
   end
 
   reaper.defer(Main)
+end
+
+do   -- (timing report: the whole frame, and the once-a-second report)
+  local inner = Main
+  Main = function()
+    PROF.tick(mode)
+    if not PROF.on then return inner() end
+    local t0 = reaper.time_precise()
+    inner()
+    PROF.add("whole frame", reaper.time_precise() - t0)
+    PROF.frames = PROF.frames + 1
+  end
 end
 
 reaper.defer(Main)

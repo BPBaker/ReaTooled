@@ -1,6 +1,6 @@
 --[[
 -- @description ReaTooled - Startup
--- @version 2.2.4
+-- @version 2.2.5
 -- @author Brendan Baker
 -- @link http://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -9,6 +9,10 @@
     ReaTooled installer adds. Edit the SCRIPTS list below to change
     what runs at startup; ReaPack updates this file like any other.
     CHANGELOG
+    v 2.2.5 - On every start (not just once a day), checks whether ReaPack has downloaded a
+              newer ReaTooled that hasn't been applied yet (a synchronize done by hand or
+              by ReaPack itself) and asks whether to apply it. This needs no internet; the
+              check for a newer release online is still once a day.
     v 2.2.4 - Once a day, checks quietly for a newer ReaTooled (Update ReaTooled); if there
               is one, asks whether to update now. ExtState ReaTooled/UpdateCheck = "off"
               turns the check off.
@@ -114,14 +118,19 @@ end
 if not pending() and reaper.GetExtState("ReaTooled", "UpdateCheck") ~= "off" then
   local today = os.date("%Y-%m-%d")
   local path = RES .. "/Scripts/ReaTooled/Startup/ReaTooled_Update ReaTooled.lua"
-  if reaper.GetExtState("ReaTooled", "UpdateCheckDay") ~= today and reaper.file_exists(path) then
-    reaper.SetExtState("ReaTooled", "UpdateCheckDay", today, true)
-    reaper.AddRemoveReaScript(true, 0, path, true)   -- (in the Actions list too)
+  if reaper.file_exists(path) then
+    -- once a day: online, for a newer release. Every other start: only whether ReaPack has
+    -- downloaded one that hasn't been applied (a local file, no internet)
+    local daily = reaper.GetExtState("ReaTooled", "UpdateCheckDay") ~= today
+    if daily then
+      reaper.SetExtState("ReaTooled", "UpdateCheckDay", today, true)
+      reaper.AddRemoveReaScript(true, 0, path, true)   -- (in the Actions list too)
+    end
     -- a few seconds after startup, so REAPER is ready
     local t0 = reaper.time_precise()
     local function later()
       if reaper.time_precise() - t0 < 5 then reaper.defer(later) return end
-      _G.REATOOLED_UPDATE_CHECK = true
+      _G.REATOOLED_UPDATE_CHECK = daily and true or "local"
       pcall(dofile, path)
     end
     reaper.defer(later)
