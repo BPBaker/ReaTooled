@@ -1,5 +1,5 @@
 -- @description ReaTooled - Grid & Nudge Settings (Dockable GUI)
--- @version 3.3.6
+-- @version 3.3.7
 -- @date 2026.11.04
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
@@ -34,6 +34,14 @@
 --     the label shown when the project's grid can't be matched to a menu entry.
 --
 -- @changelog
+--   v3.3.7 (2026-11-06)
+--     • Transport: no more lag in REAPER when the strip is attached next to the selection
+--       display but the Transport isn't showing one (too narrow, or a layout without it).
+--       It then searched the whole Transport for it on every frame, thousands of "what's
+--       under this point?" questions to REAPER, 30 times a second. Not finding it is now
+--       remembered until the Transport changes size (with a look every 5 seconds)
+--     • Transport: finding the selection display and the transport buttons asks REAPER
+--       about far fewer points (a coarse pass, then only the edges point by point)
 --   v3.3.6 (2026-11-05)
 --     • Changing the nudge unit converts with the project's sample rate (it was always
 --       44.1 kHz) and the grid's real size (grid values came out four times off)
@@ -1252,26 +1260,28 @@ local function sel_at(cx, cy)
   return thing ~= nil and thing:sub(1, 9) == "trans.sel"
 end
 
--- Full measure: every few points across the Transport, at three heights
+-- Full measure: a coarse pass across the Transport (middle height first, then above and
+-- below if it isn't there), then its two edges point by point
 local function selection_scan(ww, wh)
-  local l, r, y
-  local step = math.max(1, math.floor(2 * (TR.measure or 1)))
+  local step = math.max(2, math.floor(8 * (TR.measure or 1)))
   for _, fy in ipairs({ 0.5, 0.25, 0.75 }) do
     local cy = math.floor(wh * fy)
+    local first, last
     for cx = 0, ww - 1, step do
       if sel_at(cx, cy) then
-        if not l or cx < l then l, y = cx, cy end
-        r = r and math.max(r, cx + step) or (cx + step)
+        first = first or cx
+        last = cx
       end
     end
+    if first then
+      local l = first
+      while l > 0 and l > first - step and sel_at(l - 1, cy) do l = l - 1 end
+      local r = last
+      while r < ww - 1 and r < last + step and sel_at(r + 1, cy) do r = r + 1 end
+      return l, r + 1, cy
+    end
   end
-  -- exact left edge (to the point)
-  if l then
-    local x = l
-    while x > 0 and sel_at(x - 1, y) do x = x - 1 end
-    l = x
-  end
-  return l, r, y
+  return nil
 end
 
 -- While the Transport is resized: the left edge is followed from where it was (a few
@@ -1291,6 +1301,9 @@ local function selection_edges()
   local _, ww, wh = reaper.JS_Window_GetClientSize(TR.hwnd)
   local key = ww .. "x" .. wh
   local now = reaper.time_precise()
+  -- (no selection display at this size: don't look again until the size changes, or for
+  -- 5 seconds; before, the whole Transport was searched again on every frame)
+  if sel_cache.none and sel_cache.key == key and now - sel_cache.t < 5 then return nil end
   if sel_cache.l and sel_cache.key == key then
     if now - sel_cache.t < 0.5 then return sel_cache.l, sel_cache.r end
     sel_cache.t = now
@@ -1314,6 +1327,7 @@ local function selection_edges()
   end
   sel_cache.key, sel_cache.t = key, now
   sel_cache.l, sel_cache.r, sel_cache.y = selection_scan(ww, wh)
+  sel_cache.none = (sel_cache.l == nil)
   return sel_cache.l, sel_cache.r
 end
 
@@ -1627,21 +1641,35 @@ local function protected_spans()
   if key ~= room.key then room.key, room.fine, room.changed = key, false, now
   elseif room.fine or now - room.changed < 0.25 then return room.spans end
   local fine = room.key == key and now - room.changed >= 0.25
-  local step = math.max(1, math.floor((fine and 2 or 6) * TR.measure))
-  local hit = {}
+  local step = math.max(2, math.floor(6 * TR.measure))
   local ys = { math.floor(wh * 0.3), math.floor(wh * 0.7) }   -- (the box is centred, about full height)
-  for _, cy in ipairs(ys) do
-    for cx = 0, ww - 1, step do
+  local function protected_at(cx)
+    for _, cy in ipairs(ys) do
       local sx, sy = reaper.JS_Window_ClientToScreen(TR.hwnd, cx, cy)
       local _, thing = reaper.GetThingFromPoint(sx, sy)
-      if is_protected(thing) then hit[cx] = true end
+      if is_protected(thing) then return true end
     end
+    return false
   end
+  -- a coarse pass; then (once the size has settled) each edge point by point, instead of
+  -- asking about every other point across the whole Transport
+  local hit = {}
+  for cx = 0, ww - 1, step do if protected_at(cx) then hit[cx] = true end end
   local spans, cur = {}, nil
   for cx = 0, ww - 1, step do
     if hit[cx] then
-      if cur and cx <= cur[2] + step then cur[2] = cx + step
-      else cur = { cx, cx + step }; spans[#spans + 1] = cur end
+      if cur and cx <= cur[2] then cur[2] = cx + step
+      else cur = { cx, cx + step, first = cx, last = cx }; spans[#spans + 1] = cur end
+      cur.last = cx
+    end
+  end
+  if fine then
+    for _, sp in ipairs(spans) do
+      local l = sp.first
+      while l > 0 and l > sp.first - step and protected_at(l - 1) do l = l - 1 end
+      local r = sp.last
+      while r < ww - 1 and r < sp.last + step and protected_at(r + 1) do r = r + 1 end
+      sp[1], sp[2] = l, r + 1
     end
   end
   -- the time display: its own window

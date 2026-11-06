@@ -32,7 +32,7 @@
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="3.2026.1105.2240" author="Brendan Baker" time="2026-11-06T03:41:07Z">
+      <version name="3.2026.1106.1126" author="Brendan Baker" time="2026-11-06T16:26:34Z">
         <changelog><![CDATA[v3.0 - November 03, 2026
 
 HIGHLIGHTS
@@ -364,7 +364,7 @@ DETAILS
 {\pard \ql \f0 \sa180 \li0 \fi0 ReaTooled's themes, installed into REAPER's ColorThemes folder. "Default_7.0 ReaTooled v3 Dark" is the default.\par}
 }]]></description>
       </metadata>
-      <version name="3.2026.1105.2240" author="Brendan Baker" time="2026-11-06T03:41:07Z">
+      <version name="3.2026.1106.1126" author="Brendan Baker" time="2026-11-06T16:26:34Z">
         <source file="Assembled_ReaTooled v1.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Assembled_ReaTooled%20v1.ReaperThemeZip</source>
         <source file="Default_7.0 ReaTooled v2 Light.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Default_7.0%20ReaTooled%20v2%20Light.ReaperThemeZip</source>
         <source file="Default_7.0 ReaTooled v3 Dark.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Default_7.0%20ReaTooled%20v3%20Dark.ReaperThemeZip</source>
@@ -766,9 +766,9 @@ DETAILS
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="3.3.6" author="Brendan Baker" time="2026-11-05T20:03:31Z">
-        <changelog><![CDATA[• Changing the nudge unit converts with the project's sample rate (it was always 44.1 kHz) and the grid's real size (grid values came out four times off)
-• Dotted and triplet "1 bar" is right in REAPER's measures.beats notation (dotted was 1.5, which REAPER reads as 1 measure + 5 beats; now 1.2 in 4/4, i.e. 6 beats), and switching dotted/triplet on and off converts the value the same way]]></changelog>
+      <version name="3.3.7" author="Brendan Baker" time="2026-11-06T16:26:34Z">
+        <changelog><![CDATA[• Transport: no more lag in REAPER when the strip is attached next to the selection display but the Transport isn't showing one (too narrow, or a layout without it). It then searched the whole Transport for it on every frame, thousands of "what's under this point?" questions to REAPER, 30 times a second. Not finding it is now remembered until the Transport changes size (with a look every 5 seconds)
+• Transport: finding the selection display and the transport buttons asks REAPER about far fewer points (a coarse pass, then only the edges point by point)]]></changelog>
         <source file="ReaTooled_Grid and Nudge Settings.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Grid%20and%20Nudge%20Settings.lua</source>
       </version>
     </reapack>

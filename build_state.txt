@@ -23,7 +23,7 @@ Edit/ReaTooled_Fade In to Edit Cursor Or Mouse (Hover Mode Dependent).lua	1.2	a5
 Edit/ReaTooled_Fade Out From Edit Cursor Or Mouse (Hover Mode Dependent).lua	1.2	7730e49d
 Edit/ReaTooled_Glide Envelope Points.lua	3.0	5a04e65f
 Edit/ReaTooled_Glue items with handles.lua	1.1	12b11d72
-Edit/ReaTooled_Grid and Nudge Settings.lua	3.3.6	77b755ba
+Edit/ReaTooled_Grid and Nudge Settings.lua	3.3.7	9317e80d
 Edit/ReaTooled_Magic Zero Crossing Loop Copy Buffer Maker.lua	1.0	12cca528
 Edit/ReaTooled_Move Tool Left Click (Select item under mouse cursor, move cursor to start of items).lua	5.12	86687763
 Edit/ReaTooled_Move Tool Left Shift-Click (Select item and extend razor edit).lua	6.3	f06929f3
