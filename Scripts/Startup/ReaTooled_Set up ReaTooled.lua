@@ -1,6 +1,6 @@
 --[[
 -- @description ReaTooled - Set up ReaTooled
--- @version 2.3.13
+-- @version 2.3.14
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -19,6 +19,15 @@
     When you click OK at the end, REAPER quits, the helper writes those files,
     and the same copy of REAPER opens again by itself.
 -- CHANGELOG
+-- v2.3.14 Shortcut clashes are remembered (Data/ReaTooled/shortcut_choices.txt): a key you kept
+--         as yours isn't asked about again at the next update, as long as it's still your
+--         same action against ReaTooled's same action (if ReaTooled maps that key to
+--         something new, or you changed it, it's asked again). Earlier choices are listed
+--         in the report. "ReaTooled_Shortcut choices" (_G.REATOOLED_UPDATE = "choices")
+--         opens the clash window with every remembered choice, both ways: give a kept key
+--         to ReaTooled, or give a key you let ReaTooled have back to your own action. If
+--         the restart's "Save changes?" is cancelled, it says the update finishes the next
+--         time REAPER quits. Shortcut choices closed with nothing changed doesn't restart.
 -- v2.3.13 Updates merge preferences more completely: a preference ReaTooled no longer sets is
 --         removed (REAPER's default comes back) unless you changed it yourself; preferences
 --         that hold several on/off options in one number (Config/update_rules.txt "bits")
@@ -822,7 +831,15 @@ local function base_keymap()
 end
 
 local UPDATE = false
-local CONFIRMED = _G.REATOOLED_UPDATE == "confirmed"   -- (Update ReaTooled asked already)
+-- (Shortcut choices: an update showing every remembered shortcut choice)
+local CHOICES_MODE = _G.REATOOLED_UPDATE == "choices"
+local CONFIRMED = _G.REATOOLED_UPDATE == "confirmed" or CHOICES_MODE   -- (Update ReaTooled asked already)
+if CHOICES_MODE and not BASE_REC then
+  _G.REATOOLED_UPDATE = nil
+  msg("ReaTooled isn't set up yet, so there are no shortcut choices to change.\n\n" ..
+      "Run \"Set up ReaTooled\" first.")
+  return
+end
 if BASE_REC then
   if _G.REATOOLED_UPDATE then
     UPDATE = true
@@ -1159,6 +1176,65 @@ do
 end
 
 ------------------------------------------------------------
+-- 3a+. Remembered shortcut choices (Data/ReaTooled/shortcut_choices.txt, one line per
+-- clash: "kept" or "ours", the key, the user's action, ReaTooled's action).
+--   kept: the user kept their own action on the key. The same clash (same key, same two
+--         actions) isn't asked about again in an update.
+--   ours: the user gave the key to ReaTooled. Not a clash any more, but listed in
+--         Shortcut choices so the key can be given back.
+-- A choice that no longer matches (ReaTooled maps the key to something else now, or the
+-- user changed it) is forgotten, so that clash is asked about as new.
+------------------------------------------------------------
+
+local CHOICES_FILE = RES .. "/Data/ReaTooled/shortcut_choices.txt"
+local remembered_kept, remembered_ours = 0, 0
+do
+  local remembered = { kept = {}, ours = {} }
+  for _, l in ipairs(lines_of(read_file(CHOICES_FILE) or "")) do
+    local kind, k, u, o = l:match("^(%a+)\t([^\t]+)\t([^\t]+)\t([^\t]+)$")
+    if kind and remembered[kind] then
+      remembered[kind][k] = { u = renamed(norm_id(u)), o = renamed(norm_id(o)) }
+    end
+  end
+  for _, c in ipairs(conflicts) do
+    local r = remembered.kept[c.k.k]
+    if r and r.u == norm_id(c.u.cmd) and r.o == norm_id(c.k.cmd) then
+      c.remembered = "kept"
+      remembered_kept = remembered_kept + 1
+    end
+  end
+  -- (in key order, so the window lists them the same way each time)
+  local keys = {}
+  for k in pairs(remembered.ours) do keys[#keys + 1] = k end
+  table.sort(keys)
+  for _, k in ipairs(keys) do
+    local r = remembered.ours[k]
+    local u = user_key[k]
+    if u and not remove_line[u.i] and not replace_line[u.i] and norm_id(u.cmd) == r.o then
+      for _, ok in ipairs(our_key) do
+        if ok.k == k and norm_id(ok.cmd) == r.o then
+          local mods, key, section = k:match("^([^|]+)|([^|]+)|([^|]+)$")
+          conflicts[#conflicts + 1] = { k = ok, remembered = "ours",
+            u = { i = u.i, cmd = r.u, line = string.format("KEY %s %s %s %s", mods, key, r.u, section) } }
+          remembered_ours = remembered_ours + 1
+          break
+        end
+      end
+    end
+  end
+end
+
+-- Saved once the setup goes ahead (not without ReaImGui, where nothing was asked)
+local function save_choices()
+  local out = { "# ReaTooled shortcut choices (written by Set up ReaTooled; change them with",
+                "# \"ReaTooled_Shortcut choices\"). kept/ours <tab> key <tab> your action <tab> ReaTooled's" }
+  for _, c in ipairs(conflicts) do
+    out[#out + 1] = table.concat({ c.update and "ours" or "kept", c.k.k, norm_id(c.u.cmd), norm_id(c.k.cmd) }, "\t")
+  end
+  write_file(CHOICES_FILE, table.concat(out, "\n") .. "\n")
+end
+
+------------------------------------------------------------
 -- 3b. Clashes: one window lists them all. Each starts on "Keep yours";
 -- any row can be changed until Continue, and the shortcut that loses its key
 -- can be given another one.
@@ -1174,9 +1250,14 @@ end
 
 for _, c in ipairs(conflicts) do
   c.key_text   = key_label(c.k.line)
-  c.yours_name = short_name(command_name(c.u.cmd, user_lines[c.u.i]))
+  -- (a key given to ReaTooled earlier: its line names ReaTooled's action, not the user's)
+  c.yours_name = short_name(command_name(c.u.cmd, c.u.line or user_lines[c.u.i]))
   c.ours_name  = short_name(command_name(c.k.cmd, c.k.line))
-  c.update     = false   -- default: keep yours
+  c.update     = (c.remembered == "ours")   -- default: keep yours (or what was chosen before)
+  c.was_update = c.update
+  -- An update doesn't ask again about a choice already made; Shortcut choices and a
+  -- setup from scratch show them all
+  c.hidden     = (c.remembered ~= nil) and UPDATE and not CHOICES_MODE
   c.section    = c.k.k:match("([^|]+)$")
   -- Another key can only be given to keyboard shortcuts (not mousewheel or MIDI)
   c.keyboard   = (tonumber(c.k.k:match("^([^|]+)")) or 255) < 128
@@ -1205,10 +1286,28 @@ local function owner_of(kstr, except_row, except_side)
   end
 end
 
+local given_back = 0   -- keys given back to the user's own action (Shortcut choices)
 local function apply_choices()
   for _, c in ipairs(conflicts) do
     local alt
-    if c.update then
+    if c.remembered == "ours" then
+      -- the key is ReaTooled's already
+      if c.update then
+        alt = c.alt_yours
+        if alt then
+          add_key[#add_key + 1] = string.format("KEY %d %d %s %s", alt.flags, alt.key, c.u.cmd, c.section)
+        end
+      else
+        replace_line[c.u.i] = c.u.line   -- (back to the user's action)
+        given_back = given_back + 1
+        alt = c.alt_ours
+        if alt then
+          add_key[#add_key + 1] = string.format("KEY %d %d %s %s", alt.flags, alt.key, c.k.cmd, c.section)
+        else
+          left_without[#left_without + 1] = c.ours_name
+        end
+      end
+    elseif c.update then
       replace_line[c.u.i] = c.k.line
       use_ours = use_ours + 1
       alt = c.alt_yours
@@ -1701,8 +1800,10 @@ local function clash_window()
   local function counts()
     local keep, upd, moved = 0, 0, 0
     for _, c in ipairs(conflicts) do
+      if c.hidden then goto continue end
       if c.update then upd = upd + 1 else keep = keep + 1 end
       if (c.update and c.alt_yours) or (not c.update and c.alt_ours) then moved = moved + 1 end
+      ::continue::
     end
     return keep, upd, moved
   end
@@ -1724,33 +1825,57 @@ local function clash_window()
     local visible, open = ImGui.Begin(ctx, TITLE .. " - shortcuts", true, flags)
     if visible then
       if capture then record() end
-      ImGui.PushFont(ctx, font_b); ImGui.Text(ctx, "Shortcut clashes"); ImGui.PopFont(ctx)
+      ImGui.PushFont(ctx, font_b); ImGui.Text(ctx, CHOICES_MODE and "Shortcut choices" or "Shortcut clashes"); ImGui.PopFont(ctx)
       ImGui.SameLine(ctx)
       ImGui.SetCursorPosX(ctx, W + 16 - ImGui.CalcTextSize(ctx, "ReaTooled"))
       ImGui.TextDisabled(ctx, "ReaTooled")
       ImGui.Separator(ctx)
-      note((#conflicts == 1 and "1 ReaTooled shortcut uses a key" or (#conflicts .. " ReaTooled shortcuts use keys")) ..
-        " you already use for something else. Choose what each key should do. Nothing changes until you press Continue.", 0xD0D0D0FF)
+      local shown, new_rows = 0, 0
+      for _, c in ipairs(conflicts) do
+        if not c.hidden then shown = shown + 1; if not c.remembered then new_rows = new_rows + 1 end end
+      end
+      if CHOICES_MODE then
+        note("The keys where ReaTooled's shortcuts and yours meet, and what you chose for each. " ..
+          "Change any of them: nothing changes until you press Continue (then REAPER restarts).", 0xD0D0D0FF)
+      else
+        note((shown == 1 and "1 ReaTooled shortcut uses a key" or (shown .. " ReaTooled shortcuts use keys")) ..
+          " you already use for something else. Choose what each key should do. Nothing changes until you press Continue.", 0xD0D0D0FF)
+      end
+      if remembered_kept > 0 and not CHOICES_MODE and UPDATE then
+        note("Keys you chose to keep before (" .. remembered_kept .. ") stay yours and aren't asked about again.")
+      end
       if legacy_updated > 0 then
         note("Shortcuts from your earlier ReaTooled (" .. legacy_updated .. ") were updated automatically.")
       end
       ImGui.Dummy(ctx, 0, 2)
 
-      local h = math.min(#conflicts * 118, 420)
+      local h = math.min(shown * 118 + ((new_rows > 0 and new_rows < shown) and 30 or 0), 420)
       if ImGui.BeginChild(ctx, "rows", W, h, CHILD_BORDER) then
-        for n, c in ipairs(conflicts) do
-          if n > 1 then ImGui.Separator(ctx) end
-          row(n, c)
+        local first, heading = true, false
+        -- new clashes first, then the choices made before
+        for pass = 1, 2 do
+          for n, c in ipairs(conflicts) do
+            if not c.hidden and ((pass == 1) == (c.remembered == nil)) then
+              if pass == 2 and not heading and new_rows > 0 then
+                heading = true
+                ImGui.Separator(ctx)
+                ImGui.TextDisabled(ctx, "Your earlier choices")
+              end
+              if not first then ImGui.Separator(ctx) end
+              first = false
+              row(n, c)
+            end
+          end
         end
         ImGui.EndChild(ctx)
       end
 
       if ImGui.Button(ctx, "Keep all of mine") then
-        for _, c in ipairs(conflicts) do c.update = false end
+        for _, c in ipairs(conflicts) do if not c.hidden then c.update = false end end
       end
       ImGui.SameLine(ctx)
       if ImGui.Button(ctx, "Update all to ReaTooled's") then
-        for _, c in ipairs(conflicts) do c.update = true end
+        for _, c in ipairs(conflicts) do if not c.hidden then c.update = true end end
       end
       local keep, upd, moved = counts()
       ImGui.SameLine(ctx)
@@ -1758,14 +1883,14 @@ local function clash_window()
       ImGui.TextDisabled(ctx, string.format("Keeping %d, updating %d%s", keep, upd,
         moved > 0 and (", another key " .. moved) or ""))
       ImGui.Dummy(ctx, 0, 2)
-      note("Changed your mind later? Run \"Set up ReaTooled\" again: keys you kept are offered again. " ..
-        "\"Restore settings from a backup\" brings back shortcuts you replaced. You can also change any " ..
-        "shortcut in the Actions list.")
+      note("Changed your mind later? Run \"ReaTooled_Shortcut choices\" (Actions list) to change any of " ..
+        "these, either way. \"Restore settings from a backup\" brings back a whole earlier setup, and you " ..
+        "can change any shortcut in the Actions list.")
       ImGui.Separator(ctx)
 
       local w1, w2 = 110, 110
       ImGui.SetCursorPosX(ctx, ImGui.GetCursorPosX(ctx) + math.max(0, W - w1 - w2 - 8))
-      if ImGui.Button(ctx, "Cancel setup", w1, 0) then outcome = "cancel" end
+      if ImGui.Button(ctx, CHOICES_MODE and "Cancel" or "Cancel setup", w1, 0) then outcome = "cancel" end
       ImGui.SameLine(ctx)
       if accent_button("Continue", w2) then outcome = "continue" end
       ImGui.End(ctx)
@@ -1778,14 +1903,25 @@ local function clash_window()
 
   local function loop()
     frame()
+    if outcome == "continue" and CHOICES_MODE then
+      -- (Shortcut choices with nothing changed: no update, no restart)
+      local changed = false
+      for _, c in ipairs(conflicts) do
+        if c.update ~= c.was_update or c.alt_ours or c.alt_yours then changed = true end
+      end
+      if not changed then
+        reaper.defer(function() msg("Nothing was changed.") end)
+        return
+      end
+    end
     if outcome == "continue" then
       apply_choices()
       reaper.defer(finish_setup)   -- after the window has closed
       return
     elseif outcome == "cancel" then
       reaper.defer(function()
-        msg("Setup cancelled. Nothing was changed.\n\n" ..
-            "Run \"Set up ReaTooled\" again whenever you're ready.")
+        msg(CHOICES_MODE and "Nothing was changed." or ("Setup cancelled. Nothing was changed.\n\n" ..
+            "Run \"Set up ReaTooled\" again whenever you're ready."))
       end)
       return
     end
@@ -2214,6 +2350,8 @@ finish_setup = function()
       (legacy_updated > 0 and (", " .. legacy_updated .. " from an earlier ReaTooled updated") or "") ..
       (legacy_removed > 0 and (", " .. legacy_removed .. " old ReaTooled shortcut(s) removed") or "") ..
       (#conflicts > 0 and (", " .. use_ours .. " clash(es) set to ReaTooled's, " .. kept .. " kept as yours") or "") ..
+      (remembered_kept > 0 and (" (" .. remembered_kept .. " of them as you chose before)") or "") ..
+      (given_back > 0 and (", " .. given_back .. " given back to your own action") or "") ..
       (rekeyed > 0 and (", " .. rekeyed .. " given another key") or "") ..
       (midi_conflicts > 0 and (" (" .. midi_conflicts .. " of the clashes in the MIDI editor)") or "") .. ".",
     "Script settings: " .. ext_count .. ". Files: " .. copied .. " copied" ..
@@ -2312,6 +2450,8 @@ finish_setup = function()
       "\n\nYour old settings were backed up to:\n" .. backup_dir)
   end
 
+  if not clash_fallback then save_choices() end
+
   if not launch_helper(restart_now) then
     msg("The finishing step couldn't be prepared (no permission to write in\n" .. PENDING ..
         ").\n\nPlease contact support.")
@@ -2321,10 +2461,24 @@ finish_setup = function()
   if restart_now then
     discard_empty_project()
     reaper.Main_OnCommand(quit_cmd, 0)
+    -- (still running a few seconds later: "Save changes?" was cancelled, so REAPER stayed open)
+    local t0 = reaper.time_precise()
+    local function still_open()
+      if reaper.time_precise() - t0 < 5 then reaper.defer(still_open) return end
+      msg("REAPER didn't quit, so " .. (UPDATE and "the update" or "the setup") .. " isn't finished yet.\n\n" ..
+          "It finishes by itself the next time you quit REAPER (File > Quit), and REAPER then opens again.")
+    end
+    reaper.defer(still_open)
   end
 end
 
-if #conflicts > 0 then
+local shown_rows = 0
+for _, c in ipairs(conflicts) do if not c.hidden then shown_rows = shown_rows + 1 end end
+if CHOICES_MODE and shown_rows == 0 then
+  msg("None of ReaTooled's shortcuts use keys you use for something else, so there are no choices to change.")
+  return
+end
+if shown_rows > 0 then
   if not clash_window() then
     -- No ReaImGui: nothing is asked, every clashing key stays yours
     clash_fallback = true
@@ -2332,5 +2486,6 @@ if #conflicts > 0 then
     finish_setup()
   end
 else
+  apply_choices()   -- (choices remembered from before, if any)
   finish_setup()
 end

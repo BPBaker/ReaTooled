@@ -32,7 +32,7 @@
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="3.2026.1106.1956" author="Brendan Baker" time="2026-11-07T00:57:01Z">
+      <version name="3.2026.1107.1237" author="Brendan Baker" time="2026-11-07T17:37:43Z">
         <changelog><![CDATA[Configuration updated (no new entries in the release notes).
 
 To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or run "Update ReaTooled").]]></changelog>
@@ -44,7 +44,7 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
         <source file="ReaTooled/Config/themeconfig.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/themeconfig.ini</source>
         <source file="ReaTooled/Config/theme.txt">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/theme.txt</source>
         <source file="ReaTooled/Config/extstate.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/extstate.ini</source>
-        <source file="ReaTooled/Config/version.txt">https://github.com/BPBaker/ReaTooled/releases/download/v3.2026.1106.1956/installs.txt</source>
+        <source file="ReaTooled/Config/version.txt">https://github.com/BPBaker/ReaTooled/releases/download/v3.2026.1107.1237/installs.txt</source>
         <source file="ReaTooled/Config/reaper_sections.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/reaper_sections.ini</source>
         <source file="ReaTooled/Config/update_rules.txt">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/update_rules.txt</source>
         <source file="ReaTooled/Config/screensets.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/screensets.ini</source>
@@ -185,7 +185,7 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
 {\pard \ql \f0 \sa180 \li0 \fi0 ReaTooled's themes, installed into REAPER's ColorThemes folder. "Default_7.0 ReaTooled v3 Dark" is the default.\par}
 }]]></description>
       </metadata>
-      <version name="3.2026.1106.1956" author="Brendan Baker" time="2026-11-07T00:57:01Z">
+      <version name="3.2026.1107.1237" author="Brendan Baker" time="2026-11-07T17:37:43Z">
         <source file="Assembled_ReaTooled v1.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Assembled_ReaTooled%20v1.ReaperThemeZip</source>
         <source file="Default_7.0 ReaTooled v2 Light.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Default_7.0%20ReaTooled%20v2%20Light.ReaperThemeZip</source>
         <source file="Default_7.0 ReaTooled v3 Dark.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Default_7.0%20ReaTooled%20v3%20Dark.ReaperThemeZip</source>
@@ -1225,8 +1225,8 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="2.4.26" author="Brendan Baker" time="2026-11-07T00:57:01Z">
-        <changelog><![CDATA[ReaTooled_Update ReaTooled: Checks the newest release on GitHub's Releases page as well as the repository (whichever is newer counts). Each check adds one to that release's download count, which is how ReaTooled counts how many people use it; nothing about you is sent. Turn the daily check off with ExtState ReaTooled/UpdateCheck = "off"]]></changelog>
+      <version name="2.4.27" author="Brendan Baker" time="2026-11-07T17:37:43Z">
+        <changelog><![CDATA[ReaTooled_Set up ReaTooled: Shortcut clashes are remembered (Data/ReaTooled/shortcut_choices.txt): a key you kept as yours isn't asked about again at the next update, as long as it's still your same action against ReaTooled's same action (if ReaTooled maps that key to something new, or you changed it, it's asked again). Earlier choices are listed in the report. "ReaTooled_Shortcut choices" (_G.REATOOLED_UPDATE = "choices") opens the clash window with every remembered choice, both ways: give a kept key to ReaTooled, or give a key you let ReaTooled have back to your own action. If the restart's "Save changes?" is cancelled, it says the update finishes the next time REAPER quits. Shortcut choices closed with nothing changed doesn't restart.]]></changelog>
         <source file="ReaTooled_Earlier shortcuts.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Earlier%20shortcuts.lua</source>
         <source file="ReaTooled_Earlier toolbars.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Earlier%20toolbars.lua</source>
         <source file="ReaTooled_Enable Link Edit Cursor and Play Cursor.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Enable%20Link%20Edit%20Cursor%20and%20Play%20Cursor.lua</source>
@@ -1636,6 +1636,21 @@ ReaTooled_Trim Tool (Background): – An edge can be grabbed from just outside t
       <version name="1.2" author="Brendan Baker">
         <changelog><![CDATA[Pro Tools note reworded]]></changelog>
         <source file="ReaTooled_Scrolling settings.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Utilities/ReaTooled_Scrolling%20settings.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Shortcut choices.lua" type="script" desc="ReaTooled - Shortcut choices">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Change your answers in the shortcut clash window\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 When ReaTooled's shortcuts use keys you already use for something else, Set up asks which to keep, and updates remember what you chose (so you aren't asked again). This opens the same window with every key you were asked about, so you can change your mind either way: give a key you kept to ReaTooled, or give a key ReaTooled has back to your own action. Your settings are backed up first and REAPER restarts to finish, like an update.\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
+      <version name="1.0" author="Brendan Baker" time="2026-11-07T17:37:43Z">
+        <changelog><![CDATA[First version]]></changelog>
+        <source file="ReaTooled_Shortcut choices.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Utilities/ReaTooled_Shortcut%20choices.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Update key map from .ReaperConfigZip file.lua" type="script" desc="ReaTooled_Update key map from .ReaperConfigZip file">
