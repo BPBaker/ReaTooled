@@ -1,6 +1,6 @@
 --[[
 -- @description ReaTooled - Update ReaTooled
--- @version 1.0.3
+-- @version 1.0.4
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -13,6 +13,10 @@
     Also run by ReaTooled's startup once a day (quietly): if a newer release is out, it
     asks whether to update now.
     CHANGELOG
+    v1.0.4 Checks the newest release on GitHub's Releases page as well as the repository
+           (whichever is newer counts). Each check adds one to that release's download
+           count, which is how ReaTooled counts how many people use it; nothing about you
+           is sent. Turn the daily check off with ExtState ReaTooled/UpdateCheck = "off"
     v1.0.3 ReaTooled's startup also runs it on every start without going online
            (REATOOLED_UPDATE_CHECK = "local"): if ReaPack has downloaded a newer ReaTooled
            that hasn't been applied, it asks whether to apply it. Answering No there isn't
@@ -29,6 +33,9 @@
 
 local TITLE       = "Update ReaTooled"
 local VERSION_URL = "https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/version.txt"
+-- (the newest GitHub Release's copy: each download is counted, so the release's download
+-- count shows roughly how many installs check each day. No other information is sent)
+local RELEASE_URL = "https://github.com/BPBaker/ReaTooled/releases/latest/download/version.txt"
 local REPO_NAME   = "ReaTooled"
 local REPO_URL    = "https://raw.githubusercontent.com/BPBaker/ReaTooled/main/index.xml"
 local SYNC_WAIT   = 300   -- seconds to wait for ReaPack's download
@@ -96,8 +103,13 @@ end
 -- the address has no spaces, and the temporary file's path is checked for them)
 local CURL = IS_WIN and "curl.exe" or (reaper.file_exists("/usr/bin/curl") and "/usr/bin/curl" or "curl")
 local function q(s) return IS_WIN and ('"' .. s .. '"') or s end
-local function curl_cmd()
-  return CURL .. " -sL -m 10 " .. q(VERSION_URL)
+local function curl_cmd(url)
+  return CURL .. " -sfL -m 10 " .. q(url)
+end
+local function newest(a, b)
+  if not a then return b end
+  if not b then return a end
+  return newer(b, a) and b or a
 end
 local last_error = nil
 local function parse_remote(out)
@@ -237,29 +249,44 @@ end
 if LOCAL_ONLY then
   decide(nil)
 elseif QUIET then
-  -- In the background: curl runs without REAPER waiting; its answer is read when it's done
-  local tmp = (os.getenv(IS_WIN and "TEMP" or "TMPDIR") or "/tmp"):gsub("\\", "/"):gsub("/$", "") ..
-              "/reatooled_latest_version.txt"
-  if not IS_WIN and tmp:find(" ") then tmp = "/tmp/reatooled_latest_version.txt" end
-  os.remove(tmp)
-  local cmd = CURL .. " -sL -m 10 -o " .. q(tmp) .. " " .. q(VERSION_URL)
-  reaper.ExecProcess(cmd, -1)
-  local start, last = reaper.time_precise(), nil
+  -- In the background: curl runs without REAPER waiting; its answers are read when they're done
+  local dir = (os.getenv(IS_WIN and "TEMP" or "TMPDIR") or "/tmp"):gsub("\\", "/"):gsub("/$", "")
+  if not IS_WIN and dir:find(" ") then dir = "/tmp" end
+  local checks = {
+    { url = RELEASE_URL, tmp = dir .. "/reatooled_latest_release.txt" },
+    { url = VERSION_URL, tmp = dir .. "/reatooled_latest_version.txt" },
+  }
+  for _, c in ipairs(checks) do
+    os.remove(c.tmp)
+    reaper.ExecProcess(CURL .. " -sfL -m 10 -o " .. q(c.tmp) .. " " .. q(c.url), -1)
+  end
+  local start = reaper.time_precise()
   local function poll()
-    local text = read_file(tmp)
-    -- (the same twice in a row: curl has finished writing it)
-    local remote = text and text == last and text:match("^%s*(%d+%.[%d%.]+)%s*$")
-    last = text
-    if remote then
-      os.remove(tmp)
-      decide(remote)
-    elseif reaper.time_precise() - start < 20 then
-      reaper.defer(poll)
+    local waiting, best, answered = false, nil, false
+    for _, c in ipairs(checks) do
+      if not c.done then
+        local text = read_file(c.tmp)
+        -- (the same twice in a row: curl has finished writing it)
+        local v = text and text == c.last and text:match("^%s*(%d+%.[%d%.]+)%s*$")
+        c.last = text
+        if v then c.done, c.version = true, v; os.remove(c.tmp) end
+      end
+      if c.done then answered = true; best = newest(best, c.version) else waiting = true end
+    end
+    local t = reaper.time_precise() - start
+    -- (both answered; or one has, and the other is slow or failed; or no answer at all)
+    if not waiting or (answered and t > 8) or t > 20 then
+      for _, c in ipairs(checks) do os.remove(c.tmp) end
+      decide(best)   -- (nil: only a downloaded-but-not-applied update is mentioned)
     else
-      decide(nil)   -- (no answer: only a downloaded-but-not-applied update is mentioned)
+      reaper.defer(poll)
     end
   end
   reaper.defer(poll)
 else
-  decide(parse_remote(reaper.ExecProcess(curl_cmd(), 15000)))
+  local from_release = parse_remote(reaper.ExecProcess(curl_cmd(RELEASE_URL), 15000))
+  local err = last_error
+  local from_repo = parse_remote(reaper.ExecProcess(curl_cmd(VERSION_URL), 15000))
+  if from_repo then last_error = nil elseif from_release then last_error = nil else last_error = last_error or err end
+  decide(newest(from_release, from_repo))
 end
