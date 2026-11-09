@@ -32,7 +32,7 @@
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="3.2026.1107.1246" author="Brendan Baker" time="2026-11-07T17:46:43Z">
+      <version name="3.2026.1109.1523" author="Brendan Baker" time="2026-11-09T20:24:20Z">
         <changelog><![CDATA[Configuration updated (no new entries in the release notes).
 
 To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or run "Update ReaTooled").]]></changelog>
@@ -44,7 +44,7 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
         <source file="ReaTooled/Config/themeconfig.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/themeconfig.ini</source>
         <source file="ReaTooled/Config/theme.txt">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/theme.txt</source>
         <source file="ReaTooled/Config/extstate.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/extstate.ini</source>
-        <source file="ReaTooled/Config/version.txt">https://github.com/BPBaker/ReaTooled/releases/download/v3.2026.1107.1246/installs.txt</source>
+        <source file="ReaTooled/Config/version.txt">https://github.com/BPBaker/ReaTooled/releases/download/v3.2026.1109.1523/installs.txt</source>
         <source file="ReaTooled/Config/reaper_sections.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/reaper_sections.ini</source>
         <source file="ReaTooled/Config/update_rules.txt">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/update_rules.txt</source>
         <source file="ReaTooled/Config/screensets.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/screensets.ini</source>
@@ -185,7 +185,7 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
 {\pard \ql \f0 \sa180 \li0 \fi0 ReaTooled's themes, installed into REAPER's ColorThemes folder. "Default_7.0 ReaTooled v3 Dark" is the default.\par}
 }]]></description>
       </metadata>
-      <version name="3.2026.1107.1246" author="Brendan Baker" time="2026-11-07T17:46:43Z">
+      <version name="3.2026.1109.1523" author="Brendan Baker" time="2026-11-09T20:24:20Z">
         <source file="Assembled_ReaTooled v1.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Assembled_ReaTooled%20v1.ReaperThemeZip</source>
         <source file="Default_7.0 ReaTooled v2 Light.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Default_7.0%20ReaTooled%20v2%20Light.ReaperThemeZip</source>
         <source file="Default_7.0 ReaTooled v3 Dark.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Default_7.0%20ReaTooled%20v3%20Dark.ReaperThemeZip</source>
@@ -797,11 +797,6 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
         <source file="ReaTooled_Restore ripple mode.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Restore%20ripple%20mode.lua</source>
       </version>
     </reapack>
-    <reapack name="ReaTooled_Ripple left edge.lua" type="script" desc="ReaTooled_Ripple left edge">
-      <version name="1.0" author="Brendan Baker">
-        <source file="ReaTooled_Ripple left edge.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Ripple%20left%20edge.lua</source>
-      </version>
-    </reapack>
     <reapack name="ReaTooled_Save ripple mode.lua" type="script" desc="ReaTooled - Save ripple mode">
       <metadata>
         <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
@@ -1225,8 +1220,7 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="2.4.27" author="Brendan Baker" time="2026-11-07T17:37:43Z">
-        <changelog><![CDATA[ReaTooled_Set up ReaTooled: Shortcut clashes are remembered (Data/ReaTooled/shortcut_choices.txt): a key you kept as yours isn't asked about again at the next update, as long as it's still your same action against ReaTooled's same action (if ReaTooled maps that key to something new, or you changed it, it's asked again). Earlier choices are listed in the report. "ReaTooled_Shortcut choices" (_G.REATOOLED_UPDATE = "choices") opens the clash window with every remembered choice, both ways: give a kept key to ReaTooled, or give a key you let ReaTooled have back to your own action. If the restart's "Save changes?" is cancelled, it says the update finishes the next time REAPER quits. Shortcut choices closed with nothing changed doesn't restart.]]></changelog>
+      <version name="2.4.28" author="Brendan Baker" time="2026-11-09T20:24:20Z">
         <source file="ReaTooled_Earlier shortcuts.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Earlier%20shortcuts.lua</source>
         <source file="ReaTooled_Earlier toolbars.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Earlier%20toolbars.lua</source>
         <source file="ReaTooled_Enable Link Edit Cursor and Play Cursor.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Enable%20Link%20Edit%20Cursor%20and%20Play%20Cursor.lua</source>
@@ -1331,8 +1325,8 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="1.8" author="Brendan Baker">
-        <changelog><![CDATA[Recalls the pre-roll toggle (its marker) when REAPER's pre-roll is on, and puts back drags the Shuffle move script left switched off over a razor area]]></changelog>
+      <version name="1.9" author="Brendan Baker" time="2026-11-09T20:24:20Z">
+        <changelog><![CDATA[Recalls "Ripple edit when editing media item left edges" (starts it if it was on)]]></changelog>
         <source file="ReaTooled_Recall ReaTooled Button States.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Toggles/ReaTooled_Recall%20ReaTooled%20Button%20States.lua</source>
       </version>
     </reapack>
@@ -1484,6 +1478,25 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
         <source file="ReaTooled_Toggle ReaTooled Shortcuts.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Toggles/ReaTooled_Toggle%20ReaTooled%20Shortcuts.lua</source>
       </version>
     </reapack>
+    <reapack name="ReaTooled_Toggle Ripple edit when editing media item left edges.lua" type="script" desc="ReaTooled - Ripple edit when editing media item left edges">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Ripple edit when editing media item left edges\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 A toggle that runs in the background, on top of REAPER's "Ripple edit when editing media item edges" (which only ripples right edges). It works while REAPER is in a ripple mode (per-track or all tracks) and that option is on; otherwise plain drags are left alone.\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Drag an item's left edge (REAPER's single left-edge cursor): the item's start stays, dragging right trims audio off the front, and what follows closes up as you drag.\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Cmd+drag (Ctrl+drag on Windows) a left edge: the same, rippling all tracks (REAPER switches to ripple all while Cmd is held on the edge, and back after).\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Butt joints, right edges, other modifier keys and plain clicks: as usual.\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Trim Tool: in a ripple mode it hands left-edge trims (and left-side body drags) to this script; the trim then ends as the Trim Tool's own (selection, cursor, outline). Which items are trimmed: the grabbed one; if it's selected, the overlapping selected item on each other track; item groups; track groups (media editing); in ripple all, items starting at the same time on every other track. Locked items are never trimmed or moved. What follows: on tracks with a trimmed item, what comes after it; on grouped tracks (per track) and every track (ripple all), what starts after the grabbed item's start; markers with "Ripple edit all affects regions/markers"; automation with "Move envelope points with media items". Take envelopes, stretch markers and snap offsets stay with the audio. Snaps as REAPER's own edge drag (a line shows what it snapped to). Esc cancels; the view stays put; one undo step ("Resize media items"). Remembered when REAPER restarts (Recall ReaTooled Button States). The rules: "Left edge ripple - design rules.md".\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
+      <version name="1.18" author="Brendan Baker" time="2026-11-09T20:24:20Z">
+        <changelog><![CDATA[Changing the ripple mode during a drag (ripple off, per track, all tracks) keeps what the drag has done so far and carries on in the new mode from there: ripple off trims the left edge as REAPER does without ripple (the edge follows the mouse, nothing else moves), per track / all tracks pick their items and tracks again. Esc still undoes the whole drag; still one undo step]]></changelog>
+        <source file="ReaTooled_Toggle Ripple edit when editing media item left edges.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Toggles/ReaTooled_Toggle%20Ripple%20edit%20when%20editing%20media%20item%20left%20edges.lua</source>
+      </version>
+    </reapack>
     <reapack name="ReaTooled_Toggle Tab to Transient.lua" type="script" desc="ReaTooled - Toggle Tab to Transient">
       <metadata>
         <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
@@ -1521,16 +1534,18 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
 {\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab ReaTooled - Toggle Shuffle mode\par}
 {\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab ReaTooled - Toggle Spot mode\par}
 {\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab ReaTooled - Toggle swap left and right drag\par}
-{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Item Body Drag to Trim Edge v7.8.5 (Group/Track-Group Safe, Native Fades, Native Edge-Safe Ripple)\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Item Body Drag to Trim Edge v7.16.1 (Group/Track-Group Safe, Native Fades, Native Edge-Safe Ripple)\par}
 {\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab ReaTooled - Scrub Tool\par}
 {\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab ReaTooled - Trim Tool (Controller)\par}
 {\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab ReaTooled - Zoom Tool (Zoomer Tool)\par}
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="7.8.7" author="Brendan Baker" time="2026-11-05T20:03:31Z">
-        <changelog><![CDATA[ReaTooled_Shuffle move (background): With ripple editing all tracks, the other tracks' new junctions follow the same rule as the dragged track: a crossfade with auto-crossfade on, else a butt joint
-ReaTooled_Trim Tool (Background): – An edge can be grabbed from just outside the item too, where REAPER already shows its edge cursor (its edge zone reaches a few pixels past the item): the press there used to find no item under the mouse, so nothing happened]]></changelog>
+      <version name="7.16.1" author="Brendan Baker" time="2026-11-09T20:24:20Z">
+        <changelog><![CDATA[ReaTooled_Shuffle move (background): No outline while what's dragged is back where it started
+ReaTooled_Toggle Shuffle mode: No tooltip when the ripple mode changes only for a moment (Cmd held over a left edge, an item or a razor area switches to all tracks and back: ExtState ShuffleQuiet)
+ReaTooled_Tools lib: outline(owner, items, redrawn, ends): ends[item] = where to draw its right side (the Trim Tool leads REAPER's own edge drag with it)
+ReaTooled_Trim Tool (Background): ALIGN_LEFT_ALWAYS off: a left-side body press (left-edge ripple running) only scrolls the view when the edge would otherwise go off screen.]]></changelog>
         <source file="Default Multi Tool (Smart)_ReaTooled.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/Default%20Multi%20Tool%20%28Smart%29_ReaTooled.lua</source>
         <source file="Move Tool (Grabber)_ReaTooled.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/Move%20Tool%20%28Grabber%29_ReaTooled.lua</source>
         <source file="Pencil Tool_ReaTooled.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/Pencil%20Tool_ReaTooled.lua</source>

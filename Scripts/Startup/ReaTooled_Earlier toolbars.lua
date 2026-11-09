@@ -19,7 +19,7 @@ return {
   ["Main edit"] = { "2e7180a5" },
   ["Main file"] = { "00e8cb22" },
   ["Main insert"] = { "04e71541" },
-  ["Main options"] = { "c9a5025b" },
+  ["Main options"] = { "070c1aa5", "c9a5025b" },
   ["Main toolbar"] = { "dc4dd508" },
   ["Main track"] = { "1d119295", "c042d40b" },
   ["Main view"] = { "283df88c", "d283af27" },

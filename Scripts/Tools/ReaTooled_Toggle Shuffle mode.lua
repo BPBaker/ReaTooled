@@ -1,5 +1,5 @@
 -- @description ReaTooled - Toggle Shuffle mode
--- @version 1.5
+-- @version 1.6
 -- @date 2026.10.29
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
@@ -21,6 +21,8 @@
 --   With the Move Tool (or the Multi tool's lower half), dragging an item reorders
 --   it, as in Pro Tools (see "Shuffle move").
 -- @changelog
+--   v1.6 No tooltip when the ripple mode changes only for a moment (Cmd held over a left edge,
+--        an item or a razor area switches to all tracks and back: ExtState ShuffleQuiet)
 --   v1.5 Turned on while REAPER is already in a ripple mode, Shuffle starts in that mode
 --        (all-tracks ripple on: Shuffle all tracks)
 --   v1.4 Three states: Shuffle per track, Shuffle all tracks, off. Choosing all-tracks
@@ -130,7 +132,9 @@ local function watch()
   if settled and all ~= lastAll then   -- ripple mode changed in REAPER: Shuffle follows
     lastAll = all
     set_all(all)
-    tooltip(all and "Shuffle: all tracks" or "Shuffle: per track")
+    local q = reaper.GetExtState(NS, "ShuffleQuiet")   -- (a Cmd switch for a moment: no tooltip)
+    local quiet = q == "1" or (tonumber(q) ~= nil and reaper.time_precise() < tonumber(q))
+    if not quiet then tooltip(all and "Shuffle: all tracks" or "Shuffle: per track") end
   end
   frames = frames + 1
   if frames % 30 == 0 and reaper.GetToggleCommandStateEx(section, cmd_id) ~= 1 then

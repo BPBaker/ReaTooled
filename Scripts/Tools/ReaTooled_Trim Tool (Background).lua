@@ -1,7 +1,8 @@
--- @description Item Body Drag to Trim Edge v7.8.5 (Group/Track-Group Safe, Native Fades, Native Edge-Safe Ripple)
--- @version 7.8.5
--- @date 2026-11-05
--- @author Brendan Baker (with assistant)
+-- @description Item Body Drag to Trim Edge v7.16.1 (Group/Track-Group Safe, Native Fades, Native Edge-Safe Ripple)
+-- @version 7.16.1
+-- @date 2026-11-08
+-- @author Brendan Baker
+-- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
 --   ReaScript: REAPER 7.48+ | Requires SWS + JS_ReaScript API
 --   • Body-drag to trim either edge (edge determined by press in left/right body half, using fade seams).
@@ -12,221 +13,26 @@
 --   • Ripple Per-Track: scope = driver's track + selected tracks (snapshot at press).
 --     Grouped / track-grouped followers still follow even on unselected tracks.
 --   • Ripple All-Tracks: whole project timeline; markers/regions only if 43690 is ON.
---   • Native-like Live Ripple (BODY_NATIVE_RIPPLE=true): downstream translates continuously.
+--   • Live ripple (items after the edge follow while dragging): a right edge in a ripple mode with
+--     the left-edge ripple running (otherwise the ripple is made on release).
 --   • Crossfades preserved (length + shapes) wherever allowed; locked items never edited.
 --   • Fixed lanes aware (same-lane only when REQUIRE_SAME_LANE=true).
 --   • One undo point per gesture.
 --   • Honors: 1156 (group master), 40771 (track grouping enabled), 43638/42788/43639 (track group edit modes),
 --             40041 (auto-xfade), 41117 (trim content behind), 40070 (move env with items),
 --             43690 (Ripple edit all affects regions/markers), 43475 (ripple when edge-editing).
---   • PATCH 6.0.2:
---       - Left-edge body press in a C+A crossfade now snaps using the *seam* (end of C) as reference.
---       - Right-edge body press in an A+B crossfade uses the start of the crossfade as the snap reference.
---       - With BODY_NATIVE_RIPPLE=true, start-edge snap ripples downstream immediately at press (driver feels "locked").
---   • PATCH 6.0.3:
---       - Clamp logic unified: items cannot be trimmed past their fades (single or crossfades).
---         Minimum effective length is fade-in + fade-out (plus EPS), so you can shrink until
---         you have "just a fade-in and fade-out", but never eat into fades.
---       - Crossfade sliding when Ripple is OFF:
---           * Left drag on A with a left crossfade C–A: C's end moves with A's start, crossfade length/shape preserved.
---           * Right drag on A with a right crossfade A–B: B's start moves with A's end, crossfade preserved.
---         This works regardless of BODY_NATIVE_RIPPLE, as long as ripple editing is OFF.
---   • v7.0.0 – Refactor (no behavior changes):
---       - All G fields now declared in new_G() — no more ad-hoc field creation mid-gesture.
---         Eliminates stale-state risk between gestures.
---       - freeze_scope() decomposed into five focused sub-functions:
---         freeze_drivers_and_followers, freeze_ripple_scope, freeze_fade_snapshots,
---         freeze_crossfade_pairs, freeze_slide_neighbors.
---       - resolve_pair() guard asymmetry documented explicitly; editedSet-aware guard added.
---       - clamp_to_source() split: fade-floor constraint extracted to clamp_min_length_for_fades(),
---         source-boundary constraint kept in clamp_to_source_bounds(). Both composed by clamp_to_source().
---       - batch_translate_items() now takes an explicit moveEnvelopes boolean instead of
---         inferring intent from a nil cutoff; callers updated accordingly.
---       - DOWNSTREAM_SNAPSHOT_TOL alias removed; BOUNDARY_TOL used directly.
---       - SLICE_CLEAN_TOL and LIVE_RIPPLE_MIN_DT annotated with rationale.
---       - RIPPLE_INCLUDE_DRIVER_ON_MOUSEUP behavior documented with invariant comment.
---       - main() loop refactored into handle_hover / handle_press / handle_drag / handle_release
---         sub-functions dispatched by a mode table.
---       - Debug assertions added for nil initStates entries in drag loop.
---   • v7.1.0 – Cleanup and correctness:
---       - Removed dead functions: build_ripple_sets, compute_item_zones_min,
---         fade_seam_for_start, fade_seam_for_end (none were called anywhere).
---       - Removed unused cursor_fade_in / cursor_fade_out cursor handles.
---       - Removed G.initialMouse field (was set but never read; G.initialMouseRaw is used).
---       - clamp_min_length_for_fades() now reads press-time fade lengths from G.pressXf
---         instead of querying live item values, which could be polluted by the AutoXfade
---         live preview mid-drag. Fixes fade-floor clamp inconsistency during preview.
---       - BR_GetMouseCursorContext() is now called exactly once per frame in main() and
---         the results cached as frame-local upvalues; px_to_time() uses GetHZoomLevel()
---         directly without re-priming the cursor context.
---       - handle_press() press-time snap logic extracted into do_press_snap_default()
---         and do_press_snap_sliding(), reducing handle_press() to a clean dispatcher.
---       - resolve_pair() TrimBehind else-branch clarified: "both edited OR neither edited"
---         is now explicitly documented and the duplicate code path collapsed.
---       - snapped_delta_from_raw() deadband/snap interaction documented: deadband takes
---         priority over snap — delta returns 0 inside the deadband even at a grid point.
---       - pertrack_first_downstream_and_anchor() rewritten with a single O(N) index pass
---         instead of O(N²) nested loops.
---   • v7.8.5 – An edge can be grabbed from just outside the item too, where REAPER already
---         shows its edge cursor (its edge zone reaches a few pixels past the item): the
---         press there used to find no item under the mouse, so nothing happened
---   • v7.8.4 – An item edge with a razor area's edge right on it (e.g. after a click made a razor
---         area the size of the item) can be grabbed again: REAPER shows its razor-edge cursor
---         there and would move the razor edge, so while the mouse is over such an edge
---         REAPER's plain razor-edge drag is switched off and the item edge is trimmed
---   • v7.8.3 – Lighter on CPU while you hover: SWS's "what's under the mouse" and the item
---               under the mouse are looked up again only when the mouse moves or a key or
---               button changes (or 10 times a second), instead of every frame. While a
---               button is down or a trim is going on, every frame as before.
---   • v7.8.2 – Snap offset stays on the same spot in the audio when the start edge moves
---       (as REAPER's own trim does; it stays at the start if the item has none).
---       SELECT_EDGE_MATCHED: whether items trimmed only because their edge is at the
---       same time (ripple modes) are selected afterwards (true, like Pro Tools) or not.
---   • v7.8.1 – Butt joints in ripple modes: the two-edge cursor slides the cut point in
---       every mode (both edges move, both items' audio stays put, nothing after moves:
---       the total length doesn't change). Only what the neighbor can't follow (it ran
---       out of audio) ripples, so no gap opens. The single-edge cursor in ripple modes
---       is a Shuffle trim of that one item, as before.
---   • v7.8.0 – Edit cursor, loop points, and the cursor you saw:
---       - After a trim (or a click), the trimmed items are selected (the selection is
---         kept if the clicked item was already selected), the edit cursor goes to the
---         start of the selected items, and with "Link Timeline and Edit Selection" on,
---         the loop points are set to them, like the Move Tool's click.
---       - The click is decided by the cursor REAPER showed just before the press (REAPER
---         can change its cursor as the button goes down): two-edge, single-edge, handles.
---       - Nothing is changed while REAPER itself is dragging (its own handles).
---       - DIAG_PRESS = true reports each press in the console (testing).
---   • v7.7.2 – Butt joints follow REAPER's cursor: with REAPER's two-edge cursor (right
---       at the joint) both items' edges move; with the single-edge cursor only that
---       item's edge moves. Where REAPER's cursor can't be read: two edges within
---       JOINT_PX of the joint.
---   • v7.7.1 – Butt joints: dragging an edge where two items meet (Ripple OFF) moves
---       both items' edges together, as REAPER's own edge drag did (it made an overlap
---       or crossfade). The neighbor follows as far as its audio allows; past that the
---       grabbed edge goes on alone. Body clicks still trim only the clicked item.
---   • v7.7.0 – Edges are the Trim Tool's too; REAPER's own handles decided by REAPER:
---       - Which clicks go to REAPER is decided by the cursor REAPER shows at that spot:
---         fade handles and curves, the volume handle and other handles go to REAPER;
---         the body and REAPER's edge zone are the Trim Tool's. This matches REAPER's own
---         zones at any zoom or item height (the fixed 7 px zone left a strip where both
---         REAPER and the Trim Tool acted, and couldn't see the handles at the top of an
---         item). The 7 px zone is still used where REAPER's cursor can't be read.
---       - A plain click or drag on an edge grabs that edge (no jump), with the same
---         group, selected-item, snap and ripple handling as body trims (REAPER's own
---         plain edge drag is turned off by the Trim Tool controller 2.4). Edge drags with
---         modifier keys are still REAPER's.
---       - The cursor is no longer forced to the arrow off items every frame.
---       - A click that changes nothing makes no undo point.
---   • v7.6.0 – Selected items, groups, stretch markers, loops, autoscroll:
---       - Clicking a selected item trims every selected item's same edge by the same
---         amount (in ripple modes, one item per track: the clicked track's clicked item,
---         elsewhere the item whose edge is nearest).
---       - Item groups: every item in the group gets the same edit (was: only items
---         whose edge lined up within 1 ms).
---       - Track groups (no "start/end at the same time" option on): on each following
---         track, the matching item gets the same edit: of the items overlapping the
---         clicked item, the one whose same edge is nearest (was: only items whose edge
---         lined up within 1 ms).
---       - Stretch markers stay with the audio when the start edge moves.
---       - Looped items (MIDI items loop by default) can be extended to the left.
---       - Dragging past the left or right of the arrange scrolls it; the edge follows
---         the mouse instead of jumping when the mouse is over the track panel.
---       - Take envelopes are updated every ENV_UPDATE_FRAMES frames while dragging
---         (and exactly at the click and on release), for items with long clip gain.
---       - Removed a check for REAPER's fade/edge zones that never ran (it read the wrong
---         value); the script's own fade and edge zones are what hand clicks to REAPER.
---       - Undo is named "Trim items".
---   • v7.5.1 – Snap and double-clicks:
---       - With snap on, dragging puts the edge on the grid line nearest the mouse (it
---         was offset by the distance between the click and the grid line it snapped
---         to, so the edge could land a grid line too far, making items longer or
---         shorter than expected, and rippling the items after them by that much more).
---       - A double-click trims once (in ripple mode its second click trimmed again).
---   • v7.5.0 – Ripple (per track and all tracks) kept in sync:
---       - Each track ripples from the end of its own trimmed item, not the clicked
---         item's end (grouped items with different lengths left items unmoved
---         between the two ends).
---       - The items after the edit are the ones found at the click, used as they are
---         at release (was: found again at release from a cutoff that could miss the
---         item crossfaded on the right of the trimmed item).
---       - Every trimmed item's crossfaded neighbor on the right moves with the ripple
---         (was: only the clicked item's, and not even that one when the item was the
---         first on its track).
---       - Per track: only tracks with a trimmed item ripple. Selected tracks without
---         one no longer move (their items slid over the items before them). Set
---         RIPPLE_SELECTED_TRACKS = true for the old behavior.
---       - Track automation (with "Move envelope points with media items" on) stays
---         with the audio: on the trimmed tracks, start-edge ripples also move the
---         points under the trimmed item, and the points in the time that was removed
---         are deleted instead of piling up on the moved ones. Other tracks (all
---         tracks mode) move from the clicked item's end, the same as their items.
---   • v7.4.1 – Crossfades in grouped trims (Ripple OFF):
---       - Every trimmed item (grouped items, track-group followers), not only the
---         clicked one, slides its own crossfade with the neighbor on the trimmed side,
---         and all of them make the same move at the click (they were left behind
---         when the clicked item had a crossfade).
---       - Overlap cleanup on release leaves the untouched side of every trimmed item
---         alone (was: only the clicked item's).
---   • v7.4.0 – Clicks, takes, clip gain, groups:
---       - Clicks are read from the arrange view's own mouse messages, so a quick click
---         between two checks is no longer missed, and the trim lands where you clicked.
---         Clicks on windows floating over the arrange (FX, other apps) are ignored.
---         Falls back to polling the mouse if the messages can't be read.
---       - Every take of the item is trimmed, not only the active one.
---       - Take envelopes (clip gain, pan, pitch, take FX) stay with the audio when the
---         start edge moves.
---       - Track groups: only tracks that follow a group the clicked track leads take part
---         (was: any track in any group with media editing). The clicked track's other
---         items are no longer included.
---       - After a trim, only the trimmed items are removed if they end up shorter than
---         about 1 ms (was: any item that short on those tracks).
---       - All trimmed items move by the same amount and stop together when one of them
---         reaches a limit (start or end of its file, its fades).
---   • v7.3.1 – Start-edge trims keep the audio in place on items with a playrate other
---       than 1.0 (the start in source moved by the distance divided by the rate, not
---       multiplied by it). Also fixed for neighbours trimmed by an overlap.
---   • v7.3.0 – Undo and redraw:
---       - The undo point is made at mouse-up instead of being held open from mouse-down
---         for the whole drag (an open undo block across background cycles could take in
---         unrelated actions). The drag itself creates no undo points, so the result is
---         the same single "Trim items" step. If the tool is stopped mid-drag, or the
---         dragged item disappears, the change so far still gets an undo point.
---       - The arrange is redrawn only while a trim is in progress (and once after it),
---         not 30 times a second while the Trim tool is just selected.
---   • v7.2.0 – Further cleanup and performance:
---       - Removed dead functions: temp_move_items_only, clamp (neither was called anywhere).
---       - Removed duplicate EdgeRippleOn() — RippleEdgeOptionOn() (tg(43475)) is the single
---         source; startup block updated to use it.
---       - Removed _ctx_window from frame cache — it was assigned but never read.
---       - do_press_snap_sliding() trivial wrapper removed; handle_press() calls
---         press_time_align_sliding_crossfade() directly with an explanatory comment.
---       - freeze_crossfade_pairs() split into two focused functions:
---           freeze_crossfade_pair_detection() — populates G.pressCF only.
---           freeze_right_xfade_neighbor()     — mutates G.downstreamSnap and sets
---                                               G.rightXfadeNeighbor, then computes guardPairs.
---         freeze_scope() calls them in sequence; the hidden ordering dependency is now explicit.
---       - freeze_fade_snapshots() scoped to rippleTrackScope + driver's track instead of
---         walking the entire project. pressXf is only read for items within gesture reach.
---       - restore_press_crossfades() scoped to rippleTrackScope + driver's track instead
---         of walking the entire project at mouse-up.
---       - handle_drag() sliding-neighbor exclusion set pre-computed once before the trim
---         loop, eliminating per-item per-frame calls to is_current_sliding_neighbor().
---       - Redundant zero-assignments removed from handle_press() (rippleApplied,
---         initialPressDelta already zeroed by new_G()).
---       - live_preview_autoxf() preview threshold comments clarified: PREVIEW_MIN_FADE_PX
---         is the minimum overlap to draw a preview fade; PREVIEW_HYST_PX adds hysteresis
---         to prevent jitter near the threshold. They are summed into a single cutoff T.
+--   • Version history: "Trim Tool - history.txt" (kept out of the script so it stays readable).
+--   • v7.16.1 (2026-11-08): ALIGN_LEFT_ALWAYS off: a left-side body press (left-edge ripple running)
+--     only scrolls the view when the edge would otherwise go off screen.
+--   • v7.16.0 (2026-11-08): same behaviour as v7.15.1, with code that never ran taken out, and
+--     nothing redone while the mouse is still during a drag (no redraw either). A live ripple's
+--     track automation and markers move every frame as one batch from the press (no drift).
 
-----------------------------------------------------------------
--- CONFIG
-----------------------------------------------------------------
-local BODY_NATIVE_RIPPLE       = false      -- native-like live translation while dragging
 local BODY_SET_EDGE_ON_PRESS   = true       -- snap edge at press to cursor time
 local REQUIRE_SAME_LANE        = true
 -- When true: for start-edge moves, edited set rides the initial press jump so it "feels native"
 local RIPPLE_INCLUDE_DRIVER_ON_MOUSEUP = true
 -- Ripple per track: also ripple selected tracks that have no trimmed item (old behavior)
-local RIPPLE_SELECTED_TRACKS   = false
 -- While dragging, take envelopes (clip gain etc.) are moved every this many frames
 -- (always exactly at the click and on release). 1 = every frame.
 local ENV_UPDATE_FRAMES        = 3
@@ -270,8 +76,6 @@ local SLICE_CLEAN_TOL          = math.max(BOUNDARY_TOL, EPS * 3)
 local PREVIEW_MIN_FADE_PX      = 2.0
 local PREVIEW_HYST_PX          = 1.5
 
-local DEBUG                    = false
-local function dbg(...) if DEBUG then reaper.ShowConsoleMsg(table.concat({...}," ").."\n") end end
 
 -- Extra pixel padding around fades where body-drag is disabled
 local FADE_HALO_PX = 6    -- try 6–12; lower = tighter, higher = safer
@@ -302,6 +106,12 @@ local function RippleOff()               return tg(40309) end
 local function AnyRippleOn()             return (RipplePerTrack() or RippleAllTracks()) and (not RippleOff()) end
 local function MarkersRegionsRippleAll() return tg(43690) end
 local function RippleEdgeOptionOn()      return tg(43475) end  -- "Ripple edit when editing media item edges"
+local CMDT = { forced = false, edge = nil, hoverAll = false, drag = false,   -- Cmd = all tracks (below)
+               ALL_START_TOL = 0.005,    -- (ripple all, left edges: starts this close are trimmed together)
+               -- With the left-edge ripple running, a left-side body press in a ripple mode:
+               -- true = the view always scrolls so the new edge is under the mouse;
+               -- false = only when the edge would otherwise go off screen
+               ALIGN_LEFT_ALWAYS = false }
 local function SnapEnabled()             return tg(1157) end
 
 ----------------------------------------------------------------
@@ -441,7 +251,6 @@ local function new_G()
     driver            = nil,      -- primary item under cursor at press
     edge              = nil,      -- "start" | "end"
     undoOpen          = false,
-    inPressAlign      = false,    -- true only during press-time snap alignment
 
     -- Mouse / drag tracking
     initialMouseRaw   = nil,      -- mouse time at start of drag (post press-snap)
@@ -542,15 +351,6 @@ local function group_masks(tr, name)
   return math.floor(lo) & 0xFFFFFFFF, math.floor(hi) & 0xFFFFFFFF
 end
 
-local function boundary_match_for_edge(driver, other, edge, refStart, refEnd)
-  if not same_lane(driver, other) then return false end
-  local os, oe = item_start(other), item_end(other)
-  if edge == "start" then
-    return approx(os, refStart, BOUNDARY_TOL)
-  else
-    return approx(oe, refEnd, BOUNDARY_TOL)
-  end
-end
 
 local function start_or_end_match(other, refStart, refEnd)
   local os, oe = item_start(other), item_end(other)
@@ -679,9 +479,11 @@ local function collect_codrivers(primary, edge, refBoundary, selectedTracks)
       for i=0, reaper.CountTrackMediaItems(tr)-1 do
         local it = reaper.GetTrackMediaItem(tr,i)
         if valid_item(it) and not is_locked(it) and it~=primary and same_lane(primary,it) then
-          if edge=="start" and approx(item_start(it), refBoundary, BOUNDARY_TOL) then
+          if edge=="start" and approx(item_start(it), refBoundary,
+                                       RippleAllTracks() and CMDT.ALL_START_TOL or BOUNDARY_TOL) then
             out[#out+1]=it
-          elseif edge=="end" and approx(item_end(it), refBoundary, BOUNDARY_TOL) then
+          elseif edge=="end" and approx(item_end(it), refBoundary,
+                                       RippleAllTracks() and CMDT.ALL_START_TOL or BOUNDARY_TOL) then
             out[#out+1]=it
           end
         end
@@ -703,11 +505,6 @@ local function build_ripple_track_scope(primary, selectedTracks, editedSet)
   elseif RipplePerTrack() then
     local pTr = reaper.GetMediaItem_Track(primary)
     if valid_track(pTr) then scope[pTr] = true end
-    if RIPPLE_SELECTED_TRACKS then
-      for tr,_ in pairs(selectedTracks or {}) do
-        scope[tr] = true
-      end
-    end
   end
   for it,_ in pairs(editedSet or {}) do
     local tr = valid_item(it) and reaper.GetMediaItem_Track(it) or nil
@@ -723,10 +520,12 @@ local function snapshot_downstream_items(originalEnd, trackScope, excludeSet)
   for tr,_ in pairs(trackScope or {}) do
     local pe  = G.pressEdges and G.pressEdges[tr]
     local cut = (pe and pe.e) or originalEnd
+    -- (ripple all, left edge, nothing trimmed here: what starts after the trimmed start)
+    local after = (not pe) and G.rippleStartCut or nil
     for i=0, reaper.CountTrackMediaItems(tr)-1 do
       local it = reaper.GetTrackMediaItem(tr,i)
       if valid_item(it) and not (excludeSet and excludeSet[it]) and not is_locked(it) then
-        if item_start(it) >= cut - BOUNDARY_TOL then
+        if (after and item_start(it) > after + BOUNDARY_TOL) or ((not after) and item_start(it) >= cut - BOUNDARY_TOL) then
           snap[it] = true
         end
       end
@@ -781,46 +580,6 @@ local function pertrack_first_downstream_and_anchor(originalEnd, trackScope, dow
   return guard
 end
 
-local function build_downstream_with_cutoffs(primary, edge)
-  local edited = {}
-  for it,_ in pairs(G.editedSet or {}) do edited[it] = true end
-  local downstream, enclosed = {}, {}
-
-  if not AnyRippleOn() then return edited, downstream, enclosed end
-
-  local cutoffMap = {}
-  for tr,_ in pairs(G.rippleTrackScope or {}) do
-    local gp = G.guardPairs and G.guardPairs[tr] or nil
-    cutoffMap[tr] = (gp and gp.prevEnd) or G.originalEnd
-  end
-
-  local finalBoundary = item_end(primary)
-  local function in_scope(tr) return G.rippleTrackScope and G.rippleTrackScope[tr] end
-
-  for t=0, reaper.CountTracks(0)-1 do
-    local tr = reaper.GetTrack(0,t)
-    if valid_track(tr) and in_scope(tr) then
-      local cutoff = cutoffMap[tr] or G.originalEnd
-      for i=0, reaper.CountTrackMediaItems(tr)-1 do
-        local it = reaper.GetTrackMediaItem(tr,i)
-        if valid_item(it) and not edited[it] and not is_locked(it) then
-          local s = item_start(it)
-          local e = item_end(it)
-          if s >= cutoff - BOUNDARY_TOL then
-            downstream[it] = true
-            if edge == "end" and (finalBoundary > cutoff + BOUNDARY_TOL) then
-              if s >= cutoff - BOUNDARY_TOL and e <= finalBoundary + BOUNDARY_TOL then
-                enclosed[it] = true
-              end
-            end
-          end
-        end
-      end
-    end
-  end
-
-  return edited, downstream, enclosed
-end
 
 local function mark_press_crossfade_pair(left, right)
   if not G.pressCF then G.pressCF = {} end
@@ -1087,13 +846,6 @@ local function apply_trim(it, st, edge, delta)
     local newPos = st.pos + delta
     local newLen = math.max(EPS, st.len - delta)
 
-    -- BODY_NATIVE_RIPPLE + start edge during drag: keep item left edge fixed on timeline.
-    -- During press-time alignment (inPressAlign=true) we DO let the edge move so we can
-    -- measure initialPressDelta correctly.
-    if BODY_NATIVE_RIPPLE and AnyRippleOn() and not G.inPressAlign then
-      newPos = st.pos
-    end
-
     reaper.SetMediaItemInfo_Value(it,"D_POSITION", newPos)
     reaper.SetMediaItemInfo_Value(it,"D_LENGTH",  newLen)
 
@@ -1209,7 +961,7 @@ end
 -- moveMarkersRegions: pass true to shift markers/regions (only meaningful for RippleAll).
 -- cutoff: only items/envelopes/markers at or after this time are moved.
 local function batch_translate_items(itemSet, delta, cutoff, trackScope, moveEnvelopes, moveMarkersRegions)
-  if delta==0 then return end
+  if delta==0 then return end   -- (itemSet nil: only track automation and markers)
   reaper.PreventUIRefresh(1)
   for it,_ in pairs(itemSet or {}) do
     if valid_item(it) and not is_locked(it) then
@@ -1817,13 +1569,27 @@ local function classify_press(it, tRaw, zone, mods)
   local edgeTolT = px_to_time(EDGE_GRAB_PX)
   local nearEdge = math.abs(tRaw - s) <= edgeTolT or math.abs(tRaw - e) <= edgeTolT
   if zone == "edge" or zone == "joint" or (zone ~= "body" and nearEdge) then
-    if (mods or 0) ~= 0 then return nil end
+    if (mods or 0) ~= 0 and not (mods == 4 and CMDT.edge == "0") then return nil end   -- (Cmd: all tracks)
     local edge = (math.abs(tRaw - s) <= math.abs(e - tRaw)) and "start" or "end"
     -- both edges of a butt joint: REAPER's two-edge cursor (or, unknown, right at it)
     local joint = (zone == "joint")
     if zone == nil then
       local d = (edge == "start") and math.abs(tRaw - s) or math.abs(e - tRaw)
       joint = d <= px_to_time(JOINT_PX)
+    end
+    -- A single edge, in a ripple mode, with "Ripple edit when editing media item left
+    -- edges" running: a left edge is that script's trim (it reads this note and takes the
+    -- press), a right edge is REAPER's own (rippling) edge drag
+    if not joint and (mods or 0) == 0 and AnyRippleOn() and RippleEdgeOptionOn() then
+      local beat = tonumber(reaper.GetExtState("ReaTooled", "RippleLeftEdges_beat"))
+      if beat and reaper.time_precise() - beat < 1 then
+        if edge == "start" then
+          reaper.SetExtState("ReaTooled", "TrimDeferredLeftEdge", tostring(reaper.time_precise()), false)
+          return nil
+        end
+        -- (a right edge: REAPER's own only when it's alone; lined up with others, ours)
+        if not CMDT.lined_up(it) then return nil end
+      end
     end
     return {modeKind="body", grab="edge", edge=edge, joint=joint}
   end
@@ -1959,6 +1725,7 @@ local function freeze_ripple_scope(primary)
     exclude[it] = true
   end
 
+  G.rippleStartCut = (G.edge == "start" and RippleAllTracks()) and item_start(primary) or nil
   G.downstreamSnap = snapshot_downstream_items(G.originalEnd, G.rippleTrackScope, exclude)
 end
 
@@ -2177,6 +1944,9 @@ local function ripple_track_envelopes(edge, total, R)
       elseif pe then
         from = pe.e
         if total < 0 then delA, delB = pe.e + total, pe.e end
+      elseif G.rippleStartCut and edge == "start" then   -- (ripple all: from the trimmed start)
+        from = G.rippleStartCut + math.max(0, total)
+        if total > 0 then delA, delB = G.rippleStartCut, G.rippleStartCut + total end
       else
         from = G.originalEnd
         if R < 0 then delA, delB = G.originalEnd + R, G.originalEnd end
@@ -2238,7 +2008,8 @@ local function finalize_ripple(primary, edge, effSincePress, totalOverride)
 
   ripple_track_envelopes(edge, total, R)
   if RippleAllTracks() and MarkersRegionsRippleAll() then
-    move_markers_regions_after(G.originalEnd, R)
+    -- (left edge: markers after the trimmed start follow its audio)
+    move_markers_regions_after((edge == "start" and G.rippleStartCut) and (G.rippleStartCut + BOUNDARY_TOL * 2) or G.originalEnd, R)
   end
 end
 
@@ -2406,6 +2177,44 @@ do   -- left switched off by a copy that stopped without putting it back
   end
 end
 
+-- In a ripple mode with "Ripple edit when editing media item left edges" running, a single
+-- right edge is REAPER's own edge drag: while the mouse is on one, REAPER's plain item-edge
+-- drag is "Move edge" (the Trim Tool's is No action); back as soon as it leaves. Kept on disk
+-- while changed, and put back on the next start if this stopped before it could.
+-- (one table: this file is at Lua's limit of 200 locals)
+local NRE = { EDGE = "1 m", SAVED = "TrimNativeRightEdgeSaved", on = false }   -- (1 m: Move edge)
+function NRE.set(on)
+  if on == NRE.on or not reaper.SetMouseModifier then return end
+  if on then
+    local cur = reaper.GetMouseModifier and reaper.GetMouseModifier("MM_CTX_ITEMEDGE", 0) or ""
+    reaper.SetExtState(NS, NRE.SAVED, (cur ~= "" and cur) or "0", true)
+    reaper.SetMouseModifier("MM_CTX_ITEMEDGE", 0, NRE.EDGE)
+    NRE.applied = reaper.GetMouseModifier and reaper.GetMouseModifier("MM_CTX_ITEMEDGE", 0) or NRE.EDGE
+  else
+    local saved = reaper.GetExtState(NS, NRE.SAVED)
+    -- (not if something else, e.g. another tool's button, has set it meanwhile)
+    local cur = reaper.GetMouseModifier and reaper.GetMouseModifier("MM_CTX_ITEMEDGE", 0) or NRE.applied
+    if saved ~= "" and cur == (NRE.applied or NRE.EDGE) and reaper.GetExtState(NS, "CurrentTool") == "trim" then
+      reaper.SetMouseModifier("MM_CTX_ITEMEDGE", 0, saved)
+    end
+    reaper.DeleteExtState(NS, NRE.SAVED, true)
+  end
+  NRE.on = on
+end
+function NRE.left_ripple_running()
+  local beat = tonumber(reaper.GetExtState(NS, "RippleLeftEdges_beat"))
+  return beat ~= nil and reaper.time_precise() - beat < 1
+end
+do   -- left changed by a copy that stopped without putting it back
+  local saved = reaper.GetExtState(NS, NRE.SAVED)
+  if saved ~= "" and reaper.SetMouseModifier and not reaper.HasExtState(NS, RUN_KEY) then
+    if reaper.GetMouseModifier("MM_CTX_ITEMEDGE", 0) == NRE.EDGE then
+      reaper.SetMouseModifier("MM_CTX_ITEMEDGE", 0, saved)
+    end
+    reaper.DeleteExtState(NS, NRE.SAVED, true)
+  end
+end
+
 local __edgeRipplePrev    = nil
 local __edgeRippleForced  = false
 
@@ -2482,6 +2291,148 @@ local function beat()
   reaper.SetExtState(NS, HEARTBEAT, tostring(reaper.time_precise()), false)
 end
 
+-- Cmd = all tracks (one table: this file is at Lua's limit of 200 locals)
+-- ripple: REAPER's ripple mode switched to all tracks for the moment, shared with the
+-- left-edge ripple and Shuffle move scripts (ExtState ReaTooled/CmdAllFrom: the mode to go
+-- back to; CmdAllWant_<who>: when each last wanted it); edge: REAPER's Cmd item-edge drag
+-- switched for the moment (Tools library temp_take: "0" ours, "1 m" REAPER's Move edge)
+do
+  local dir = ({ reaper.get_action_context() })[2]:match("^(.*[/\\])") or ""
+  local ok, t = pcall(dofile, dir .. "ReaTooled_Tools lib.lua")
+  if ok and type(t) == "table" and t.temp_take then CMDT.tools = t end
+end
+function CMDT.ripple(want)
+  local now = reaper.time_precise()
+  local tgl = function(id) return reaper.GetToggleCommandState(id) == 1 end
+  if want then
+    reaper.SetExtState(NS, "CmdAllWant_trim", tostring(now), false)
+    if not CMDT.forced then
+      if reaper.GetExtState(NS, "CmdAllFrom") == "" then
+        if tgl(40311) then return end   -- (already all tracks: nothing to switch)
+        reaper.SetExtState(NS, "CmdAllFrom", tostring(tgl(40310) and 40310 or 40309), false)
+        reaper.SetExtState(NS, "ShuffleQuiet", "1", false)
+        reaper.Main_OnCommand(40311, 0)
+      end
+      CMDT.forced = true
+    end
+  elseif CMDT.forced then
+    CMDT.forced = false
+    reaper.DeleteExtState(NS, "CmdAllWant_trim", false)
+    for _, other in ipairs({ "leftedge", "shuffle" }) do   -- (another still wants it: it switches back)
+      local t = tonumber(reaper.GetExtState(NS, "CmdAllWant_" .. other))
+      if t and now - t < 0.3 then return end
+    end
+    local from = tonumber(reaper.GetExtState(NS, "CmdAllFrom"))
+    reaper.DeleteExtState(NS, "CmdAllFrom", false)
+    if from and tgl(40311) then reaper.Main_OnCommand(from, 0) end   -- (unless changed meanwhile)
+    reaper.SetExtState(NS, "ShuffleQuiet", tostring(now + 0.5), false)
+  end
+end
+function CMDT.set_edge(v)
+  if v == CMDT.edge or not CMDT.tools then return end
+  if CMDT.edge then CMDT.tools.temp_give("trim", "MM_CTX_ITEMEDGE", 2) end
+  if v then CMDT.tools.temp_take("trim", "MM_CTX_ITEMEDGE", 2, v) end
+  CMDT.edge = v
+end
+-- Hovering (button up): what's wanted for Cmd on this spot
+function CMDT.hover(edgeValue, rippleAll)
+  CMDT.set_edge(edgeValue)
+  if rippleAll then CMDT.ripple(true); CMDT.hoverAll = true
+  elseif CMDT.hoverAll then CMDT.hoverAll = false; if not CMDT.drag then CMDT.ripple(false) end end
+end
+-- A Cmd trim of ours: all tracks from the press until it's done
+function CMDT.press(mods)
+  if mods == 4 then CMDT.drag = true; CMDT.ripple(true) end
+end
+function CMDT.done()
+  if CMDT.drag then CMDT.drag = false; if not CMDT.hoverAll then CMDT.ripple(false) end end
+end
+-- The yellow outline around the items being trimmed (Tools library outline)
+function CMDT.outline(on)
+  if not (CMDT.tools and CMDT.tools.outline) then return end
+  if on then
+    local list = {}
+    for it in pairs(G.editedSet or {}) do list[#list + 1] = it end
+    CMDT.tools.outline("trim", list, true); CMDT.outlined = true   -- (redrawn at the frame's end)
+  elseif CMDT.outlined then
+    CMDT.tools.outline("trim", nil); CMDT.outlined = false
+  end
+end
+-- Leading REAPER's own right-edge drag with the outline (v7.13.1): where the edge will be,
+-- from the mouse (plus one frame of its speed, snapped to the grid as REAPER does)
+CMDT.LEAD_FRAMES = 0.5    -- (frames ahead of the mouse: 0 = at the mouse, 1 = a whole frame)
+CMDT.LEAD_TRUST_PX = 12   -- (further than this from REAPER's edge: REAPER's is used)
+function CMDT.mouse_t()
+  local mx, my = reaper.GetMousePosition()
+  local cx = ARRANGE and reaper.JS_Window_ScreenToClient(ARRANGE, mx, my)
+  if not cx then return nil end
+  return reaper.GetSet_ArrangeView2(0, false, 0, 0) + cx / (reaper.GetHZoomLevel() or 1)
+end
+function CMDT.lead_start(it, items)
+  local m = CMDT.mouse_t()
+  if not (m and valid_item(it)) then return nil end
+  local e0 = {}
+  for _, o in ipairs(items) do if valid_item(o) then e0[o] = item_end(o) end end
+  return { it = it, m0 = m, e0 = e0, last = m, t = reaper.time_precise() }
+end
+function CMDT.lead_ends(L)
+  if not (L and valid_item(L.it)) then return nil end
+  local m = CMDT.mouse_t()
+  if not m then return nil end
+  local now = reaper.time_precise()
+  local v = (now > L.t) and (m - L.last) / (now - L.t) or 0
+  L.last, L.t = m, now
+  if math.abs(v) < 1e-9 then return nil end   -- (still: REAPER's own edge)
+  local want = L.e0[L.it] + (m - L.m0) + v * CMDT.LEAD_FRAMES / 30
+  if SnapEnabled() then
+    local g = reaper.SnapToGrid(0, want)
+    local _, grid = reaper.get_config_var_string("projshowgrid")
+    local _, dist = reaper.get_config_var_string("itemsnap")
+    local any = ((tonumber(grid) or 0) & 1024) ~= 0
+    if any or math.abs(g - want) <= px_to_time(tonumber(dist) or 10) then want = g end
+  end
+  local real = item_end(L.it)
+  if math.abs(want - real) > px_to_time(CMDT.LEAD_TRUST_PX) then return nil end   -- (REAPER holds it)
+  local shift = want - real
+  local ends = {}
+  for o in pairs(L.e0) do if valid_item(o) then ends[o] = item_end(o) + shift end end
+  return ends
+end
+-- Is another item's right edge trimmed with this one (selected with it, or lined up)?
+-- (the hover asks every frame: kept for the same item for a moment)
+function CMDT.lined_up(it)
+  if not valid_item(it) then return false end
+  local now = reaper.time_precise()
+  local c = CMDT.lu
+  if c and c.it == it and now - c.t < 0.25 then return c.v end
+  local v = false
+  if reaper.IsMediaItemSelected(it) and reaper.CountSelectedMediaItems(0) > 1 then v = true
+  else v = #collect_codrivers(it, "end", item_end(it), snapshot_selected_tracks()) > 0 end
+  CMDT.lu = { it = it, t = now, v = v }
+  return v
+end
+-- A live ripple's track automation and markers, brought up to date (each frame while
+-- dragging, and at the release)
+function CMDT.flush_live()
+  local d = CMDT.livePending or 0
+  CMDT.livePending = 0
+  if math.abs(d) < LIVE_RIPPLE_MIN_DT or not G.rippleTrackScope then return end
+  batch_translate_items(nil, d, G.originalEnd, G.rippleTrackScope, true,
+                        RippleAllTracks() and MarkersRegionsRippleAll())
+end
+function CMDT.cleanup()
+  CMDT.live = false
+  CMDT.outline(false)
+  if CMDT.tools then CMDT.tools.temp_give_all("trim-hand"); CMDT.tools.temp_give_all("trim-click") end
+  CMDT.handoff, CMDT.hand_ok = nil, nil
+  CMDT.set_edge(nil)
+  CMDT.drag, CMDT.hoverAll = false, false
+  CMDT.ripple(false)
+end
+if CMDT.tools then
+  for _, o in ipairs({ "trim", "trim-hand", "trim-click" }) do CMDT.tools.temp_give_all(o) end
+end   -- (left by a copy that stopped first)
+
 local function rt_kill_requested()
   return reaper.HasExtState(NS, KILL_KEY)
 end
@@ -2492,6 +2443,8 @@ local function rt_cleanup()
   __rt_cleanup_done = true
   if cursor_default and lastSetByUs then reaper.JS_Mouse_SetCursor(cursor_default) end
   block_razor_edge(false)
+  NRE.set(false)
+  CMDT.cleanup()
   release_click_msgs()
   if G and G.undoOpen then end_undo() end
   if G and G.mode == "body" then reaper.Undo_OnStateChange("Trim items") end   -- stopped mid-drag
@@ -2522,7 +2475,6 @@ local function press_time_align_to_snap(edge, targetTime)
   local drv = G.driver
   local dst = G.initStates and drv and G.initStates[drv]
   if not (dst and valid_item(drv)) then return end
-  G.inPressAlign = true
   -- The move is worked out on the clicked item, then made by every trimmed item
   local fin  = reaper.GetMediaItemInfo_Value(drv, "D_FADEINLEN")  or 0
   local fout = reaper.GetMediaItemInfo_Value(drv, "D_FADEOUTLEN") or 0
@@ -2533,7 +2485,6 @@ local function press_time_align_to_snap(edge, targetTime)
     delta = ((targetTime or (dst.pos + dst.len)) + math.max(0, fout)) - (dst.pos + dst.len)
   end
   trim_all(edge, delta)
-  G.inPressAlign = false
 end
 
 -- Sliding crossfade press-time alignment (Ripple OFF, true CF neighbor present).
@@ -2630,17 +2581,16 @@ local function do_press_snap_default(pressBoundary, mTimeRaw)
   G.pressBoundary     = (G.edge == "start") and item_start(G.driver) or item_end(G.driver)
   G.initialPressDelta = G.pressBoundary - pressBoundary
 
-  if BODY_NATIVE_RIPPLE and AnyRippleOn() and G.edge == "start" then
-    local edited, downstream = build_downstream_from_snapshot()
-    local rippleDelta = -(G.initialPressDelta or 0)
-
-    if math.abs(rippleDelta) >= LIVE_RIPPLE_MIN_DT then
-      local moveMarkers = RippleAllTracks() and MarkersRegionsRippleAll()
-      batch_translate_items(edited,     rippleDelta, nil, nil, false, false)
-      batch_translate_items(downstream, rippleDelta, G.originalEnd, G.rippleTrackScope, true, moveMarkers)
+  -- live ripple of a right edge: the items after it move with the press's trim, at once
+  if CMDT.live and G.edge == "end" then
+    local _, downstream, enclosed = build_downstream_from_snapshot()
+    for it, _ in pairs(enclosed or {}) do downstream[it] = true end
+    local rd = G.initialPressDelta or 0
+    if math.abs(rd) >= LIVE_RIPPLE_MIN_DT then
+      batch_translate_items(downstream, rd, G.originalEnd, G.rippleTrackScope, true,
+                            RippleAllTracks() and MarkersRegionsRippleAll())
     end
-
-    G.initialPressDelta = 0
+    G.rippleApplied = rd
   end
 
   recapture_states(G.edge)
@@ -2671,7 +2621,29 @@ local function handle_press(hov, mTimeRaw, zone, mods)
 
   if not cls or cls.modeKind == "edge" then
     locked_cursor = nil
+    -- (a single edge left to the left-edge script or REAPER: outlined until the release)
+    -- (a left edge is the left-edge script's, which outlines it itself)
+    local rightSide = math.abs(item_end(hov) - mTimeRaw) < math.abs(mTimeRaw - item_start(hov))
+    if not cls and zone == "edge" and rightSide and (mods == 0 or mods == 4) and NRE.left_ripple_running()
+       and CMDT.tools and CMDT.tools.outline then
+      local items = { hov }
+      if reaper.IsMediaItemSelected(hov) then
+        for i = 0, reaper.CountSelectedMediaItems(0) - 1 do
+          local o = reaper.GetSelectedMediaItem(0, i)
+          if o ~= hov then items[#items + 1] = o end
+        end
+      end
+      CMDT.handoff = { kind = "watch", items = items, lead = CMDT.lead_start(hov, items),
+                       select = true, wasSel = reaper.IsMediaItemSelected(hov) }
+      CMDT.tools.outline("trim", items); CMDT.outlined = true
+    end
     return
+  end
+  CMDT.press(mods)   -- (Cmd: all tracks, before the scope is taken)
+  CMDT.hand_ok = nil
+  if cls.grab ~= "edge" and (mods == 0 or mods == 4) and NRE.left_ripple_running() and RippleEdgeOptionOn() then
+    local px = reaper.GetMousePosition()
+    CMDT.hand_ok = { x = px, mods = mods }   -- (handed over once the mouse moves: CMDT.hand_check)
   end
 
   G.mode    = "body"
@@ -2684,6 +2656,9 @@ local function handle_press(hov, mTimeRaw, zone, mods)
   G.modeKind = cls.modeKind
   G.initialMouseRaw = mTimeRaw
   -- rippleApplied and initialPressDelta are already 0 from new_G()
+  -- (left-edge ripple running, a right edge in a ripple mode: live ripple, v7.14.2)
+  CMDT.live = G.edge == "end" and AnyRippleOn() and RippleEdgeOptionOn() and NRE.left_ripple_running()
+  CMDT.lastDelta, CMDT.envBehind, CMDT.livePending, CMDT.still = nil, false, 0, false
 
   freeze_scope(hov, G.edge)
 
@@ -2785,6 +2760,22 @@ local function handle_drag(mTimeRaw)
     set_cursor(cursor_default, true)
   end
 
+  -- The same move as the last frame (the mouse is still): nothing to redo, unless take
+  -- envelopes or a live ripple's automation are behind (they're updated every few frames)
+  if delta == CMDT.lastDelta then
+    local caught_up = CMDT.envBehind or math.abs(CMDT.livePending or 0) >= LIVE_RIPPLE_MIN_DT
+    if CMDT.envBehind then
+      ENV_NOW = true
+      trim_all(G.edge, delta)
+      CMDT.envBehind = false
+    end
+    CMDT.flush_live()
+    CMDT.still = not caught_up   -- (no redraw unless something was brought up to date)
+    return
+  end
+  CMDT.lastDelta = delta
+  CMDT.envBehind = not ENV_NOW
+
   -- One move for every trimmed item and the crossfade neighbors sliding with
   -- them, so they all stay together and stop together
   delta = trim_all(G.edge, delta)
@@ -2793,27 +2784,19 @@ local function handle_drag(mTimeRaw)
 
   live_preview_autoxf()
 
-  if BODY_NATIVE_RIPPLE and AnyRippleOn() and not (G.modeKind == "edge" and RippleEdgeOptionOn()) then
-    local edited, downstream, enclosed = build_downstream_from_snapshot()
-
+  -- Live ripple (a right edge: v7.14.2): the items after it, track automation and markers
+  -- follow every frame
+  if CMDT.live and AnyRippleOn() then
+    local _, downstream, enclosed = build_downstream_from_snapshot()
+    for it,_ in pairs(enclosed or {}) do downstream[it] = true end
     local totalEdgeMove = (G.initialPressDelta or 0) + delta
-    local targetRipple  = (G.edge == "start") and (-totalEdgeMove) or totalEdgeMove
-    local diff          = targetRipple - (G.rippleApplied or 0)
-
+    local diff          = totalEdgeMove - (G.rippleApplied or 0)
     if math.abs(diff) >= LIVE_RIPPLE_MIN_DT then
-      local moveMarkers = RippleAllTracks() and MarkersRegionsRippleAll()
-
-      if G.edge == "start" then
-        batch_translate_items(downstream, diff, G.originalEnd, G.rippleTrackScope, true, moveMarkers)
-      else
-        for it,_ in pairs(enclosed or {}) do
-          downstream[it] = true
-        end
-        batch_translate_items(downstream, diff, G.originalEnd, G.rippleTrackScope, true, moveMarkers)
-      end
-
+      batch_translate_items(downstream, diff, nil, nil, false, false)
+      CMDT.livePending = (CMDT.livePending or 0) + diff
       G.rippleApplied = (G.rippleApplied or 0) + diff
     end
+    CMDT.flush_live()
   end
 end
 
@@ -2864,9 +2847,10 @@ local function handle_release()
   local effSincePress = (curEdge - (G.pressBoundary or curEdge))
   local totalEdgeMove = (G.initialPressDelta or 0) + (effSincePress or 0)
 
-  if AnyRippleOn() and (not BODY_NATIVE_RIPPLE) then
+  if AnyRippleOn() and not CMDT.live then   -- (live: already done)
     finalize_ripple(G.driver, G.edge, effSincePress, totalEdgeMove)
   end
+  CMDT.flush_live()   -- (live: track automation and markers exactly where they end up)
 
   if AutoXfadeOn() and not AnyRippleOn() and not TrimBehindOn() then
     G.previewOrig = {}
@@ -2882,19 +2866,164 @@ local function handle_release()
   locked_cursor = nil
 end
 
+-- The trim done (handle_release), and for a left-edge ripple trim whose edge would go off
+-- screen (the item goes back to where its start was, left of the view), the view scrolled
+-- by the same amount, so the edge stays where it was trimmed to (v7.13.0)
+function CMDT.release(align_always)
+  local it = G.driver
+  local before = (G.edge == "start" and valid_item(it) and AnyRippleOn()) and item_start(it) or nil
+  handle_release()
+  CMDT.live = false
+  if not (before and valid_item(it)) then return end
+  local after = item_start(it)
+  local jump = before - after
+  local vs, ve = reaper.GetSet_ArrangeView2(0, false, 0, 0)
+  -- (only when the edge was in view, and now isn't)
+  if jump > EPS and before >= vs and (after < vs or align_always) then
+    local ns = math.max(0, vs - jump)
+    reaper.GetSet_ArrangeView2(0, true, 0, 0, ns, ns + (ve - vs))
+  end
+end
+
+-- Handing a body drag over (v7.12.0): the press's trim is done, the drag goes on as an edge
+-- drag (the left-edge script's, or REAPER's own Move edge, started at the item's new edge)
+CMDT.HAND_PX = 0   -- (pixels the mouse moves before the drag is handed over: at once)
+function CMDT.send(msg, cx, cy) reaper.JS_WindowMessage_Send(ARRANGE, msg, msg == "WM_LBUTTONDOWN" and 1 or 0, 0, cx, cy) end
+-- Does another item on the same track (and lane) meet this edge?
+function CMDT.touching(it, edge)
+  local tr = reaper.GetMediaItem_Track(it)
+  local t = (edge == "start") and item_start(it) or item_end(it)
+  for i = 0, reaper.CountTrackMediaItems(tr) - 1 do
+    local o = reaper.GetTrackMediaItem(tr, i)
+    if o ~= it and same_lane(it, o) then
+      local ot = (edge == "start") and item_end(o) or item_start(o)
+      if math.abs(ot - t) <= px_to_time(JOINT_PX) then return true end
+    end
+  end
+  return false
+end
+function CMDT.hand_check()
+  local h = CMDT.hand_ok
+  local mx, my = reaper.GetMousePosition()
+  if math.abs(mx - h.x) < CMDT.HAND_PX or not (ARRANGE and reaper.JS_WindowMessage_Send and CMDT.tools) then return false end
+  local it, edge = G.driver, G.edge
+  -- (more than one item trimmed, for REAPER's own edge drag: kept, so the edges stay together)
+  local count = 0
+  for _ in pairs(G.editedSet or {}) do count = count + 1 end
+  if count > 1 and not (edge == "start" and AnyRippleOn()) then CMDT.hand_ok = nil; return false end
+  CMDT.hand_ok = nil
+  local items = {}   -- (still outlined while the edge drag goes on)
+  for e in pairs(G.editedSet or {}) do items[#items + 1] = e end
+  CMDT.outline(false)
+  -- (the press's trim: done, one undo point; the view kept on the edge, and with the switch on,
+  -- always lined up with the mouse for the left-edge script's trim)
+  CMDT.release(CMDT.ALIGN_LEFT_ALWAYS and edge == "start" and AnyRippleOn())
+  if not valid_item(it) then return true end
+  local kind = (edge == "start" and AnyRippleOn()) and "left" or "native"
+  local flag = (h.mods == 4) and 2 or 0
+  if kind == "left" then   -- ("time|item GUID": the item named, wherever its edge is now)
+    local _, guid = reaper.GetSetMediaItemInfo_String(it, "GUID", "", false)
+    reaper.SetExtState(NS, "TrimDeferredLeftEdge", tostring(reaper.time_precise()) .. "|" .. (guid or ""), false)
+  else
+    local cx, cy = reaper.JS_Window_ScreenToClient(ARRANGE, mx, my)
+    -- (REAPER's drag under ours ends; its release isn't taken as a click)
+    for _, c in ipairs({ "MM_CTX_ITEM_CLK", "MM_CTX_ITEMLOWER_CLK" }) do CMDT.tools.temp_take("trim-click", c, flag, "0") end
+    CMDT.send("WM_LBUTTONUP", cx, cy)
+    -- (and starts again as its own edge drag, at the edge)
+    CMDT.tools.temp_take("trim-hand", "MM_CTX_ITEMEDGE", flag, "1 m")
+    local t = (edge == "start") and item_start(it) or item_end(it)
+    local pps = reaper.GetHZoomLevel() or 1
+    local ex = math.floor((t - reaper.GetSet_ArrangeView2(0, false, 0, 0)) * pps + 0.5)
+    local inward = (edge == "start") and 1 or -1
+    local px = 1
+    -- (the item's middle height: the fade handles are at its top corners)
+    local tr = reaper.GetMediaItem_Track(it)
+    local midY = math.floor(reaper.GetMediaTrackInfo_Value(tr, "I_TCPY") + reaper.GetMediaItemInfo_Value(it, "I_LASTY")
+                            + reaper.GetMediaItemInfo_Value(it, "I_LASTH") * 0.6 + 0.5)
+    if CMDT.touching(it, edge) then   -- (a butt joint: REAPER's two-edge zone is right at it)
+      px = math.max(1, math.min(JOINT_PX + 2, math.floor(item_len(it) * pps / 2)))
+      local sx = reaper.JS_Window_ClientToScreen(ARRANGE, ex + inward * px, cy)
+      if sx and reaper.JS_Mouse_SetPosition then reaper.JS_Mouse_SetPosition(sx, my) end   -- (across only)
+    end
+    CMDT.send("WM_LBUTTONDOWN", ex + inward * px, midY)
+  end
+  CMDT.handoff = { kind = kind, items = items, lead = (edge == "end") and CMDT.lead_start(it, items) or nil }
+  -- (the left-edge script outlines its own trims; REAPER's: outlined here)
+  if kind == "native" and CMDT.tools.outline then CMDT.tools.outline("trim", items); CMDT.outlined = true end
+  return true
+end
+-- The end of a handed-over trim, as the Trim Tool's own (select_and_place_cursor): the trimmed
+-- items selected (an edge grab: only them, unless the grabbed one was selected), the edit
+-- cursor at the start of the selection, the time selection over it with Link Timeline on
+function CMDT.relink(h)
+  if h.select then
+    if not h.wasSel then reaper.SelectAllMediaItems(0, false) end
+    for _, it in ipairs(h.items or {}) do if valid_item(it) then reaper.SetMediaItemSelected(it, true) end end
+  end
+  local s, e = math.huge, -math.huge
+  for i = 0, reaper.CountSelectedMediaItems(0) - 1 do
+    local it = reaper.GetSelectedMediaItem(0, i)
+    if it then
+      local p = item_start(it)
+      if p < s then s = p end
+      if p + item_len(it) > e then e = p + item_len(it) end
+    end
+  end
+  if s == math.huge then return end
+  reaper.SetEditCurPos(s, false, false)
+  if e > s and link_timeline_on() then reaper.GetSet_LoopTimeRange(true, true, s, e, false) end
+  reaper.UpdateArrange()
+end
+
+-- Each frame while handed over: nothing of ours until the button's up, then all put back
+function CMDT.hand_frame(mouseDown)
+  local now = reaper.time_precise()
+  if CMDT.click_back and now >= CMDT.click_back and CMDT.tools then
+    CMDT.tools.temp_give_all("trim-click"); CMDT.click_back = nil
+  end
+  if not CMDT.handoff then return false end
+  if mouseDown then
+    if CMDT.drag then CMDT.ripple(true) end   -- (Cmd: still all tracks)
+    if CMDT.outlined then   -- (follows the edge; REAPER's right edge: led from the mouse)
+      CMDT.tools.outline("trim", CMDT.handoff.items, false, CMDT.lead_ends(CMDT.handoff.lead))
+    end
+    return true
+  end
+  CMDT.outline(false)
+  CMDT.relink(CMDT.handoff)   -- (selection, edit cursor, time selection: from the final sizes)
+  if CMDT.handoff.kind == "native" then   -- (REAPER's drag ends here, even if it missed the release)
+    local mx, my = reaper.GetMousePosition()
+    local cx, cy = reaper.JS_Window_ScreenToClient(ARRANGE, mx, my)
+    if cx then CMDT.send("WM_LBUTTONUP", cx, cy) end
+    CMDT.click_back = now + 0.3
+  end
+  if CMDT.tools then CMDT.tools.temp_give_all("trim-hand") end
+  if MSG_OK then new_click() end   -- (our own press to REAPER isn't a click of yours)
+  CMDT.handoff = nil
+  CMDT.done()
+  return true
+end
+
 local mode_handlers = {
   body = function(mouseDown, hov, mTimeRaw)
     if not valid_item(G.driver) then
       reaper.Undo_OnStateChange("Trim items")   -- keep what the drag already changed undoable
       G = new_G()
       locked_cursor = nil
+      CMDT.done(); CMDT.outline(false)
       return
     end
 
     if not mouseDown then
-      handle_release()
+      CMDT.outline(false)
+      CMDT.hand_ok = nil
+      CMDT.release()
+      CMDT.done()
     else
+      if CMDT.drag then CMDT.ripple(true) end   -- (still wanted: the other scripts see it)
+      if CMDT.hand_ok and CMDT.hand_check() then return end   -- (handed over: v7.12.0)
       handle_drag(mTimeRaw)
+      if not CMDT.still then CMDT.outline(true) end   -- (still: the outline hasn't moved)
     end
   end,
 }
@@ -2944,11 +3073,41 @@ local function main()
   local pressZone = hoverZone
   if not mouseDown then hoverZone = reaper_zone() end
 
+  -- A body drag handed over (v7.12.0): REAPER or the left-edge script has it until the release
+  if CMDT.hand_frame(mouseDown) then
+    prevMouseDown = mouseDown
+    reaper.defer(main)
+    return
+  end
+
   -- Cursor over items, only with the button up (not during REAPER's own drags)
   if G.mode == "none" and not mouseDown then
     local edgeIt = hov
-    if not edgeIt and reaper_zone() == "native" then edgeIt = item_at_edge_near(mx, my, mTimeRaw) end
+    local zoneNow = reaper_zone()
+    if not edgeIt and (zoneNow == "native" or zoneNow == "edge") then edgeIt = item_at_edge_near(mx, my, mTimeRaw) end
     block_razor_edge(edgeIt ~= nil and razor_covered_edge(edgeIt, mTimeRaw) ~= nil)
+    -- a single right edge, with the left-edge ripple running in a ripple mode: REAPER's own
+    local rightEdge = false
+    if edgeIt and zoneNow == "edge" and mods == 0 and AnyRippleOn() and RippleEdgeOptionOn()
+       and NRE.left_ripple_running() then
+      local s, e = item_start(edgeIt), item_end(edgeIt)
+      rightEdge = math.abs(e - mTimeRaw) < math.abs(mTimeRaw - s) and not CMDT.lined_up(edgeIt)
+    end
+    NRE.set(rightEdge)
+    -- Cmd on a single edge or a joint: ours (all tracks), REAPER's Cmd edge drag off; with
+    -- the left-edge ripple running, a left edge is that script's and a right edge REAPER's
+    -- own in ripple all (Move edge)
+    local cmdEdge, cmdAll = nil, false
+    if edgeIt and mods == 4 and (zoneNow == "edge" or zoneNow == "joint") then
+      local s, e = item_start(edgeIt), item_end(edgeIt)
+      local right = math.abs(e - mTimeRaw) < math.abs(mTimeRaw - s)
+      if zoneNow == "edge" and NRE.left_ripple_running() and RippleEdgeOptionOn() then
+        if right then cmdEdge, cmdAll = "1 m", true end
+      else
+        cmdEdge = "0"
+      end
+    end
+    CMDT.hover(cmdEdge, cmdAll)
     handle_hover(hov, mTimeRaw)
   end
 
@@ -2966,7 +3125,7 @@ local function main()
         handle_press(it, tClick or mTimeRaw, pressZone, mods)
         pressed = true
         -- Pressed and released between two checks: finish the click now
-        if G.mode == "body" and not mouseDown then handle_release() end
+        if G.mode == "body" and not mouseDown then CMDT.release() end
       end
     elseif (not MSG_OK) and mouseDown and not prevMouseDown then
       local it = hov
@@ -2985,8 +3144,11 @@ local function main()
   end
 
   prevMouseDown = mouseDown
-  -- Redraw only while a trim is in progress, and once more as it ends
-  if pressed or was_trimming or G.mode ~= "none" then reaper.UpdateArrange() end
+  -- Redraw while a trim is changing something, and once more as it ends (not while the
+  -- mouse is still mid-drag: nothing moved)
+  local ending = was_trimming and G.mode == "none"
+  if pressed or ending or (G.mode ~= "none" and not CMDT.still) then reaper.UpdateArrange() end
+  CMDT.still = false
   reaper.defer(main)
 end
 

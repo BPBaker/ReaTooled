@@ -1,12 +1,13 @@
 --[[
 -- @description ReaTooled - Recall ReaTooled Button States
--- @version 1.8
--- @date 2026.10.30
+-- @version 1.9
+-- @date 2026.11.07
 -- @author Brendan Baker
 -- @link http://brendanpatrickbaker.com/reatooled/
 -- @about
     # Recalls various ReaTooled Button States
 -- CHANGELOG
+-- v1.9 Recalls "Ripple edit when editing media item left edges" (starts it if it was on)
 -- v1.8 Recalls the pre-roll toggle (its marker) when REAPER's pre-roll is on, and puts back
 --      drags the Shuffle move script left switched off over a razor area
 -- v1.7 Recalls the Separation mode button
@@ -60,6 +61,7 @@ local DRAG_SWAP            = cmd("Tools/ReaTooled_Toggle swap left and right dra
 local SHUFFLE_MODE         = cmd("Tools/ReaTooled_Toggle Shuffle mode.lua")
 local SEPARATION_MODE      = cmd("Tools/ReaTooled_Toggle Separation mode.lua")
 local PREROLL_TOGGLE       = cmd("Toggles/ReaTooled_Toggle pre-roll (playback and recording).lua")
+local RIPPLE_LEFT_EDGES    = cmd("Toggles/ReaTooled_Toggle Ripple edit when editing media item left edges.lua")
 
 
 -- TAB TO TRANSIENT
@@ -148,6 +150,13 @@ end
 do
   local ok, tools = pcall(dofile, BASE .. "Tools/ReaTooled_Tools lib.lua")
   if ok and type(tools) == "table" and tools.repair_hover then tools.repair_hover() end
+end
+
+-- RIPPLE EDIT WHEN EDITING MEDIA ITEM LEFT EDGES (background toggle: started if it was on)
+if reaper.GetExtState("ReaTooled", "RippleLeftEdges") == "1" then
+  run(RIPPLE_LEFT_EDGES)
+else
+  set_button(RIPPLE_LEFT_EDGES, false)
 end
 
 -- SLIP INDICATOR (Ripple Off)

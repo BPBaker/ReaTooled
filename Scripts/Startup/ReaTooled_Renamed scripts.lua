@@ -14,4 +14,6 @@
     without an entry here.
 --]]
 return {
+  -- 2026-11-07: replaced by Toggles/ReaTooled_Toggle Ripple edit when editing media item left edges.lua
+  ["Edit/ReaTooled_Ripple left edge.lua"] = false,
 }

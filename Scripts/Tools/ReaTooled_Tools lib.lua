@@ -1,6 +1,6 @@
 -- @description ReaTooled - Tools library (shared by the tool scripts)
--- @version 1.15
--- @date 2026.10.30
+-- @version 1.17.4
+-- @date 2026.11.07
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -17,6 +17,37 @@
 --     - lights the tool's toolbar button(s) and turns the others off
 --   Adding a tool means adding it to TOOLS below, and nowhere else.
 -- @changelog
+--   v1.17.4 outline(owner, items, redrawn, ends): ends[item] = where to draw its right side
+--           (the Trim Tool leads REAPER's own edge drag with it)
+--   v1.17.3 outline(owner, items, redrawn): no extra redraws asked for when the caller redraws
+--           the arrange view itself that frame; off while ExtState ReaTooled/OutlineOff is "1"
+--           (the smoothness monitor's switch, to measure what it costs)
+--   v1.17.2 Trim Tool 7.12 owners: "trim-hand", "trim-click" (a body drag handed over)
+--   v1.17.1 Choosing the Trim, Zoom or Pencil Tool no longer puts the previous tool's item
+--           drags back over its own (a mode's remembered originals, e.g. Shuffle's from the
+--           Multi tool): they set their item modifiers too. With the Trim Tool, REAPER's own
+--           item drags then moved and rippled items under the trim, and the top half made a
+--           selection
+--   v1.17 outline(owner, items): a yellow outline drawn over the arrange view around the items
+--         being trimmed or moved (Trim Tool, Shuffle move), so they can be seen where they
+--         overlap other items; outline(owner, nil) takes it away
+--   v1.16.4 The Trim Tool (7.10) is an owner too ("trim": its Cmd item-edge drag)
+--   v1.16.3 Choosing a tool (or a mode re-applying it) forgets any modifier switched off for a
+--            moment that the tool has just set itself, so it isn't "put back" over the tool's
+--            own (Shuffle could put the Multi tool's item drags back over the Trim Tool's:
+--            REAPER then moved and rippled items under the Trim Tool's body-drag trim). Only
+--            REAPER's lower-half Pass through is treated as unchanged now (not any "0")
+--   v1.16.2 An item's lower half set to "Pass through" is reported by REAPER as whatever the
+--            upper half has: that counts as still switched too, so it's put back (it stayed
+--            on Pass through when the upper half was put back first)
+--   v1.16.1 A modifier switched off for a moment is put back even when REAPER reports it
+--            differently from what was written (e.g. an item's lower half "Pass through")
+--   v1.16 temp_take() / temp_give(): one record of mouse modifiers switched off for a moment by
+--         the background scripts (Shuffle move, Ripple edit when editing media item left
+--         edges). When two of them switch off the same one, the first one's original is kept
+--         and it's put back when the last lets go (before, one could take the other's "off"
+--         for the original and put that back). repair_hover() also puts back anything left
+--         switched off by a script that stopped without doing it
 --   v1.14 Option/Alt-dragging a razor area in Shuffle copies with or without Separation
 --         Mode (the Selector included)
 --   v1.13 Shuffle mode: Option/Alt item drags (and razor area drags with Separation) go
@@ -272,13 +303,228 @@ local apply_spot, apply_shuffle
 -- The Shuffle move script switches some drags off while the mouse is over a razor
 -- area and keeps what it switched on disk. If it (or REAPER) stopped before it could
 -- switch them back, they're put back here (only where they're still switched).
+------------------------------------------------------------
+-- Mouse modifiers switched for a moment by background scripts (while the mouse is over
+-- something, or during a drag), in one record (ExtState TempMods, kept on disk):
+-- "context|flag|original|ours|owner,owner;...". The first script to switch one keeps its
+-- original; it's put back when the last owner lets go (only if it's still ours: a tool
+-- chosen meanwhile has set its own). Owners: "leftedge", "shuffle" (and their "-click" ones).
+------------------------------------------------------------
+local TEMP_KEY = "TempMods"
+local TEMP_ALIVE = { leftedge = "RippleLeftEdges_beat", ["leftedge-click"] = "RippleLeftEdges_beat",
+                     shuffle = "ShuffleMoveAlive", ["shuffle-click"] = "ShuffleMoveAlive",
+                     ["shuffle-hover"] = "ShuffleMoveAlive", trim = "TrimToolHeartbeat",
+                     ["trim-hand"] = "TrimToolHeartbeat", ["trim-click"] = "TrimToolHeartbeat" }   -- heartbeats
+local function temp_read()
+  local t = {}
+  for line in reaper.GetExtState(NS, TEMP_KEY):gmatch("[^;]+") do
+    local c, f, orig, ours, owners, set = line:match("^(.-)|(%-?%d+)|(.-)|(.-)|([^|]*)|?(.*)$")
+    if c then
+      local e = { ctx = c, flag = tonumber(f), orig = orig, applied = ours, set = set, owners = {} }
+      for o in owners:gmatch("[^,]+") do e.owners[o] = true end
+      t[c .. "|" .. f] = e
+    end
+  end
+  return t
+end
+local function temp_write(t)
+  local out = {}
+  for _, e in pairs(t) do
+    local o = {}
+    for k in pairs(e.owners) do o[#o + 1] = k end
+    out[#out + 1] = table.concat({ e.ctx, e.flag, e.orig, e.applied, table.concat(o, ","), e.set or "" }, "|")
+  end
+  if #out == 0 then reaper.DeleteExtState(NS, TEMP_KEY, true)
+  else reaper.SetExtState(NS, TEMP_KEY, table.concat(out, ";"), true) end
+end
+local function mod_now(ctx, flag)
+  local v = reaper.GetMouseModifier(ctx, flag)
+  if v == nil or v == "" then v = "-1" end
+  return v
+end
+
+-- Is a modifier still as a temp_take left it? (REAPER can report what was set differently from
+-- what was written, e.g. "Pass through" on an item's lower half: so either counts, and so do
+-- No action/blank/pass through when that's what was set)
+local function noop(v) return v == nil or v == "" or v == "-1" or v:match("^0%s*%a?$") ~= nil end
+-- (REAPER reports a lower half that passes through as the upper half's setting)
+local UPPER_OF = { MM_CTX_ITEMLOWER = "MM_CTX_ITEM", MM_CTX_ITEMLOWER_CLK = "MM_CTX_ITEM_CLK",
+                   MM_CTX_ITEMLOWER_DBLCLK = "MM_CTX_ITEM_DBLCLK" }
+local function still_ours(e)
+  local v = mod_now(e.ctx, e.flag)
+  if v == e.applied or (e.set and e.set ~= "" and v == e.set) then return true end
+  local up = UPPER_OF[e.ctx]
+  return noop(e.set) and up ~= nil and v == mod_now(up, e.flag)   -- (still passing through)
+end
+M.temp_still_ours = still_ours
+
+-- Switch a modifier to 'value' for 'owner' (kept until temp_give)
+function M.temp_take(owner, ctx, flag, value)
+  if not reaper.GetMouseModifier then return end
+  local t = temp_read()
+  local k = ctx .. "|" .. flag
+  local e = t[k]
+  if e and still_ours(e) then
+    e.owners[owner] = true                      -- (already switched by another: share it)
+  else
+    -- (not switched, or changed since by something else: what's there now is the original)
+    e = { ctx = ctx, flag = flag, orig = mod_now(ctx, flag), set = value, owners = { [owner] = true } }
+    reaper.SetMouseModifier(ctx, flag, value)
+    e.applied = mod_now(ctx, flag)
+    t[k] = e
+  end
+  temp_write(t)
+end
+
+-- Let go of one ('forget': without putting it back, e.g. a tool now owns it)
+function M.temp_give(owner, ctx, flag, forget)
+  if not reaper.GetMouseModifier then return end
+  local t = temp_read()
+  local k = ctx .. "|" .. flag
+  local e = t[k]
+  if not e or not e.owners[owner] then return end
+  e.owners[owner] = nil
+  if not next(e.owners) then
+    if not forget and still_ours(e) then reaper.SetMouseModifier(ctx, flag, e.orig) end
+    t[k] = nil
+  end
+  temp_write(t)
+end
+
+-- Let go of everything one owner holds
+function M.temp_give_all(owner)
+  for _, e in pairs(temp_read()) do
+    if e.owners[owner] then M.temp_give(owner, e.ctx, e.flag) end
+  end
+end
+
+-- A tool (or mode) has just set these contexts itself: what was switched there is forgotten,
+-- not put back over the tool's own when its owner lets go
+local TOOL_WRITES_ALL = { MM_CTX_ITEM = true, MM_CTX_ITEMLOWER = true, MM_CTX_ITEM_CLK = true,
+  MM_CTX_ITEMLOWER_CLK = true, MM_CTX_ITEM_DBLCLK = true, MM_CTX_ITEMLOWER_DBLCLK = true,
+  MM_CTX_TRACK = true, MM_CTX_TRACK_CLK = true }
+local TOOL_WRITES_EDGE = { grabber = true, smart = true, trim = true, zoom = true }   -- (+ item edge)
+function M.temp_forget(contexts)
+  local t, changed = temp_read(), false
+  for k, e in pairs(t) do
+    if contexts[e.ctx] then t[k] = nil; changed = true end
+  end
+  if changed then temp_write(t) end
+end
+local function tool_contexts(key)
+  if key == "scrub" or key == nil or key == "" then return {} end
+  local c = {}
+  for k in pairs(TOOL_WRITES_ALL) do c[k] = true end
+  if TOOL_WRITES_EDGE[key] then c.MM_CTX_ITEMEDGE = true end
+  return c
+end
+
+-- Owners that aren't running any more (stopped without letting go): let go for them
+function M.temp_repair()
+  local now = reaper.time_precise()
+  for _, e in pairs(temp_read()) do
+    for o in pairs(e.owners) do
+      local beat = tonumber(reaper.GetExtState(NS, TEMP_ALIVE[o] or ""))
+      if not beat or now - beat > 2 then M.temp_give(o, e.ctx, e.flag) end
+    end
+  end
+end
+
+------------------------------------------------------------
+-- Outline: a yellow frame over the arrange view around items being edited (drawn on top of
+-- everything, so an item can be seen where it overlaps others). Each owner has its own.
+------------------------------------------------------------
+local OUTLINE_COLOR = 0xFFFFD000   -- (ARGB: yellow)
+local OUTLINE_PX = 2
+local OUTLINE_MAX = 32             -- items outlined at most
+local outlines = {}                -- owner -> { bms = {}, rects = {} }
+local function arrange_hwnd()
+  if not M._arrange then M._arrange = reaper.JS_Window_FindChildByID(reaper.GetMainHwnd(), 1000) end
+  return M._arrange
+end
+function M.outline(owner, items, redrawn, ends)
+  if not (reaper.JS_Composite and reaper.JS_LICE_CreateBitmap) then return end
+  if items and reaper.GetExtState(NS, "OutlineOff") == "1" then items = {} end
+  local hwnd = arrange_hwnd()
+  if not hwnd then return end
+  local o = outlines[owner]
+  if not o then o = { bms = {}, rects = {} }; outlines[owner] = o end
+  local _, w, h = reaper.JS_Window_GetClientSize(hwnd)
+  local view = reaper.GetSet_ArrangeView2(0, false, 0, 0)
+  local zoom = reaper.GetHZoomLevel()
+  -- the frames: 4 lines an item, as rects { x, y, w, h }
+  local want, n = {}, 0
+  for _, it in ipairs(items or {}) do
+    if n >= OUTLINE_MAX * 4 then break end
+    if reaper.ValidatePtr2(0, it, "MediaItem*") then
+      local tr = reaper.GetMediaItem_Track(it)
+      local ty = reaper.GetMediaTrackInfo_Value(tr, "I_TCPY")
+      local th = reaper.GetMediaTrackInfo_Value(tr, "I_TCPH")
+      local iy = reaper.GetMediaItemInfo_Value(it, "I_LASTY")
+      local ih = reaper.GetMediaItemInfo_Value(it, "I_LASTH")
+      if th > 0 and ih > 0 then
+        local pos = reaper.GetMediaItemInfo_Value(it, "D_POSITION")
+        local len = reaper.GetMediaItemInfo_Value(it, "D_LENGTH")
+        if ends and ends[it] then len = math.max(0, ends[it] - pos) end
+        local x1 = math.floor((pos - view) * zoom + 0.5)
+        local x2 = math.floor((pos + len - view) * zoom + 0.5)
+        local y1, y2 = math.floor(ty + iy), math.floor(ty + iy + ih)
+        if x2 > 0 and x1 < w and y2 > 0 and y1 < h and x2 - x1 >= 1 then
+          local cx1, cx2 = math.max(x1, -OUTLINE_PX), math.min(x2, w + OUTLINE_PX)
+          local function add(x, y, ww, hh)
+            if ww > 0 and hh > 0 then n = n + 1; want[n] = { x, y, ww, hh } end
+          end
+          add(cx1, y1, cx2 - cx1, OUTLINE_PX)                              -- top
+          add(cx1, y2 - OUTLINE_PX, cx2 - cx1, OUTLINE_PX)                 -- bottom
+          if x1 >= -OUTLINE_PX then add(x1, y1, OUTLINE_PX, y2 - y1) end    -- left
+          if x2 <= w + OUTLINE_PX then add(x2 - OUTLINE_PX, y1, OUTLINE_PX, y2 - y1) end   -- right
+        end
+      end
+    end
+  end
+  -- what changed: put the lines there, take the rest away, redraw only those places
+  local dirty = {}
+  local count = math.max(n, #o.rects)
+  for i = 1, count do
+    local r, old = want[i], o.rects[i]
+    local same = r and old and r[1] == old[1] and r[2] == old[2] and r[3] == old[3] and r[4] == old[4]
+    if not same then
+      if old then dirty[#dirty + 1] = old end
+      if r then
+        local bm = o.bms[i]
+        if not bm then
+          bm = reaper.JS_LICE_CreateBitmap(true, 1, 1)
+          reaper.JS_LICE_Clear(bm, OUTLINE_COLOR)
+          o.bms[i] = bm
+        end
+        reaper.JS_Composite(hwnd, r[1], r[2], r[3], r[4], bm, 0, 0, 1, 1)
+        dirty[#dirty + 1] = r
+      elseif o.bms[i] then
+        reaper.JS_Composite_Unlink(hwnd, o.bms[i])
+      end
+    end
+  end
+  o.rects = want
+  if redrawn then dirty = {} end   -- (the whole arrange view is redrawn this frame anyway)
+  for _, r in ipairs(dirty) do
+    reaper.JS_Window_InvalidateRect(hwnd, r[1] - 1, r[2] - 1, r[1] + r[3] + 1, r[2] + r[4] + 1, false)
+  end
+  if n == 0 and not items then   -- (gone: the bitmaps too)
+    for i, bm in pairs(o.bms) do reaper.JS_Composite_Unlink(hwnd, bm); reaper.JS_LICE_DestroyBitmap(bm) end
+    outlines[owner] = nil
+  end
+end
+
 function M.repair_hover()
+  M.temp_repair()
   local saved = reaper.GetExtState(NS, "ShuffleHoverSaved")
   if saved == "" or not reaper.GetMouseModifier then return end
   for line in saved:gmatch("[^;]+") do
     local c, f, orig, ours = line:match("^(.-)|(%-?%d+)|(.-)|(.*)$")
     f = tonumber(f)
-    if c and f and reaper.GetMouseModifier(c, f) == ours then reaper.SetMouseModifier(c, f, orig) end
+    if c and f and still_ours({ ctx = c, flag = f, orig = orig, applied = ours, set = "0" }) then
+      reaper.SetMouseModifier(c, f, orig)
+    end
   end
   reaper.DeleteExtState(NS, "ShuffleHoverSaved", true)
 end
@@ -289,6 +535,8 @@ function M.release_mode_overrides() release_overrides(nil, true) end
 
 function M.reapply_tool()
   local key = M.current_tool()
+  M.temp_forget({ MM_CTX_ITEM = true, MM_CTX_ITEMLOWER = true, MM_CTX_ITEM_CLK = true,
+                  MM_CTX_ITEMLOWER_CLK = true, MM_CTX_AREASEL = true })   -- (the modes' overrides)
   release_overrides(nil, true)
   apply_spot(key)
   apply_shuffle(key)
@@ -406,13 +654,15 @@ end
 ------------------------------------------------------------
 -- Called at the end of every tool script
 ------------------------------------------------------------
-local WRITES_ITEM_MODS = { grabber = true, smart = true, selector = true }
+local WRITES_ITEM_MODS = { grabber = true, smart = true, selector = true,
+                          trim = true, zoom = true, pencil = true }   -- (every tool but Scrub)
 -- The contexts those tools write themselves (others, like razor area drags, are
 -- never set by a tool: a mode's original there is still right)
 local TOOL_CONTEXTS = { MM_CTX_ITEM = true, MM_CTX_ITEMLOWER = true,
                         MM_CTX_ITEM_CLK = true, MM_CTX_ITEMLOWER_CLK = true }
 
 function M.finish(key)
+  M.temp_forget(tool_contexts(key))   -- (first: the tool has just set these itself)
   M.repair_hover()
   -- The tool has just set its own modifiers: the modes' remembered originals are
   -- out of date for a tool that sets its item modifiers (forget them), and still

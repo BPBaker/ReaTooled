@@ -1,6 +1,6 @@
 -- @description ReaTooled - Shuffle move (background, started in Shuffle mode)
--- @version 1.0.2
--- @date 2026.11.05
+-- @version 1.2.1
+-- @date 2026.11.07
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -52,6 +52,21 @@
 --   Move Tool: any plain drag on an item. Multi tool: plain drags on an item's lower
 --   half; its upper half, edges, fades and handles stay REAPER's.
 -- @changelog
+--   v1.2.1 No outline while what's dragged is back where it started
+--   v1.2 While dragging, the items being moved have a yellow outline drawn on top, so they
+--        can be seen where they overlap other items (Tools library 1.17)
+--   v1.1.3 Cmd = all tracks is shared with the Trim Tool (7.10) too
+--   v1.1.2 The drags switched off while the mouse is over a razor area are in the shared record
+--          too, and are put back even when REAPER reports an item's lower half differently
+--   v1.1.1 The click actions switched off for a drag, and REAPER's Cmd drags switched off
+--          over a move zone or razor area, are kept in ReaTooled's shared record (Tools
+--          library 1.16), so the left-edge ripple script switching some of the same ones off
+--          nearby can't leave them off
+--   v1.1 Cmd = all tracks: in Shuffle per-track, Cmd+drag on an item's move zone (Move Tool:
+--        the whole item; Multi tool: the lower half) or on a razor area (any of the three
+--        tools) is a Shuffle all tracks drag, Cmd+Option a copy. While Cmd is held over one,
+--        REAPER switches to ripple all tracks (Shuffle shows it, without a tooltip) and back
+--        afterwards; REAPER's own Cmd drags there (a new razor area) are off meanwhile
 --   v1.0.2 With ripple editing all tracks, the other tracks' new junctions follow the same
 --          rule as the dragged track: a crossfade with auto-crossfade on, else a butt joint
 --   v1.0.1 Less flicker in other windows (Track Manager, Project Bay) while dragging: the
@@ -2322,11 +2337,11 @@ local hoverSaved = nil
 local HOVER_KEY = "ShuffleHoverSaved"
 
 local clickSaved = nil   -- click actions switched off for the drag (below)
+local CMDALL = { forced = false, saved = nil }   -- Cmd = all tracks (below)
 local function save_hover()
-  if not hoverSaved and not clickSaved then reaper.DeleteExtState(NS, HOVER_KEY, true) return end
+  if not hoverSaved then reaper.DeleteExtState(NS, HOVER_KEY, true) return end
   local out = {}
   for _, o in ipairs(hoverSaved or {}) do out[#out + 1] = table.concat({ o[1], o[2], o[3], o[4] or "" }, "|") end
-  for _, o in ipairs(clickSaved or {}) do out[#out + 1] = table.concat({ o[1], o[2], o[3], o[4] or "" }, "|") end
   reaper.SetExtState(NS, HOVER_KEY, table.concat(out, ";"), true)
 end
 
@@ -2340,47 +2355,34 @@ local function click_actions_off()
   if clickSaved or not reaper.GetMouseModifier then return end
   local m = reaper.JS_Mouse_GetState(4 | 8 | 16 | 32) or 0
   local flag = ((m & 8) ~= 0 and 1 or 0) | ((m & 4) ~= 0 and 2 or 0) | ((m & 16) ~= 0 and 4 or 0) | ((m & 32) ~= 0 and 8 or 0)
-  clickSaved = {}
-  for _, c in ipairs(CLICK_CTX) do
-    local v = reaper.GetMouseModifier(c, flag)
-    if v == nil or v == "" then v = "-1" end
-    reaper.SetMouseModifier(c, flag, "0")
-    clickSaved[#clickSaved + 1] = { c, flag, v, reaper.GetMouseModifier(c, flag) }
-  end
+  -- (in ReaTooled's shared record: Tools library temp_take/temp_give)
+  for _, c in ipairs(CLICK_CTX) do tools.temp_take("shuffle-click", c, flag, "0") end
+  clickSaved = flag
   clickRestoreAt = nil
-  save_hover()
 end
 local function click_actions_on()
   if not clickSaved then return end
-  for _, o in ipairs(clickSaved) do
-    if reaper.GetMouseModifier(o[1], o[2]) == o[4] then reaper.SetMouseModifier(o[1], o[2], o[3]) end
-  end
+  for _, c in ipairs(CLICK_CTX) do tools.temp_give("shuffle-click", c, clickSaved) end
   clickSaved, clickRestoreAt = nil, nil
-  save_hover()
 end
 click_actions_off_fwd = click_actions_off
 
 local function hover_razor(on)
   if on and not hoverSaved then
     if not reaper.GetMouseModifier then return end
+    -- (in ReaTooled's shared record: Tools library temp_take/temp_give)
     hoverSaved = {}
     local plain = separation_on()   -- (without Separation Mode only Option/Alt-drags are ours)
     for _, h in ipairs(HOVER_OFF) do
       if h[2] ~= 0 or plain then
-      local v = reaper.GetMouseModifier(h[1], h[2])
-      if v == nil or v == "" then v = "-1" end
-      reaper.SetMouseModifier(h[1], h[2], h[3])
-      hoverSaved[#hoverSaved + 1] = { h[1], h[2], v, reaper.GetMouseModifier(h[1], h[2]) }
+        tools.temp_take("shuffle-hover", h[1], h[2], h[3])
+        hoverSaved[#hoverSaved + 1] = h
       end
     end
-    save_hover()
   elseif not on and hoverSaved then
     -- (only where it's still ours: a tool chosen meanwhile has set its own)
-    for _, o in ipairs(hoverSaved) do
-      if reaper.GetMouseModifier(o[1], o[2]) == o[4] then reaper.SetMouseModifier(o[1], o[2], o[3]) end
-    end
+    for _, h in ipairs(hoverSaved) do tools.temp_give("shuffle-hover", h[1], h[2]) end
     hoverSaved = nil
-    save_hover()
   end
 end
 
@@ -2772,11 +2774,65 @@ local function show_copy_cursor(on)
   end
 end
 
--- Ours, and is it a copy (Option/Alt-drag)? Other modifier drags stay REAPER's own.
+-- Cmd held over something that does "all tracks" (a left edge, a Shuffle move zone, a razor
+-- area): REAPER is switched to ripple all tracks, and back afterwards. Shared by the scripts
+-- that do this (ExtState ReaTooled/CmdAllFrom: the ripple mode to go back to;
+-- CmdAllWant_<who>: when each last wanted it), so moving from one of their zones to
+-- another doesn't switch back and forth. ShuffleQuiet keeps Shuffle's tooltip quiet.
+local CMDALL_NS, CMDALL_ALL, CMDALL_PER, CMDALL_OFF = "ReaTooled", 40311, 40310, 40309
+local function cmdall_set(state, who, want)
+  local now = reaper.time_precise()
+  local tgl = function(id) return reaper.GetToggleCommandState(id) == 1 end
+  if want then
+    reaper.SetExtState(CMDALL_NS, "CmdAllWant_" .. who, tostring(now), false)
+    if not state.forced then
+      if reaper.GetExtState(CMDALL_NS, "CmdAllFrom") == "" then
+        if tgl(CMDALL_ALL) then return end   -- (already all tracks: nothing to switch)
+        reaper.SetExtState(CMDALL_NS, "CmdAllFrom", tostring(tgl(CMDALL_PER) and CMDALL_PER or CMDALL_OFF), false)
+        reaper.SetExtState(CMDALL_NS, "ShuffleQuiet", "1", false)
+        reaper.Main_OnCommand(CMDALL_ALL, 0)
+      end
+      state.forced = true
+    end
+  elseif state.forced then
+    state.forced = false
+    reaper.DeleteExtState(CMDALL_NS, "CmdAllWant_" .. who, false)
+    -- (another script still wants it: that one switches back when it's done)
+    for _, other in ipairs({ "leftedge", "shuffle", "trim" }) do
+      local t = other ~= who and tonumber(reaper.GetExtState(CMDALL_NS, "CmdAllWant_" .. other))
+      if t and now - t < 0.3 then return end
+    end
+    local from = tonumber(reaper.GetExtState(CMDALL_NS, "CmdAllFrom"))
+    reaper.DeleteExtState(CMDALL_NS, "CmdAllFrom", false)
+    if from and tgl(CMDALL_ALL) then reaper.Main_OnCommand(from, 0) end   -- (unless changed meanwhile)
+    reaper.SetExtState(CMDALL_NS, "ShuffleQuiet", tostring(now + 0.5), false)   -- (quiet a moment more)
+  end
+end
+
+-- Cmd = all tracks: Cmd+drag (Cmd+Option: a copy) on an item's move zone or a razor area
+-- is a Shuffle all tracks drag. While Cmd is held over one, REAPER is in ripple all tracks
+-- (cmdall_set) and REAPER's own Cmd drags there (a new razor area) are off.
+CMDALL.CMD = 4   -- JS_Mouse_GetState: Command (macOS) / Ctrl (Windows)
+CMDALL.OFF = { { "MM_CTX_ITEM", 2 }, { "MM_CTX_ITEMLOWER", 2 }, { "MM_CTX_TRACK", 2 }, { "MM_CTX_AREASEL", 2 },
+               { "MM_CTX_ITEM", 6 }, { "MM_CTX_ITEMLOWER", 6 }, { "MM_CTX_TRACK", 6 }, { "MM_CTX_AREASEL", 6 } }
+function CMDALL.held(mods) return (mods & CMDALL.CMD) ~= 0 and (mods & ~(CMDALL.CMD | ALT)) == 0 end
+function CMDALL.mods_off(on)   -- (in ReaTooled's shared record: Tools library temp_take/temp_give)
+  if on and not CMDALL.saved then
+    for _, h in ipairs(CMDALL.OFF) do tools.temp_take("shuffle", h[1], h[2], "0") end
+    CMDALL.saved = true
+  elseif not on and CMDALL.saved then
+    for _, h in ipairs(CMDALL.OFF) do tools.temp_give("shuffle", h[1], h[2]) end
+    CMDALL.saved = nil
+  end
+end
+function CMDALL.set(want) cmdall_set(CMDALL, "shuffle", want) end
+
+-- Ours, and is it a copy (Option/Alt-drag)? Cmd and Cmd+Option: the same, all tracks.
+-- Other modifier drags stay REAPER's own.
 local function our_press(it, sx, sy, mods)
   mods = mods or 0
-  if not it or (mods ~= 0 and mods ~= ALT) then return false end
-  local copy = mods == ALT
+  if not it or (mods ~= 0 and mods ~= ALT and not CMDALL.held(mods)) then return false end
+  local copy = (mods & ALT) ~= 0
   local tool = wanted_tool()
   if tool == "grabber" then return true, copy end        -- edges and fades are locked there
   if tool == "smart" then
@@ -2788,16 +2844,27 @@ local function our_press(it, sx, sy, mods)
   return false
 end
 
+-- The mouse is over a move zone (where a plain press would be ours) or a razor area
+function CMDALL.zone(mx, my, overRazor)
+  if overRazor then return true end
+  local it = reaper.GetItemFromPoint(mx, my, false)
+  return it ~= nil and (our_press(it, mx, my, 0)) == true
+end
+
 ------------------------------------------------------------
 -- Main loop
 ------------------------------------------------------------
 local prevDown, lastTry = false, 0
+local outlined = false   -- (the yellow outline is drawn: Tools library outline)
 
 local function stop()
+  if tools.outline then tools.outline("shuffle", nil) end
   if G then restore() G = nil end
   -- (only while Shuffle still has the Multi tool: otherwise its settings were just put back)
   if upper_half_fwd and tools.shuffle_on() and wanted_tool() == "smart" then upper_half_fwd(nil) end
   if hover_razor_fwd then hover_razor_fwd(false) end
+  CMDALL.mods_off(false)
+  CMDALL.set(false)
   click_actions_on()
   show_copy_cursor(false)
   mouse.clicks_stop()
@@ -2848,7 +2915,11 @@ local function loop()
     local upper = hover.upper
     multi_upper_half(upper and { [0] = not (overRazor and separation_on()), [4] = not overRazor } or nil)
     hover_razor(overRazor)
-    show_copy_cursor(overRazor and mods == ALT)
+    -- Cmd over a move zone or a razor area: all tracks (REAPER's Cmd drags there off)
+    local cmdZone = CMDALL.held(mods) and CMDALL.zone(mx, my, overRazor)
+    CMDALL.set(cmdZone)
+    CMDALL.mods_off(cmdZone)
+    show_copy_cursor(overRazor and (mods & ALT) ~= 0 and (mods & ~(ALT | CMDALL.CMD)) == 0)
   elseif G then
     show_copy_cursor(G.copy or (G.pendingRazor and G.pendingRazor.copy) or false)
   end
@@ -2867,12 +2938,13 @@ local function loop()
       -- Separation: a plain press on a razor area shuffles what's in it
       local rtr, rinfo = reaper.GetTrackFromPoint(sx, sy)
       local ra, rb
-      if ((separation_on() and (mods or 0) == 0) or mods == ALT) and rtr and (rinfo or 0) == 0 then
+      local cmd = CMDALL.held(mods or 0)   -- (REAPER is already in all tracks: the hover switched it)
+      if ((separation_on() and (mods or 0) == 0) or mods == ALT or cmd) and rtr and (rinfo or 0) == 0 then
         local cx = reaper.JS_Window_ScreenToClient(mouse.ARRANGE, sx, sy)
         local pt = mouse.time_at(cx)
         if razor_cached_at(rtr, pt) then drop_razor_clear() end
         ra, rb = razor_press_area(rtr, pt)
-        if ra then start_razor_press(rtr, ra, rb, pt, mods == ALT) end
+        if ra then start_razor_press(rtr, ra, rb, pt, (mods & ALT) ~= 0) end
       end
       if ra then
         -- (taken by Separation)
@@ -2890,11 +2962,24 @@ local function loop()
     end
   elseif down then
     if G.pendingRazor then razor_drag() else drag() end
+    -- (the yellow outline around what's moving; none while it's back where it started)
+    local home = G and G.active and (G.b == nil or at_start(G.track, G.b))
+    if home and outlined then tools.outline("shuffle", nil); outlined = false end
+    if G and G.active and not home and tools.outline then
+      local list = {}
+      for _, m in ipairs(G.Dslot and G.Dslot.members or {}) do list[#list + 1] = m.item end
+      for _, F in ipairs(G.followers or {}) do
+        for _, m in ipairs(F.blk and F.blk.members or {}) do list[#list + 1] = m.item end
+      end
+      for _, c in ipairs(G.allCopies or {}) do list[#list + 1] = c.it end
+      tools.outline("shuffle", list); outlined = true
+    end
   else
     if G.pendingRazor then G = nil else release() end
     if clickSaved then clickRestoreAt = reaper.time_precise() + 0.3 end
   end
 
+  if outlined and not (G and G.active and down) then tools.outline("shuffle", nil); outlined = false end
   prevDown = down
   reaper.defer(loop)
 end
@@ -2903,6 +2988,7 @@ end
 -- and runs the new one, so an updated script always takes over
 if reaper.set_action_options then reaper.set_action_options(1 | 2) end
 if tools.repair_hover then tools.repair_hover() end   -- left switched by a copy that didn't stop cleanly
+if tools.temp_give_all then tools.temp_give_all("shuffle"); tools.temp_give_all("shuffle-click"); tools.temp_give_all("shuffle-hover") end
 reaper.atexit(stop)
 mouse.clicks_start()
 loop()
