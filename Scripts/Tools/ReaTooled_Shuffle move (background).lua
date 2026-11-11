@@ -1,6 +1,6 @@
 -- @description ReaTooled - Shuffle move (background, started in Shuffle mode)
--- @version 1.2.1
--- @date 2026.11.07
+-- @version 1.3
+-- @date 2026.11.11
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -52,6 +52,10 @@
 --   Move Tool: any plain drag on an item. Multi tool: plain drags on an item's lower
 --   half; its upper half, edges, fades and handles stay REAPER's.
 -- @changelog
+--   v1.3 Works without the Tools library (Shuffle on its own, with only its toggle and the
+--        Mouse library): it carries ReaTooled's shared core (the record of mouse modifiers
+--        switched for a moment, the yellow outline, Cmd = all tracks, crash repair). With the
+--        rest of ReaTooled installed it works exactly as before
 --   v1.2.1 No outline while what's dragged is back where it started
 --   v1.2 While dragging, the items being moved have a yellow outline drawn on top, so they
 --        can be seen where they overlap other items (Tools library 1.17)
@@ -98,14 +102,285 @@ if not (reaper.JS_Mouse_GetState and reaper.JS_Window_FindChildByID) then
   return
 end
 local okM, mouse = pcall(dofile, dir .. "ReaTooled_Mouse lib.lua")
-local okT, tools = pcall(dofile, dir .. "ReaTooled_Tools lib.lua")
-if not (okM and type(mouse) == "table" and okT and type(tools) == "table") then
-  reaper.ShowMessageBox("ReaTooled_Mouse lib.lua or ReaTooled_Tools lib.lua is missing from:\n" .. dir ..
+if not (okM and type(mouse) == "table") then
+  reaper.ShowMessageBox("ReaTooled_Mouse lib.lua is missing from:\n" .. dir ..
     "\n\nUpdate ReaTooled in ReaPack (Extensions > ReaPack > Synchronize packages).", "ReaTooled", 0)
   return
 end
 
 local function wanted_tool() return reaper.GetExtState(NS, TOOL_KEY) end
+local function shuffle_on() return reaper.GetExtState(NS, "ShuffleMode") == "1" end   -- (Toggle Shuffle mode)
+
+-- >>> ReaTooled shared core (v1)
+-- Pasted into the scripts that use it by "ReaTooled_DEV Paste shared core.lua" from
+-- "ReaTooled_Shared core.lua" in DEV SCRIPTS: edit that file, never a pasted copy (the release
+-- build stops if a copy is out of date). It lets these scripts work on their own, without the
+-- Tools library, and still cooperate with each other and with the rest of ReaTooled through the
+-- same ExtStates. Keep the record formats as they are: older copies must read newer ones.
+--   C.temp_take / temp_give / temp_give_all / temp_forget / temp_repair / temp_still_ours:
+--     the shared record of mouse modifiers switched for a moment (ExtState ReaTooled/TempMods)
+--   C.outline(owner, items, redrawn, ends): the yellow outline around items being edited
+--   C.repair_hover(): crash repair for what Shuffle move switched (and the record)
+--   C.cmdall_set(state, who, want): Cmd = ripple all tracks, shared
+local RTcore = (function()
+local C = {}
+local NS = "ReaTooled"
+
+------------------------------------------------------------
+-- Mouse modifiers switched for a moment by background scripts (while the mouse is over
+-- something, or during a drag), in one record (ExtState TempMods, kept on disk):
+-- "context|flag|original|ours|owner,owner;...". The first script to switch one keeps its
+-- original; it's put back when the last owner lets go (only if it's still ours: a tool
+-- chosen meanwhile has set its own). Owners: "leftedge", "shuffle" (and their "-click" ones).
+------------------------------------------------------------
+local TEMP_KEY = "TempMods"
+local TEMP_ALIVE = { leftedge = "RippleLeftEdges_beat", ["leftedge-click"] = "RippleLeftEdges_beat",
+                     shuffle = "ShuffleMoveAlive", ["shuffle-click"] = "ShuffleMoveAlive",
+                     ["shuffle-hover"] = "ShuffleMoveAlive", trim = "TrimToolHeartbeat",
+                     ["trim-hand"] = "TrimToolHeartbeat", ["trim-click"] = "TrimToolHeartbeat" }   -- heartbeats
+local function temp_read()
+  local t = {}
+  for line in reaper.GetExtState(NS, TEMP_KEY):gmatch("[^;]+") do
+    local c, f, orig, ours, owners, set = line:match("^(.-)|(%-?%d+)|(.-)|(.-)|([^|]*)|?(.*)$")
+    if c then
+      local e = { ctx = c, flag = tonumber(f), orig = orig, applied = ours, set = set, owners = {} }
+      for o in owners:gmatch("[^,]+") do e.owners[o] = true end
+      t[c .. "|" .. f] = e
+    end
+  end
+  return t
+end
+local function temp_write(t)
+  local out = {}
+  for _, e in pairs(t) do
+    local o = {}
+    for k in pairs(e.owners) do o[#o + 1] = k end
+    out[#out + 1] = table.concat({ e.ctx, e.flag, e.orig, e.applied, table.concat(o, ","), e.set or "" }, "|")
+  end
+  if #out == 0 then reaper.DeleteExtState(NS, TEMP_KEY, true)
+  else reaper.SetExtState(NS, TEMP_KEY, table.concat(out, ";"), true) end
+end
+local function mod_now(ctx, flag)
+  local v = reaper.GetMouseModifier(ctx, flag)
+  if v == nil or v == "" then v = "-1" end
+  return v
+end
+
+-- Is a modifier still as a temp_take left it? (REAPER can report what was set differently from
+-- what was written, e.g. "Pass through" on an item's lower half: so either counts, and so do
+-- No action/blank/pass through when that's what was set)
+local function noop(v) return v == nil or v == "" or v == "-1" or v:match("^0%s*%a?$") ~= nil end
+-- (REAPER reports a lower half that passes through as the upper half's setting)
+local UPPER_OF = { MM_CTX_ITEMLOWER = "MM_CTX_ITEM", MM_CTX_ITEMLOWER_CLK = "MM_CTX_ITEM_CLK",
+                   MM_CTX_ITEMLOWER_DBLCLK = "MM_CTX_ITEM_DBLCLK" }
+local function still_ours(e)
+  local v = mod_now(e.ctx, e.flag)
+  if v == e.applied or (e.set and e.set ~= "" and v == e.set) then return true end
+  local up = UPPER_OF[e.ctx]
+  return noop(e.set) and up ~= nil and v == mod_now(up, e.flag)   -- (still passing through)
+end
+C.temp_still_ours = still_ours
+
+-- Switch a modifier to 'value' for 'owner' (kept until temp_give)
+function C.temp_take(owner, ctx, flag, value)
+  if not reaper.GetMouseModifier then return end
+  local t = temp_read()
+  local k = ctx .. "|" .. flag
+  local e = t[k]
+  if e and still_ours(e) then
+    e.owners[owner] = true                      -- (already switched by another: share it)
+  else
+    -- (not switched, or changed since by something else: what's there now is the original)
+    e = { ctx = ctx, flag = flag, orig = mod_now(ctx, flag), set = value, owners = { [owner] = true } }
+    reaper.SetMouseModifier(ctx, flag, value)
+    e.applied = mod_now(ctx, flag)
+    t[k] = e
+  end
+  temp_write(t)
+end
+
+-- Let go of one ('forget': without putting it back, e.g. a tool now owns it)
+function C.temp_give(owner, ctx, flag, forget)
+  if not reaper.GetMouseModifier then return end
+  local t = temp_read()
+  local k = ctx .. "|" .. flag
+  local e = t[k]
+  if not e or not e.owners[owner] then return end
+  e.owners[owner] = nil
+  if not next(e.owners) then
+    if not forget and still_ours(e) then reaper.SetMouseModifier(ctx, flag, e.orig) end
+    t[k] = nil
+  end
+  temp_write(t)
+end
+
+-- Let go of everything one owner holds
+function C.temp_give_all(owner)
+  for _, e in pairs(temp_read()) do
+    if e.owners[owner] then C.temp_give(owner, e.ctx, e.flag) end
+  end
+end
+
+
+-- These contexts have just been set by something else (a tool, a mode): what was switched there
+-- is forgotten, not put back over it when its owner lets go
+function C.temp_forget(contexts)
+  local t, changed = temp_read(), false
+  for k, e in pairs(t) do
+    if contexts[e.ctx] then t[k] = nil; changed = true end
+  end
+  if changed then temp_write(t) end
+end
+
+-- Owners that aren't running any more (stopped without letting go): let go for them
+function C.temp_repair()
+  local now = reaper.time_precise()
+  for _, e in pairs(temp_read()) do
+    for o in pairs(e.owners) do
+      local beat = tonumber(reaper.GetExtState(NS, TEMP_ALIVE[o] or ""))
+      if not beat or now - beat > 2 then C.temp_give(o, e.ctx, e.flag) end
+    end
+  end
+end
+
+------------------------------------------------------------
+-- Outline: a yellow frame over the arrange view around items being edited (drawn on top of
+-- everything, so an item can be seen where it overlaps others). Each owner has its own.
+------------------------------------------------------------
+local OUTLINE_COLOR = 0xFFFFD000   -- (ARGB: yellow)
+local OUTLINE_PX = 2
+local OUTLINE_MAX = 32             -- items outlined at most
+local outlines = {}                -- owner -> { bms = {}, rects = {} }
+local function arrange_hwnd()
+  if not C._arrange then C._arrange = reaper.JS_Window_FindChildByID(reaper.GetMainHwnd(), 1000) end
+  return C._arrange
+end
+function C.outline(owner, items, redrawn, ends)
+  if not (reaper.JS_Composite and reaper.JS_LICE_CreateBitmap) then return end
+  if items and reaper.GetExtState(NS, "OutlineOff") == "1" then items = {} end
+  local hwnd = arrange_hwnd()
+  if not hwnd then return end
+  local o = outlines[owner]
+  if not o then o = { bms = {}, rects = {} }; outlines[owner] = o end
+  local _, w, h = reaper.JS_Window_GetClientSize(hwnd)
+  local view = reaper.GetSet_ArrangeView2(0, false, 0, 0)
+  local zoom = reaper.GetHZoomLevel()
+  -- the frames: 4 lines an item, as rects { x, y, w, h }
+  local want, n = {}, 0
+  for _, it in ipairs(items or {}) do
+    if n >= OUTLINE_MAX * 4 then break end
+    if reaper.ValidatePtr2(0, it, "MediaItem*") then
+      local tr = reaper.GetMediaItem_Track(it)
+      local ty = reaper.GetMediaTrackInfo_Value(tr, "I_TCPY")
+      local th = reaper.GetMediaTrackInfo_Value(tr, "I_TCPH")
+      local iy = reaper.GetMediaItemInfo_Value(it, "I_LASTY")
+      local ih = reaper.GetMediaItemInfo_Value(it, "I_LASTH")
+      if th > 0 and ih > 0 then
+        local pos = reaper.GetMediaItemInfo_Value(it, "D_POSITION")
+        local len = reaper.GetMediaItemInfo_Value(it, "D_LENGTH")
+        if ends and ends[it] then len = math.max(0, ends[it] - pos) end
+        local x1 = math.floor((pos - view) * zoom + 0.5)
+        local x2 = math.floor((pos + len - view) * zoom + 0.5)
+        local y1, y2 = math.floor(ty + iy), math.floor(ty + iy + ih)
+        if x2 > 0 and x1 < w and y2 > 0 and y1 < h and x2 - x1 >= 1 then
+          local cx1, cx2 = math.max(x1, -OUTLINE_PX), math.min(x2, w + OUTLINE_PX)
+          local function add(x, y, ww, hh)
+            if ww > 0 and hh > 0 then n = n + 1; want[n] = { x, y, ww, hh } end
+          end
+          add(cx1, y1, cx2 - cx1, OUTLINE_PX)                              -- top
+          add(cx1, y2 - OUTLINE_PX, cx2 - cx1, OUTLINE_PX)                 -- bottom
+          if x1 >= -OUTLINE_PX then add(x1, y1, OUTLINE_PX, y2 - y1) end    -- left
+          if x2 <= w + OUTLINE_PX then add(x2 - OUTLINE_PX, y1, OUTLINE_PX, y2 - y1) end   -- right
+        end
+      end
+    end
+  end
+  -- what changed: put the lines there, take the rest away, redraw only those places
+  local dirty = {}
+  local count = math.max(n, #o.rects)
+  for i = 1, count do
+    local r, old = want[i], o.rects[i]
+    local same = r and old and r[1] == old[1] and r[2] == old[2] and r[3] == old[3] and r[4] == old[4]
+    if not same then
+      if old then dirty[#dirty + 1] = old end
+      if r then
+        local bm = o.bms[i]
+        if not bm then
+          bm = reaper.JS_LICE_CreateBitmap(true, 1, 1)
+          reaper.JS_LICE_Clear(bm, OUTLINE_COLOR)
+          o.bms[i] = bm
+        end
+        reaper.JS_Composite(hwnd, r[1], r[2], r[3], r[4], bm, 0, 0, 1, 1)
+        dirty[#dirty + 1] = r
+      elseif o.bms[i] then
+        reaper.JS_Composite_Unlink(hwnd, o.bms[i])
+      end
+    end
+  end
+  o.rects = want
+  if redrawn then dirty = {} end   -- (the whole arrange view is redrawn this frame anyway)
+  for _, r in ipairs(dirty) do
+    reaper.JS_Window_InvalidateRect(hwnd, r[1] - 1, r[2] - 1, r[1] + r[3] + 1, r[2] + r[4] + 1, false)
+  end
+  if n == 0 and not items then   -- (gone: the bitmaps too)
+    for i, bm in pairs(o.bms) do reaper.JS_Composite_Unlink(hwnd, bm); reaper.JS_LICE_DestroyBitmap(bm) end
+    outlines[owner] = nil
+  end
+end
+
+function C.repair_hover()
+  C.temp_repair()
+  local saved = reaper.GetExtState(NS, "ShuffleHoverSaved")
+  if saved == "" or not reaper.GetMouseModifier then return end
+  for line in saved:gmatch("[^;]+") do
+    local c, f, orig, ours = line:match("^(.-)|(%-?%d+)|(.-)|(.*)$")
+    f = tonumber(f)
+    if c and f and still_ours({ ctx = c, flag = f, orig = orig, applied = ours, set = "0" }) then
+      reaper.SetMouseModifier(c, f, orig)
+    end
+  end
+  reaper.DeleteExtState(NS, "ShuffleHoverSaved", true)
+end
+
+
+-- Cmd held over something that does "all tracks" (a left edge, a Shuffle move zone, a razor
+-- area): REAPER is switched to ripple all tracks, and back afterwards. Shared by the scripts
+-- that do this (ExtState ReaTooled/CmdAllFrom: the ripple mode to go back to;
+-- CmdAllWant_<who>: when each last wanted it), so moving from one of their zones to
+-- another doesn't switch back and forth. ShuffleQuiet keeps Shuffle's tooltip quiet.
+local CMDALL_NS, CMDALL_ALL, CMDALL_PER, CMDALL_OFF = "ReaTooled", 40311, 40310, 40309
+function C.cmdall_set(state, who, want)
+  local now = reaper.time_precise()
+  local tgl = function(id) return reaper.GetToggleCommandState(id) == 1 end
+  if want then
+    reaper.SetExtState(CMDALL_NS, "CmdAllWant_" .. who, tostring(now), false)
+    if not state.forced then
+      if reaper.GetExtState(CMDALL_NS, "CmdAllFrom") == "" then
+        if tgl(CMDALL_ALL) then return end   -- (already all tracks: nothing to switch)
+        reaper.SetExtState(CMDALL_NS, "CmdAllFrom", tostring(tgl(CMDALL_PER) and CMDALL_PER or CMDALL_OFF), false)
+        reaper.SetExtState(CMDALL_NS, "ShuffleQuiet", "1", false)
+        reaper.Main_OnCommand(CMDALL_ALL, 0)
+      end
+      state.forced = true
+    end
+  elseif state.forced then
+    state.forced = false
+    reaper.DeleteExtState(CMDALL_NS, "CmdAllWant_" .. who, false)
+    -- (another script still wants it: that one switches back when it's done)
+    for _, other in ipairs({ "leftedge", "shuffle", "trim" }) do
+      local t = other ~= who and tonumber(reaper.GetExtState(CMDALL_NS, "CmdAllWant_" .. other))
+      if t and now - t < 0.3 then return end
+    end
+    local from = tonumber(reaper.GetExtState(CMDALL_NS, "CmdAllFrom"))
+    reaper.DeleteExtState(CMDALL_NS, "CmdAllFrom", false)
+    if from and tgl(CMDALL_ALL) then reaper.Main_OnCommand(from, 0) end   -- (unless changed meanwhile)
+    reaper.SetExtState(CMDALL_NS, "ShuffleQuiet", tostring(now + 0.5), false)   -- (quiet a moment more)
+  end
+end
+
+return C
+end)()
+-- <<< ReaTooled shared core
 
 local G = nil   -- the drag in progress
 
@@ -2356,13 +2631,13 @@ local function click_actions_off()
   local m = reaper.JS_Mouse_GetState(4 | 8 | 16 | 32) or 0
   local flag = ((m & 8) ~= 0 and 1 or 0) | ((m & 4) ~= 0 and 2 or 0) | ((m & 16) ~= 0 and 4 or 0) | ((m & 32) ~= 0 and 8 or 0)
   -- (in ReaTooled's shared record: Tools library temp_take/temp_give)
-  for _, c in ipairs(CLICK_CTX) do tools.temp_take("shuffle-click", c, flag, "0") end
+  for _, c in ipairs(CLICK_CTX) do RTcore.temp_take("shuffle-click", c, flag, "0") end
   clickSaved = flag
   clickRestoreAt = nil
 end
 local function click_actions_on()
   if not clickSaved then return end
-  for _, c in ipairs(CLICK_CTX) do tools.temp_give("shuffle-click", c, clickSaved) end
+  for _, c in ipairs(CLICK_CTX) do RTcore.temp_give("shuffle-click", c, clickSaved) end
   clickSaved, clickRestoreAt = nil, nil
 end
 click_actions_off_fwd = click_actions_off
@@ -2375,13 +2650,13 @@ local function hover_razor(on)
     local plain = separation_on()   -- (without Separation Mode only Option/Alt-drags are ours)
     for _, h in ipairs(HOVER_OFF) do
       if h[2] ~= 0 or plain then
-        tools.temp_take("shuffle-hover", h[1], h[2], h[3])
+        RTcore.temp_take("shuffle-hover", h[1], h[2], h[3])
         hoverSaved[#hoverSaved + 1] = h
       end
     end
   elseif not on and hoverSaved then
     -- (only where it's still ours: a tool chosen meanwhile has set its own)
-    for _, h in ipairs(hoverSaved) do tools.temp_give("shuffle-hover", h[1], h[2]) end
+    for _, h in ipairs(hoverSaved) do RTcore.temp_give("shuffle-hover", h[1], h[2]) end
     hoverSaved = nil
   end
 end
@@ -2774,40 +3049,9 @@ local function show_copy_cursor(on)
   end
 end
 
--- Cmd held over something that does "all tracks" (a left edge, a Shuffle move zone, a razor
--- area): REAPER is switched to ripple all tracks, and back afterwards. Shared by the scripts
--- that do this (ExtState ReaTooled/CmdAllFrom: the ripple mode to go back to;
--- CmdAllWant_<who>: when each last wanted it), so moving from one of their zones to
--- another doesn't switch back and forth. ShuffleQuiet keeps Shuffle's tooltip quiet.
-local CMDALL_NS, CMDALL_ALL, CMDALL_PER, CMDALL_OFF = "ReaTooled", 40311, 40310, 40309
-local function cmdall_set(state, who, want)
-  local now = reaper.time_precise()
-  local tgl = function(id) return reaper.GetToggleCommandState(id) == 1 end
-  if want then
-    reaper.SetExtState(CMDALL_NS, "CmdAllWant_" .. who, tostring(now), false)
-    if not state.forced then
-      if reaper.GetExtState(CMDALL_NS, "CmdAllFrom") == "" then
-        if tgl(CMDALL_ALL) then return end   -- (already all tracks: nothing to switch)
-        reaper.SetExtState(CMDALL_NS, "CmdAllFrom", tostring(tgl(CMDALL_PER) and CMDALL_PER or CMDALL_OFF), false)
-        reaper.SetExtState(CMDALL_NS, "ShuffleQuiet", "1", false)
-        reaper.Main_OnCommand(CMDALL_ALL, 0)
-      end
-      state.forced = true
-    end
-  elseif state.forced then
-    state.forced = false
-    reaper.DeleteExtState(CMDALL_NS, "CmdAllWant_" .. who, false)
-    -- (another script still wants it: that one switches back when it's done)
-    for _, other in ipairs({ "leftedge", "shuffle", "trim" }) do
-      local t = other ~= who and tonumber(reaper.GetExtState(CMDALL_NS, "CmdAllWant_" .. other))
-      if t and now - t < 0.3 then return end
-    end
-    local from = tonumber(reaper.GetExtState(CMDALL_NS, "CmdAllFrom"))
-    reaper.DeleteExtState(CMDALL_NS, "CmdAllFrom", false)
-    if from and tgl(CMDALL_ALL) then reaper.Main_OnCommand(from, 0) end   -- (unless changed meanwhile)
-    reaper.SetExtState(CMDALL_NS, "ShuffleQuiet", tostring(now + 0.5), false)   -- (quiet a moment more)
-  end
-end
+-- Cmd held over a move zone or razor area: REAPER switched to ripple all tracks, and back
+-- afterwards (the shared core's cmdall_set, shared with the left-edge ripple and the Trim Tool)
+local cmdall_set = RTcore.cmdall_set
 
 -- Cmd = all tracks: Cmd+drag (Cmd+Option: a copy) on an item's move zone or a razor area
 -- is a Shuffle all tracks drag. While Cmd is held over one, REAPER is in ripple all tracks
@@ -2818,10 +3062,10 @@ CMDALL.OFF = { { "MM_CTX_ITEM", 2 }, { "MM_CTX_ITEMLOWER", 2 }, { "MM_CTX_TRACK"
 function CMDALL.held(mods) return (mods & CMDALL.CMD) ~= 0 and (mods & ~(CMDALL.CMD | ALT)) == 0 end
 function CMDALL.mods_off(on)   -- (in ReaTooled's shared record: Tools library temp_take/temp_give)
   if on and not CMDALL.saved then
-    for _, h in ipairs(CMDALL.OFF) do tools.temp_take("shuffle", h[1], h[2], "0") end
+    for _, h in ipairs(CMDALL.OFF) do RTcore.temp_take("shuffle", h[1], h[2], "0") end
     CMDALL.saved = true
   elseif not on and CMDALL.saved then
-    for _, h in ipairs(CMDALL.OFF) do tools.temp_give("shuffle", h[1], h[2]) end
+    for _, h in ipairs(CMDALL.OFF) do RTcore.temp_give("shuffle", h[1], h[2]) end
     CMDALL.saved = nil
   end
 end
@@ -2858,10 +3102,10 @@ local prevDown, lastTry = false, 0
 local outlined = false   -- (the yellow outline is drawn: Tools library outline)
 
 local function stop()
-  if tools.outline then tools.outline("shuffle", nil) end
+  RTcore.outline("shuffle", nil)
   if G then restore() G = nil end
   -- (only while Shuffle still has the Multi tool: otherwise its settings were just put back)
-  if upper_half_fwd and tools.shuffle_on() and wanted_tool() == "smart" then upper_half_fwd(nil) end
+  if upper_half_fwd and shuffle_on() and wanted_tool() == "smart" then upper_half_fwd(nil) end
   if hover_razor_fwd then hover_razor_fwd(false) end
   CMDALL.mods_off(false)
   CMDALL.set(false)
@@ -2876,7 +3120,7 @@ local hover = { pkey = nil, read = 0, ver = 0, mkey = nil, hit = 0, over = false
 local HOVER_REREAD, HIT_REREAD = 0.25, 0.1   -- seconds
 
 local function loop()
-  if wanted_tool() == "" or not tools.shuffle_on() then stop() return end
+  if wanted_tool() == "" or not shuffle_on() then stop() return end
   local now = reaper.time_precise()
   reaper.SetExtState(NS, HEARTBEAT, tostring(now), false)
   if not mouse.clicks_on() and now - lastTry > 1 then lastTry = now; mouse.clicks_start() end
@@ -2964,22 +3208,22 @@ local function loop()
     if G.pendingRazor then razor_drag() else drag() end
     -- (the yellow outline around what's moving; none while it's back where it started)
     local home = G and G.active and (G.b == nil or at_start(G.track, G.b))
-    if home and outlined then tools.outline("shuffle", nil); outlined = false end
-    if G and G.active and not home and tools.outline then
+    if home and outlined then RTcore.outline("shuffle", nil); outlined = false end
+    if G and G.active and not home then
       local list = {}
       for _, m in ipairs(G.Dslot and G.Dslot.members or {}) do list[#list + 1] = m.item end
       for _, F in ipairs(G.followers or {}) do
         for _, m in ipairs(F.blk and F.blk.members or {}) do list[#list + 1] = m.item end
       end
       for _, c in ipairs(G.allCopies or {}) do list[#list + 1] = c.it end
-      tools.outline("shuffle", list); outlined = true
+      RTcore.outline("shuffle", list); outlined = true
     end
   else
     if G.pendingRazor then G = nil else release() end
     if clickSaved then clickRestoreAt = reaper.time_precise() + 0.3 end
   end
 
-  if outlined and not (G and G.active and down) then tools.outline("shuffle", nil); outlined = false end
+  if outlined and not (G and G.active and down) then RTcore.outline("shuffle", nil); outlined = false end
   prevDown = down
   reaper.defer(loop)
 end
@@ -2987,8 +3231,8 @@ end
 -- Started again while running (each time a tool is applied): REAPER stops this copy
 -- and runs the new one, so an updated script always takes over
 if reaper.set_action_options then reaper.set_action_options(1 | 2) end
-if tools.repair_hover then tools.repair_hover() end   -- left switched by a copy that didn't stop cleanly
-if tools.temp_give_all then tools.temp_give_all("shuffle"); tools.temp_give_all("shuffle-click"); tools.temp_give_all("shuffle-hover") end
+RTcore.repair_hover()   -- left switched by a copy that didn't stop cleanly
+RTcore.temp_give_all("shuffle"); RTcore.temp_give_all("shuffle-click"); RTcore.temp_give_all("shuffle-hover")
 reaper.atexit(stop)
 mouse.clicks_start()
 loop()

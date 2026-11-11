@@ -1,7 +1,7 @@
 --[[
 -- @description ReaTooled - Ripple edit when editing media item left edges
--- @version 1.18
--- @date 2026.11.09
+-- @version 1.19
+-- @date 2026.11.11
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -25,8 +25,13 @@
     media items". Take envelopes, stretch markers and snap offsets stay with the audio.
     Snaps as REAPER's own edge drag (a line shows what it snapped to). Esc cancels; the view
     stays put; one undo step ("Resize media items"). Remembered when REAPER restarts (Recall
-    ReaTooled Button States). The rules: "Left edge ripple - design rules.md".
+    ReaTooled Button States; on its own, without the rest of ReaTooled, add it to REAPER's
+    startup actions). Works on its own too: it needs only the js_ReaScriptAPI extension. The rules: "Left edge ripple - design rules.md".
 -- CHANGELOG
+-- v1.19 Works on its own, without the rest of ReaTooled (only js_ReaScriptAPI needed): it carries
+--       ReaTooled's shared core (the record of mouse modifiers switched for a moment, the yellow
+--       outline, Cmd = all tracks) instead of loading the Tools library. With ReaTooled installed
+--       it works exactly as before
 -- v1.18 Changing the ripple mode during a drag (ripple off, per track, all tracks) keeps what the
 --       drag has done so far and carries on in the new mode from there: ripple off trims the
 --       left edge as REAPER does without ripple (the edge follows the mouse, nothing else moves),
@@ -90,18 +95,277 @@ do
 end
 
 local _, _, SEC, CMD = reaper.get_action_context()
--- ReaTooled's Tools library: the shared record of mouse modifiers switched for a moment
-local tools
-do
-  local path = reaper.GetResourcePath():gsub("\\", "/") .. "/Scripts/ReaTooled/Tools/ReaTooled_Tools lib.lua"
-  local ok, t = pcall(dofile, path)
-  if ok and type(t) == "table" and t.temp_take then tools = t end
+-- >>> ReaTooled shared core (v1)
+-- Pasted into the scripts that use it by "ReaTooled_DEV Paste shared core.lua" from
+-- "ReaTooled_Shared core.lua" in DEV SCRIPTS: edit that file, never a pasted copy (the release
+-- build stops if a copy is out of date). It lets these scripts work on their own, without the
+-- Tools library, and still cooperate with each other and with the rest of ReaTooled through the
+-- same ExtStates. Keep the record formats as they are: older copies must read newer ones.
+--   C.temp_take / temp_give / temp_give_all / temp_forget / temp_repair / temp_still_ours:
+--     the shared record of mouse modifiers switched for a moment (ExtState ReaTooled/TempMods)
+--   C.outline(owner, items, redrawn, ends): the yellow outline around items being edited
+--   C.repair_hover(): crash repair for what Shuffle move switched (and the record)
+--   C.cmdall_set(state, who, want): Cmd = ripple all tracks, shared
+local RTcore = (function()
+local C = {}
+local NS = "ReaTooled"
+
+------------------------------------------------------------
+-- Mouse modifiers switched for a moment by background scripts (while the mouse is over
+-- something, or during a drag), in one record (ExtState TempMods, kept on disk):
+-- "context|flag|original|ours|owner,owner;...". The first script to switch one keeps its
+-- original; it's put back when the last owner lets go (only if it's still ours: a tool
+-- chosen meanwhile has set its own). Owners: "leftedge", "shuffle" (and their "-click" ones).
+------------------------------------------------------------
+local TEMP_KEY = "TempMods"
+local TEMP_ALIVE = { leftedge = "RippleLeftEdges_beat", ["leftedge-click"] = "RippleLeftEdges_beat",
+                     shuffle = "ShuffleMoveAlive", ["shuffle-click"] = "ShuffleMoveAlive",
+                     ["shuffle-hover"] = "ShuffleMoveAlive", trim = "TrimToolHeartbeat",
+                     ["trim-hand"] = "TrimToolHeartbeat", ["trim-click"] = "TrimToolHeartbeat" }   -- heartbeats
+local function temp_read()
+  local t = {}
+  for line in reaper.GetExtState(NS, TEMP_KEY):gmatch("[^;]+") do
+    local c, f, orig, ours, owners, set = line:match("^(.-)|(%-?%d+)|(.-)|(.-)|([^|]*)|?(.*)$")
+    if c then
+      local e = { ctx = c, flag = tonumber(f), orig = orig, applied = ours, set = set, owners = {} }
+      for o in owners:gmatch("[^,]+") do e.owners[o] = true end
+      t[c .. "|" .. f] = e
+    end
+  end
+  return t
 end
-if not tools then
-  reaper.ShowMessageBox("ReaTooled_Tools lib.lua (1.16 or later) is missing from Scripts/ReaTooled/Tools.\n\n" ..
-    "Update ReaTooled in ReaPack (Extensions > ReaPack > Synchronize packages).", TITLE, 0)
-  return
+local function temp_write(t)
+  local out = {}
+  for _, e in pairs(t) do
+    local o = {}
+    for k in pairs(e.owners) do o[#o + 1] = k end
+    out[#out + 1] = table.concat({ e.ctx, e.flag, e.orig, e.applied, table.concat(o, ","), e.set or "" }, "|")
+  end
+  if #out == 0 then reaper.DeleteExtState(NS, TEMP_KEY, true)
+  else reaper.SetExtState(NS, TEMP_KEY, table.concat(out, ";"), true) end
 end
+local function mod_now(ctx, flag)
+  local v = reaper.GetMouseModifier(ctx, flag)
+  if v == nil or v == "" then v = "-1" end
+  return v
+end
+
+-- Is a modifier still as a temp_take left it? (REAPER can report what was set differently from
+-- what was written, e.g. "Pass through" on an item's lower half: so either counts, and so do
+-- No action/blank/pass through when that's what was set)
+local function noop(v) return v == nil or v == "" or v == "-1" or v:match("^0%s*%a?$") ~= nil end
+-- (REAPER reports a lower half that passes through as the upper half's setting)
+local UPPER_OF = { MM_CTX_ITEMLOWER = "MM_CTX_ITEM", MM_CTX_ITEMLOWER_CLK = "MM_CTX_ITEM_CLK",
+                   MM_CTX_ITEMLOWER_DBLCLK = "MM_CTX_ITEM_DBLCLK" }
+local function still_ours(e)
+  local v = mod_now(e.ctx, e.flag)
+  if v == e.applied or (e.set and e.set ~= "" and v == e.set) then return true end
+  local up = UPPER_OF[e.ctx]
+  return noop(e.set) and up ~= nil and v == mod_now(up, e.flag)   -- (still passing through)
+end
+C.temp_still_ours = still_ours
+
+-- Switch a modifier to 'value' for 'owner' (kept until temp_give)
+function C.temp_take(owner, ctx, flag, value)
+  if not reaper.GetMouseModifier then return end
+  local t = temp_read()
+  local k = ctx .. "|" .. flag
+  local e = t[k]
+  if e and still_ours(e) then
+    e.owners[owner] = true                      -- (already switched by another: share it)
+  else
+    -- (not switched, or changed since by something else: what's there now is the original)
+    e = { ctx = ctx, flag = flag, orig = mod_now(ctx, flag), set = value, owners = { [owner] = true } }
+    reaper.SetMouseModifier(ctx, flag, value)
+    e.applied = mod_now(ctx, flag)
+    t[k] = e
+  end
+  temp_write(t)
+end
+
+-- Let go of one ('forget': without putting it back, e.g. a tool now owns it)
+function C.temp_give(owner, ctx, flag, forget)
+  if not reaper.GetMouseModifier then return end
+  local t = temp_read()
+  local k = ctx .. "|" .. flag
+  local e = t[k]
+  if not e or not e.owners[owner] then return end
+  e.owners[owner] = nil
+  if not next(e.owners) then
+    if not forget and still_ours(e) then reaper.SetMouseModifier(ctx, flag, e.orig) end
+    t[k] = nil
+  end
+  temp_write(t)
+end
+
+-- Let go of everything one owner holds
+function C.temp_give_all(owner)
+  for _, e in pairs(temp_read()) do
+    if e.owners[owner] then C.temp_give(owner, e.ctx, e.flag) end
+  end
+end
+
+
+-- These contexts have just been set by something else (a tool, a mode): what was switched there
+-- is forgotten, not put back over it when its owner lets go
+function C.temp_forget(contexts)
+  local t, changed = temp_read(), false
+  for k, e in pairs(t) do
+    if contexts[e.ctx] then t[k] = nil; changed = true end
+  end
+  if changed then temp_write(t) end
+end
+
+-- Owners that aren't running any more (stopped without letting go): let go for them
+function C.temp_repair()
+  local now = reaper.time_precise()
+  for _, e in pairs(temp_read()) do
+    for o in pairs(e.owners) do
+      local beat = tonumber(reaper.GetExtState(NS, TEMP_ALIVE[o] or ""))
+      if not beat or now - beat > 2 then C.temp_give(o, e.ctx, e.flag) end
+    end
+  end
+end
+
+------------------------------------------------------------
+-- Outline: a yellow frame over the arrange view around items being edited (drawn on top of
+-- everything, so an item can be seen where it overlaps others). Each owner has its own.
+------------------------------------------------------------
+local OUTLINE_COLOR = 0xFFFFD000   -- (ARGB: yellow)
+local OUTLINE_PX = 2
+local OUTLINE_MAX = 32             -- items outlined at most
+local outlines = {}                -- owner -> { bms = {}, rects = {} }
+local function arrange_hwnd()
+  if not C._arrange then C._arrange = reaper.JS_Window_FindChildByID(reaper.GetMainHwnd(), 1000) end
+  return C._arrange
+end
+function C.outline(owner, items, redrawn, ends)
+  if not (reaper.JS_Composite and reaper.JS_LICE_CreateBitmap) then return end
+  if items and reaper.GetExtState(NS, "OutlineOff") == "1" then items = {} end
+  local hwnd = arrange_hwnd()
+  if not hwnd then return end
+  local o = outlines[owner]
+  if not o then o = { bms = {}, rects = {} }; outlines[owner] = o end
+  local _, w, h = reaper.JS_Window_GetClientSize(hwnd)
+  local view = reaper.GetSet_ArrangeView2(0, false, 0, 0)
+  local zoom = reaper.GetHZoomLevel()
+  -- the frames: 4 lines an item, as rects { x, y, w, h }
+  local want, n = {}, 0
+  for _, it in ipairs(items or {}) do
+    if n >= OUTLINE_MAX * 4 then break end
+    if reaper.ValidatePtr2(0, it, "MediaItem*") then
+      local tr = reaper.GetMediaItem_Track(it)
+      local ty = reaper.GetMediaTrackInfo_Value(tr, "I_TCPY")
+      local th = reaper.GetMediaTrackInfo_Value(tr, "I_TCPH")
+      local iy = reaper.GetMediaItemInfo_Value(it, "I_LASTY")
+      local ih = reaper.GetMediaItemInfo_Value(it, "I_LASTH")
+      if th > 0 and ih > 0 then
+        local pos = reaper.GetMediaItemInfo_Value(it, "D_POSITION")
+        local len = reaper.GetMediaItemInfo_Value(it, "D_LENGTH")
+        if ends and ends[it] then len = math.max(0, ends[it] - pos) end
+        local x1 = math.floor((pos - view) * zoom + 0.5)
+        local x2 = math.floor((pos + len - view) * zoom + 0.5)
+        local y1, y2 = math.floor(ty + iy), math.floor(ty + iy + ih)
+        if x2 > 0 and x1 < w and y2 > 0 and y1 < h and x2 - x1 >= 1 then
+          local cx1, cx2 = math.max(x1, -OUTLINE_PX), math.min(x2, w + OUTLINE_PX)
+          local function add(x, y, ww, hh)
+            if ww > 0 and hh > 0 then n = n + 1; want[n] = { x, y, ww, hh } end
+          end
+          add(cx1, y1, cx2 - cx1, OUTLINE_PX)                              -- top
+          add(cx1, y2 - OUTLINE_PX, cx2 - cx1, OUTLINE_PX)                 -- bottom
+          if x1 >= -OUTLINE_PX then add(x1, y1, OUTLINE_PX, y2 - y1) end    -- left
+          if x2 <= w + OUTLINE_PX then add(x2 - OUTLINE_PX, y1, OUTLINE_PX, y2 - y1) end   -- right
+        end
+      end
+    end
+  end
+  -- what changed: put the lines there, take the rest away, redraw only those places
+  local dirty = {}
+  local count = math.max(n, #o.rects)
+  for i = 1, count do
+    local r, old = want[i], o.rects[i]
+    local same = r and old and r[1] == old[1] and r[2] == old[2] and r[3] == old[3] and r[4] == old[4]
+    if not same then
+      if old then dirty[#dirty + 1] = old end
+      if r then
+        local bm = o.bms[i]
+        if not bm then
+          bm = reaper.JS_LICE_CreateBitmap(true, 1, 1)
+          reaper.JS_LICE_Clear(bm, OUTLINE_COLOR)
+          o.bms[i] = bm
+        end
+        reaper.JS_Composite(hwnd, r[1], r[2], r[3], r[4], bm, 0, 0, 1, 1)
+        dirty[#dirty + 1] = r
+      elseif o.bms[i] then
+        reaper.JS_Composite_Unlink(hwnd, o.bms[i])
+      end
+    end
+  end
+  o.rects = want
+  if redrawn then dirty = {} end   -- (the whole arrange view is redrawn this frame anyway)
+  for _, r in ipairs(dirty) do
+    reaper.JS_Window_InvalidateRect(hwnd, r[1] - 1, r[2] - 1, r[1] + r[3] + 1, r[2] + r[4] + 1, false)
+  end
+  if n == 0 and not items then   -- (gone: the bitmaps too)
+    for i, bm in pairs(o.bms) do reaper.JS_Composite_Unlink(hwnd, bm); reaper.JS_LICE_DestroyBitmap(bm) end
+    outlines[owner] = nil
+  end
+end
+
+function C.repair_hover()
+  C.temp_repair()
+  local saved = reaper.GetExtState(NS, "ShuffleHoverSaved")
+  if saved == "" or not reaper.GetMouseModifier then return end
+  for line in saved:gmatch("[^;]+") do
+    local c, f, orig, ours = line:match("^(.-)|(%-?%d+)|(.-)|(.*)$")
+    f = tonumber(f)
+    if c and f and still_ours({ ctx = c, flag = f, orig = orig, applied = ours, set = "0" }) then
+      reaper.SetMouseModifier(c, f, orig)
+    end
+  end
+  reaper.DeleteExtState(NS, "ShuffleHoverSaved", true)
+end
+
+
+-- Cmd held over something that does "all tracks" (a left edge, a Shuffle move zone, a razor
+-- area): REAPER is switched to ripple all tracks, and back afterwards. Shared by the scripts
+-- that do this (ExtState ReaTooled/CmdAllFrom: the ripple mode to go back to;
+-- CmdAllWant_<who>: when each last wanted it), so moving from one of their zones to
+-- another doesn't switch back and forth. ShuffleQuiet keeps Shuffle's tooltip quiet.
+local CMDALL_NS, CMDALL_ALL, CMDALL_PER, CMDALL_OFF = "ReaTooled", 40311, 40310, 40309
+function C.cmdall_set(state, who, want)
+  local now = reaper.time_precise()
+  local tgl = function(id) return reaper.GetToggleCommandState(id) == 1 end
+  if want then
+    reaper.SetExtState(CMDALL_NS, "CmdAllWant_" .. who, tostring(now), false)
+    if not state.forced then
+      if reaper.GetExtState(CMDALL_NS, "CmdAllFrom") == "" then
+        if tgl(CMDALL_ALL) then return end   -- (already all tracks: nothing to switch)
+        reaper.SetExtState(CMDALL_NS, "CmdAllFrom", tostring(tgl(CMDALL_PER) and CMDALL_PER or CMDALL_OFF), false)
+        reaper.SetExtState(CMDALL_NS, "ShuffleQuiet", "1", false)
+        reaper.Main_OnCommand(CMDALL_ALL, 0)
+      end
+      state.forced = true
+    end
+  elseif state.forced then
+    state.forced = false
+    reaper.DeleteExtState(CMDALL_NS, "CmdAllWant_" .. who, false)
+    -- (another script still wants it: that one switches back when it's done)
+    for _, other in ipairs({ "leftedge", "shuffle", "trim" }) do
+      local t = other ~= who and tonumber(reaper.GetExtState(CMDALL_NS, "CmdAllWant_" .. other))
+      if t and now - t < 0.3 then return end
+    end
+    local from = tonumber(reaper.GetExtState(CMDALL_NS, "CmdAllFrom"))
+    reaper.DeleteExtState(CMDALL_NS, "CmdAllFrom", false)
+    if from and tgl(CMDALL_ALL) then reaper.Main_OnCommand(from, 0) end   -- (unless changed meanwhile)
+    reaper.SetExtState(CMDALL_NS, "ShuffleQuiet", tostring(now + 0.5), false)   -- (quiet a moment more)
+  end
+end
+
+return C
+end)()
+-- <<< ReaTooled shared core
+
 local OWNER = "leftedge"
 local ARRANGE = reaper.JS_Window_FindChildByID(reaper.GetMainHwnd(), 1000)
 local EPS = 1e-9
@@ -394,7 +658,7 @@ local function trim_begin(grabbed, mx, plain)
   end
   s_.snaps = snap_targets(grabbed, moving, s_.flags)
   -- (the Trim Tool's yellow outline, on the trimmed items)
-  if tools and tools.outline and reaper.GetExtState("ReaTooled", "CurrentTool") == "trim" then
+  if RTcore and reaper.GetExtState("ReaTooled", "CurrentTool") == "trim" then
     s_.outline = {}
     for _, c in ipairs(s_.trims) do s_.outline[#s_.outline + 1] = c.it end
   end
@@ -572,7 +836,7 @@ local function trim_update(mx)
     else d = m - sh.t0 end
     apply(clamp(d))
   end
-  if sh.outline then tools.outline("leftedge", sh.outline) end   -- (drawn right as the edge moves)
+  if sh.outline then RTcore.outline("leftedge", sh.outline) end   -- (drawn right as the edge moves)
 end
 
 -- As the Trim Tool's own trims and clicks end: 'items' selected (added to the selection if
@@ -610,14 +874,14 @@ local function trim_retarget(mx, mode)
   trim_begin(prev.grabbed, mx, mode == "off")
   for _, k in ipairs({ "started", "grabbed_was_selected", "trim_click", "no_jump", "view_s", "view_e" }) do sh[k] = prev[k] end
   if sh.no_jump then sh.gP = sh.t0 end
-  if prev.outline and not sh.outline then tools.outline("leftedge", nil) end
+  if prev.outline and not sh.outline then RTcore.outline("leftedge", nil) end
   log("ripple mode changed to " .. mode .. ": carrying on from here")
 end
 
 local function trim_end(cancel)
   if not sh then return end
   local top = sh
-  if top.outline then tools.outline("leftedge", nil) end
+  if top.outline then RTcore.outline("leftedge", nil) end
   if cancel then   -- (the whole drag goes back, mode changes and all: latest first)
     local seg = top
     while seg do sh = seg; apply(0); seg = seg.prev end
@@ -666,38 +930,13 @@ end
 ------------------------------------------------------------
 -- Cmd on a left edge: REAPER switched to ripple all tracks, and back afterwards
 ------------------------------------------------------------
--- Shared by the scripts that do this (Shuffle move, the Trim Tool): ExtState CmdAllFrom (the
--- ripple mode to go back to) and CmdAllWant_<who> (when each last wanted it), so moving from
--- one of their zones to another doesn't switch back and forth. ShuffleQuiet keeps Shuffle's
--- tooltip quiet.
-local cmd_forced = false
+-- Shared with Shuffle move and the Trim Tool (the shared core's cmdall_set), so moving from one
+-- of their zones to another doesn't switch back and forth
+local cmd_state = { forced = false }
 local function cmd_force(on)
-  local now = reaper.time_precise()
-  if on then
-    reaper.SetExtState(EXT, "CmdAllWant_leftedge", tostring(now), false)
-    if cmd_forced then return end
-    if reaper.GetExtState(EXT, "CmdAllFrom") == "" then
-      if tg(RIPPLE_ALL) then return end   -- (already all tracks: nothing to switch)
-      reaper.SetExtState(EXT, "CmdAllFrom", tostring(tg(RIPPLE_PER_TRACK) and RIPPLE_PER_TRACK or RIPPLE_OFF), false)
-      reaper.SetExtState(EXT, "ShuffleQuiet", "1", false)
-      reaper.Main_OnCommand(RIPPLE_ALL, 0)
-    end
-    cmd_forced = true
-    log("Cmd on a left edge: ripple all tracks")
-  elseif cmd_forced then
-    cmd_forced = false
-    reaper.DeleteExtState(EXT, "CmdAllWant_leftedge", false)
-    log("Cmd let go: back")
-    -- (another script still wants it: that one switches back when it's done)
-    for _, other in ipairs({ "shuffle", "trim" }) do
-      local t = tonumber(reaper.GetExtState(EXT, "CmdAllWant_" .. other))
-      if t and now - t < 0.3 then return end
-    end
-    local from = tonumber(reaper.GetExtState(EXT, "CmdAllFrom"))
-    reaper.DeleteExtState(EXT, "CmdAllFrom", false)
-    if from and tg(RIPPLE_ALL) then reaper.Main_OnCommand(from, 0) end   -- (unless changed meanwhile)
-    reaper.SetExtState(EXT, "ShuffleQuiet", tostring(now + 0.5), false)   -- (quiet a moment more)
-  end
+  local was = cmd_state.forced
+  RTcore.cmdall_set(cmd_state, "leftedge", on)
+  if was ~= cmd_state.forced then log(cmd_state.forced and "Cmd on a left edge: ripple all tracks" or "Cmd let go: back") end
 end
 
 ------------------------------------------------------------
@@ -718,9 +957,9 @@ local hold = nil      -- the modifier flag switched off (0 plain, 2 Cmd)
 -- (forget: let go without putting back, as another script now owns those settings, e.g. the Trim Tool)
 local function set_hold(flag, forget)
   if hold == flag then return end
-  if hold then for _, ctx in ipairs(HOLD_CTX[hold]) do tools.temp_give(OWNER, ctx, hold, forget) end end
+  if hold then for _, ctx in ipairs(HOLD_CTX[hold]) do RTcore.temp_give(OWNER, ctx, hold, forget) end end
   hold = flag
-  if flag then for _, ctx in ipairs(HOLD_CTX[flag]) do tools.temp_take(OWNER, ctx, flag, "0") end end
+  if flag then for _, ctx in ipairs(HOLD_CTX[flag]) do RTcore.temp_take(OWNER, ctx, flag, "0") end end
 end
 
 -- REAPER's click actions for the modifier held, off while a drag is handed back (REAPER could
@@ -731,17 +970,17 @@ local function clicks_off()
   if click_flag then return end
   local m = reaper.JS_Mouse_GetState(4 | 8 | 16 | 32) or 0
   click_flag = ((m & 8) ~= 0 and 1 or 0) | ((m & 4) ~= 0 and 2 or 0) | ((m & 16) ~= 0 and 4 or 0) | ((m & 32) ~= 0 and 8 or 0)
-  for _, c in ipairs(CLICK_CTX) do tools.temp_take(OWNER .. "-click", c, click_flag, "0") end
+  for _, c in ipairs(CLICK_CTX) do RTcore.temp_take(OWNER .. "-click", c, click_flag, "0") end
 end
 local function clicks_on()
   if not click_flag then return end
-  for _, c in ipairs(CLICK_CTX) do tools.temp_give(OWNER .. "-click", c, click_flag) end
+  for _, c in ipairs(CLICK_CTX) do RTcore.temp_give(OWNER .. "-click", c, click_flag) end
   click_flag, click_back_at = nil, nil
 end
 
 -- (anything left switched by a crash: put back)
-tools.temp_give_all(OWNER)
-tools.temp_give_all(OWNER .. "-click")
+RTcore.temp_give_all(OWNER)
+RTcore.temp_give_all(OWNER .. "-click")
 
 ------------------------------------------------------------
 -- REAPER's own drag (the No action one under the trim): ended just before the mouse reaches
@@ -906,7 +1145,7 @@ local function loop()
     cmd_force(on_edge and mods == 4)
     if on_edge then
       if mods == 0 and active and not trim_tool then hold_flag = 0
-      elseif mods == 4 and (active or cmd_forced) then hold_flag = 2 end   -- (Cmd: REAPER's modifier 2)
+      elseif mods == 4 and (active or cmd_state.forced) then hold_flag = 2 end   -- (Cmd: REAPER's modifier 2)
     end
     set_hold(hold_flag)
   end
