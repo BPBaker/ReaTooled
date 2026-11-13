@@ -1,5 +1,5 @@
 -- @description ReaTooled - Trim Tool (Controller)
--- @version 2.6
+-- @version 2.7
 -- @date 2026.10.30
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
@@ -7,6 +7,7 @@
 --        If already running, simply reapplies Trim modifiers/locks and syncs toolbar.
 --        Does NOT toggle off and does NOT spawn duplicates.
 -- CHANGELOG
+-- v2.7  Pressed together with another tool key (F6+F7, F7+F8, F6+F8), the Smart Tool is chosen, as in Pro Tools (ReaTooled_Tools lib.lua)
 -- v2.6  Cmd+click or Option+click on the toolbar button shows a menu of tool options (Separation, Swap left and right drag) instead of choosing the tool
 -- v2.5  Left click in empty track space deselects all items and moves the edit cursor (as in the other tools), so you can clear the selection and move around
 -- v2.4  Plain edge drags are the Trim Tool's own (the background worker trims the edge with group, selected-item, snap and ripple handling); edge drags with modifier keys stay REAPER's
@@ -31,6 +32,11 @@ do
   local ok, tools = pcall(dofile, dir .. "ReaTooled_Tools lib.lua")
   if ok and type(tools) == "table" and tools.options_click and tools.options_click() then
     tools.tool_options("trim")
+    reaper.defer(function() end)   -- no undo point
+    return
+  end
+  -- (pressed together with another tool key: the Smart Tool)
+  if ok and type(tools) == "table" and tools.smart_chord and tools.smart_chord("trim") then
     reaper.defer(function() end)   -- no undo point
     return
   end

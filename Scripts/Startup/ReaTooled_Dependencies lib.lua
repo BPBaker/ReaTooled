@@ -1,6 +1,6 @@
 --[[
 -- @description ReaTooled - Dependencies library
--- @version 1.1
+-- @version 1.2
 -- @author Brendan Baker
 -- @noindex
 -- @about
@@ -25,6 +25,8 @@
 --   Files already on disk that ReaPack doesn't record (the js_ReaScriptAPI the ReaTooled package
 --   brings, or SWS from its own installer) are installed over by ReaPack, so it records and
 --   updates them too; a file another ReaPack package owns is left alone.
+--   Its working files (the downloaded indexes, the trimmed copies) are deleted when it's done;
+--   only Data/ReaTooled/Install/install_log.txt (the package installer's log) stays.
 --   If REAPER quits or crashes in between, step 4 is done the next time this library runs.
 --   ReaPack_ProcessQueue is called once, to start the install, and never right after one: ReaPack
 --   crashes REAPER if it's called again while an install is winding down.
@@ -409,7 +411,10 @@ end
 function M.install(opts)
   opts = opts or {}
   local report = { installed = {}, failed = {}, already = {} }
+  local made = {}   -- (working files written here, deleted at the end)
   local function done(err)
+    for _, f in ipairs(made) do os.remove(f) end
+    os.remove(WORK .. "/real (repair).xml")
     report.error = err
     if opts.on_done then opts.on_done(report) end
   end
@@ -422,6 +427,7 @@ function M.install(opts)
   local plan, pending = {}, {}
   for gi, g in ipairs(groups(opts.list or M.LIST)) do
     local text = download(g.url, WORK .. "/real " .. gi .. ".xml")
+    made[#made + 1] = WORK .. "/real " .. gi .. ".xml"
     if not text then
       M.log("couldn't download " .. g.url)
       for _, d in ipairs(g.deps) do report.failed[#report.failed + 1] = d.package end
@@ -470,6 +476,7 @@ function M.install(opts)
         out[#out + 1] = "</index>"
         local path = WORK .. "/" .. remote:gsub('[\\/:*?"<>|]', "_") .. ".xml"
         write(path, table.concat(out, "\n"))
+        made[#made + 1] = path
         local before = repo_info(remote)
         plan[#plan + 1] = { remote = remote, url = g.url, before = before, local_url = file_url(path), missing = missing, real = text }
         -- (put back: its own address and settings; a repository added here installs nothing new by itself)

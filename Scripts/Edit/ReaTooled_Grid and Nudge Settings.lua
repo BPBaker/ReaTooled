@@ -1,12 +1,13 @@
 -- @description ReaTooled - Grid & Nudge Settings (Dockable GUI)
--- @version 3.3.8
--- @date 2026.11.06
+-- @version 3.4
+-- @date 2026.11.13
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
 --   # Grid and nudge settings, like Pro Tools' Edit window
 --   Turn the grid on and off, choose its division, and set the nudge amount and unit, in a
---   dockable window or right inside REAPER's Transport bar.
+--   dockable window, right inside REAPER's Transport bar, or in the empty space next to
+--   the ruler (between the main toolbar and the ruler, above the track list).
 --   • Grid: click to toggle the grid; the division menu has frame rate, 1 measure and
 --     musical divisions.
 --   • Nudge: click the value to type one; the unit menu has milliseconds, seconds, measures
@@ -18,6 +19,12 @@
 --     locks it, or puts it back in a window.
 --   • It moves and resizes with the Transport, never covers the transport buttons or time
 --     display, moves to free space when it runs out of room, and hides when there is none.
+--   • Next to the ruler (right-click the window > Put next to the ruler): fills the empty
+--     space between the main toolbar's buttons and the ruler, following it as the track
+--     list or the toolbar changes width. Drag the grip left to make it bigger (it grows to
+--     the left, over the toolbar); the grip menu sets its height and layout there.
+--   • The grip menu: where to show it (Transport, next to the ruler, or a window), its
+--     position, its layout (rows, size, HiDPI), and Close.
 --   Mapped to M. Starts with REAPER, in the window or the Transport, whichever you used last.
 --
 -- @requires
@@ -34,6 +41,29 @@
 --     the label shown when the project's grid can't be matched to a menu entry.
 --
 -- @changelog
+--   v3.4 (2026-11-13)
+--     • New: Put next to the ruler (the window's right-click menu, or the grip menu). It
+--       fills the empty space between the main toolbar's buttons and the ruler (where REAPER
+--       shows the grid division, above the track list), covering it completely, with the
+--       controls kept to the right, by the ruler. It follows that space as the track list or
+--       the toolbar changes width. It fits itself to the space: two rows when there's room,
+--       else one column (Grid, division, Nudge, value), as large as fits. Drag the grip (or
+--       the background) to the left to make it bigger: it grows to the left, over the
+--       toolbar if need be; drag right to make it smaller; Reset size fits the space again.
+--       The grip menu sets its height in the space, the layout (automatic, two rows, one
+--       column) and Lock size. If it can't fit, the window shows instead. Its settings are
+--       kept apart from the Transport's
+--     • The grip menu is reorganised: where to show it first (Transport, next to the ruler,
+--       window, with a tick on the current one), then Position (in the Transport, its
+--       attach points in left-to-right order; then Lock and Reset position), then Layout
+--       (rows, Reset size, HiDPI), then Close
+--   v3.3.9 (2026-11-13)
+--     • Transport: the box finds its spot again when REAPER's Transport is laid out anew without
+--       changing size (a fresh install, the theme loading, a different layout). It measured the
+--       Transport only when its size changed, so a measurement taken before REAPER had finished
+--       laying it out at startup stayed until the window was resized. The layout (where the
+--       time display sits, and the theme) now counts as a change too, and for the first 12
+--       seconds after starting it looks again every 2 seconds while REAPER settles
 --   v3.3.8 (2026-11-06)
 --     • Optional timing report for testing: when "ReaTooled_DEV Interface smoothness
 --       monitor.lua" turns it on, it measures how long each part of the script takes per
@@ -956,6 +986,9 @@ local function DrawFrame()
       if reaper.ImGui_MenuItem(ctx, 'Put in the Transport', nil, false, window_menu_can_transport) then
         queue_action(function() window_menu_choice = "transport" end)
       end
+      if reaper.ImGui_MenuItem(ctx, 'Put next to the ruler', nil, false, window_menu_can_transport) then
+        queue_action(function() window_menu_choice = "ruler" end)
+      end
       reaper.ImGui_EndPopup(ctx)
     end
   end -- if visible
@@ -977,8 +1010,10 @@ end
 --  over the value. The dockable window is the other mode (right-click
 --  its background, or use the grip menu here, to switch).
 -- ===================================================================
-local MODE_KEY = "grid_nudge_mode"        -- "window" (dockable, default) | "transport"
+local MODE_KEY = "grid_nudge_mode"        -- "window" (dockable, default) | "transport" | "ruler"
 local TR_KEY   = "grid_nudge_transport"   -- "anchor,offset,locked,rows,size"
+local RH_KEY   = "grid_nudge_ruler_space"   -- (next to the ruler, v3.4: size = its width in points; rows 0 = automatic, 2, 4 = one column)
+local RH_V_KEY = "grid_nudge_ruler_v"     -- "top" | "middle" | "bottom" (next to the ruler)
 
 local OS_NAME = reaper.GetOS()
 local IS_MAC  = OS_NAME:match("OS") ~= nil
@@ -987,25 +1022,37 @@ local CAN_TRANSPORT = (reaper.JS_Composite and reaper.JS_LICE_CreateBitmap and r
                        and reaper.JS_GDI_CreateFont and reaper.JS_Window_FromPoint) and true or false
 
 local mode = reaper.GetExtState(EXT_SECTION, MODE_KEY)
-if mode ~= "transport" or not CAN_TRANSPORT then mode = "window" end
+if mode == "toolbar" then mode = "ruler" end   -- (3.4's first draft)
+if (mode ~= "transport" and mode ~= "ruler") or not CAN_TRANSPORT then mode = "window" end
+-- (the Transport and the space next to the ruler are drawn the same way: "hosts")
+local function in_host() return mode == "transport" or mode == "ruler" end
+local RV = reaper.GetExtState(EXT_SECTION, RH_V_KEY)
+if RV ~= "top" and RV ~= "middle" then RV = "bottom" end
 
 -- Anchors: 1 = Transport's left edge, 2 = its right edge,
 --          3 = left of the time display, 4 = right of the time display,
 --          5 = left of the selection display
 -- rows: 1 = one row, 2 = Grid above Nudge (like the window). size: row height in
 -- points (nil = fit the Transport)
-local T = { anchor = 2, offset = nil, locked = false, rows = 2, size = nil }
-do
-  local s = reaper.GetExtState(EXT_SECTION, TR_KEY)
+-- (next to the ruler: it fills the space and keeps to its right, by the ruler; size is how
+-- wide it is, in points (nil = the space's width), and it grows to the left over the toolbar;
+-- rows 0 = automatic (two rows when there's room, else one column), 2, or 4 = one column)
+local function T_key() return mode == "ruler" and RH_KEY or TR_KEY end
+local function load_T(key)
+  local t = { anchor = 2, offset = nil, locked = false, rows = (key == RH_KEY) and 0 or 2, size = nil }
+  local s = reaper.GetExtState(EXT_SECTION, key)
   local a, o, l, r, z = s:match("^(%d),([^,]*),(%d),?(%d?),?([^,]*)$")
   if a then
-    T.anchor = tonumber(a) or 2; T.offset = tonumber(o); T.locked = (l == "1")
-    T.rows = tonumber(r) or 2; T.size = tonumber(z)
-    if T.anchor == 6 then T.anchor = 2; T.offset = nil end   -- (3.2.2's right-of-selection, withdrawn)
+    t.anchor = tonumber(a) or 2; t.offset = tonumber(o); t.locked = (l == "1")
+    t.rows = tonumber(r) or t.rows; t.size = tonumber(z)
+    if t.anchor == 6 then t.anchor = 2; t.offset = nil end   -- (3.2.2's right-of-selection, withdrawn)
   end
+  if key == RH_KEY then t.anchor = 2; t.offset = nil end
+  return t
 end
+local T = load_T(T_key())
 local function save_T()
-  reaper.SetExtState(EXT_SECTION, TR_KEY,
+  reaper.SetExtState(EXT_SECTION, T_key(),
     ("%d,%s,%d,%d,%s"):format(T.anchor, T.offset and string.format("%.0f", T.offset) or "", T.locked and 1 or 0,
       T.rows, T.size and string.format("%.1f", T.size) or ""), true)
 end
@@ -1095,53 +1142,214 @@ local function find_transport()
   return found
 end
 
+-- The space next to the ruler (v3.4): REAPER's ruler header, its own window (a direct child of
+-- REAPER's main window), between the main toolbar's buttons and the ruler. REAPER widens it as
+-- the toolbar narrows, so it's always the empty part of that strip.
+local function find_ruler_header()
+  local arr = reaper.new_array({}, 1024)
+  local n = reaper.JS_Window_ArrayAllChild(main_hwnd, arr) or 0
+  local found
+  for i, a in ipairs(arr.table()) do
+    if i > n then break end
+    local h = reaper.JS_Window_HandleFromAddress(a)
+    if h and reaper.JS_Window_GetParent(h) == main_hwnd and reaper.JS_Window_GetClassName(h) == "REAPERRulerHeader" then
+      if found then return nil end   -- more than one: don't guess
+      found = h
+    end
+  end
+  return found
+end
+local function find_host()
+  if mode == "ruler" then return find_ruler_header() end
+  return find_transport()
+end
+
 local INTERCEPTS = { "WM_LBUTTONDOWN", "WM_LBUTTONUP", "WM_LBUTTONDBLCLK", "WM_RBUTTONDOWN", "WM_RBUTTONUP", "WM_SETCURSOR" }
 local CURSOR = {}
 local function cursor_for(id)
-  local cid = (id == "resize") and 32644 or (id == "grip" and not T.locked) and 32646 or 32512
+  local cid = (id == "resize") and 32644
+              or (id == "grip" and not T.locked) and (mode == "ruler" and 32644 or 32646) or 32512
   CURSOR[cid] = CURSOR[cid] or reaper.JS_Mouse_LoadCursor(cid)
   return CURSOR[cid]
 end
 
+-- (the windows it's drawn in: the host, and next to the ruler, the toolbar when it reaches
+-- over it)
+local function host_list()
+  local l = { TR.hwnd }
+  if TR.linked_ext and reaper.ValidatePtr(TR.linked_ext, "HWND*") then l[2] = TR.linked_ext end
+  return l
+end
+
 local function intercepts(on)
-  if not TR.hwnd then TR.intercept = false return end
-  if on and not TR.intercept then
-    for _, m in ipairs(INTERCEPTS) do reaper.JS_WindowMessage_Intercept(TR.hwnd, m, false) end
-    TR.intercept = true
-    for _, m in ipairs(INTERCEPTS) do
-      local ok, _, t = reaper.JS_WindowMessage_Peek(TR.hwnd, m)
-      TR.stamps[m] = ok and t or 0
+  local want = (on and TR.hwnd) and host_list() or {}
+  local cur = TR.icpt or {}
+  local same = #want == #cur
+  if same then for i, h in ipairs(want) do if cur[i] ~= h then same = false end end end
+  if same then TR.intercept = #want > 0 return end
+  for _, h in ipairs(cur) do
+    if reaper.ValidatePtr(h, "HWND*") then
+      for _, m in ipairs(INTERCEPTS) do reaper.JS_WindowMessage_Release(h, m) end
     end
-  elseif not on and TR.intercept then
-    for _, m in ipairs(INTERCEPTS) do reaper.JS_WindowMessage_Release(TR.hwnd, m) end
-    TR.intercept = false
   end
+  TR.icpt = {}
+  for _, h in ipairs(want) do
+    for _, m in ipairs(INTERCEPTS) do reaper.JS_WindowMessage_Intercept(h, m, false) end
+    TR.icpt[#TR.icpt + 1] = h
+    for _, m in ipairs(INTERCEPTS) do
+      local ok, _, t = reaper.JS_WindowMessage_Peek(h, m)
+      TR.stamps[tostring(h) .. m] = ok and t or 0
+    end
+  end
+  TR.intercept = #want > 0
+end
+
+-- (x, y in the host's coordinates; a part left of it is on the toolbar)
+local function ext_point(x, y)
+  local sx, sy = reaper.JS_Window_ClientToScreen(TR.hwnd, x, y)
+  return reaper.JS_Window_ScreenToClient(TR.ext, sx, sy)
 end
 
 local function invalidate(x, y, w, h)
   if TR.hwnd and reaper.ValidatePtr(TR.hwnd, "HWND*") then
     reaper.JS_Window_InvalidateRect(TR.hwnd, x, y, x + w, y + h, false)
+    if x < 0 and TR.ext and reaper.ValidatePtr(TR.ext, "HWND*") then
+      local ex, ey = ext_point(x, y)
+      reaper.JS_Window_InvalidateRect(TR.ext, ex, ey, ex - x, ey + h, false)
+    end
   end
 end
 
+-- (next to the ruler, when the box reaches over the toolbar, each window shows a bitmap of
+-- its own: its part, copied from the one the box is drawn in. A window shown only part of a
+-- bitmap drew it at 1x on Retina screens; shown a whole one, it's sharp)
+local function free_bm(k)
+  if TR[k] then reaper.JS_LICE_DestroyBitmap(TR[k]); TR[k] = nil end
+end
+
+local function unlink_ext()
+  if TR.linked_ext and TR.le and reaper.ValidatePtr(TR.linked_ext, "HWND*") then
+    reaper.JS_Composite_Unlink(TR.linked_ext, TR.le)
+    reaper.JS_Composite_Delay(TR.linked_ext, 0, 0, 0)
+  end
+  TR.linked_ext, TR.le = nil, nil
+  free_bm("bme")
+end
+
+-- (the bitmap the host window shows: the box's own, or its part of it)
+local function unlink_host()
+  if TR.hwnd and TR.lh and reaper.ValidatePtr(TR.hwnd, "HWND*") then
+    reaper.JS_Composite_Unlink(TR.hwnd, TR.lh)
+  end
+  TR.lh = nil
+end
+
+-- (a bitmap of this size, made again if it's another size)
+local function sized_bm(k, w, h)
+  local b = TR[k]
+  if b and reaper.JS_LICE_GetWidth(b) == w and reaper.JS_LICE_GetHeight(b) == h then return b end
+  free_bm(k)
+  TR[k] = reaper.JS_LICE_CreateBitmap(true, w, h)
+  return TR[k]
+end
+
+-- Copies the box's drawing into the two parts (when it's split)
+local function present()
+  if not TR.split or not TR.bm then return end
+  local split = TR.split
+  if TR.bmh then reaper.JS_LICE_Blit(TR.bmh, 0, 0, TR.bm, split, 0, TR.bm_w - split, TR.bm_h, 1, "COPY") end
+  local c = TR.eclip
+  if TR.bme and c then reaper.JS_LICE_Blit(TR.bme, 0, 0, TR.bm, c[1], c[2], c[3], c[4], 1, "COPY") end
+end
+
+-- Shows the bitmap: in the host; next to the ruler, the part that reaches left of the
+-- space goes in the toolbar's window (each window shows its own part of the one bitmap)
+-- (next to the ruler: the whole space and the whole toolbar are redrawn when it moves, so no
+-- piece is left behind where it was; the toolbar's part was left over before, because the
+-- old spot was worked out from where the toolbar is now)
+local function invalidate_all()
+  for _, h in ipairs({ TR.hwnd, TR.linked_ext, TR.ext }) do
+    if h and reaper.ValidatePtr(h, "HWND*") then
+      local _, w, hh = reaper.JS_Window_GetClientSize(h)
+      reaper.JS_Window_InvalidateRect(h, 0, 0, w, hh, false)
+    end
+  end
+end
+
+-- (how soon it's redrawn after REAPER redraws the window: in the Transport a little later,
+-- which is lighter; next to the ruler at once, so both parts change together)
+local function delay(h)
+  if mode == "ruler" then reaper.JS_Composite_Delay(h, 0, 0, 0)
+  else reaper.JS_Composite_Delay(h, 0.03, 0.045, 2) end
+end
+
+local function link()
+  delay(TR.hwnd)
+  if TR.x < 0 and TR.ext and reaper.ValidatePtr(TR.ext, "HWND*") then
+    local split = math.floor(-TR.x * TR.ratio + 0.5)
+    TR.split = split
+    local bh = sized_bm("bmh", TR.bm_w - split, TR.bm_h)
+    if TR.lh ~= bh then unlink_host() end
+    reaper.JS_Composite(TR.hwnd, 0, TR.y, TR.w + TR.x, TR.h, bh, 0, 0, TR.bm_w - split, TR.bm_h)
+    TR.lh = bh
+    if TR.linked_ext and TR.linked_ext ~= TR.ext then unlink_ext() end
+    -- The toolbar's part, cut to the toolbar's own edges: the box is as tall as the ruler
+    -- space, which is a little taller than the toolbar, and a picture reaching past a
+    -- window's edge was drawn at 1x on Retina screens (pixelated as the box grew)
+    local ex, ey = ext_point(TR.x, TR.y)
+    local _, tw, th = reaper.JS_Window_GetClientSize(TR.ext)
+    local x0, y0 = math.max(0, ex), math.max(0, ey)
+    local x1, y1 = math.min(tw, ex - TR.x), math.min(th, ey + TR.h)
+    if x1 > x0 and y1 > y0 then
+      local r = TR.ratio
+      local sx, sy = math.floor((x0 - ex) * r + 0.5), math.floor((y0 - ey) * r + 0.5)
+      local sw, sh = math.floor((x1 - x0) * r + 0.5), math.floor((y1 - y0) * r + 0.5)
+      TR.eclip = { sx, sy, sw, sh }
+      local be = sized_bm("bme", sw, sh)
+      if TR.le and TR.le ~= be and TR.linked_ext then reaper.JS_Composite_Unlink(TR.linked_ext, TR.le) end
+      delay(TR.ext)
+      reaper.JS_Composite(TR.ext, x0, y0, x1 - x0, y1 - y0, be, 0, 0, sw, sh)
+      TR.linked_ext, TR.le = TR.ext, be
+    else
+      unlink_ext()
+    end
+    present()
+  else
+    TR.split = nil
+    unlink_ext()
+    if TR.lh ~= TR.bm then unlink_host() end
+    free_bm("bmh")
+    reaper.JS_Composite(TR.hwnd, TR.x, TR.y, TR.w, TR.h, TR.bm, 0, 0, TR.bm_w, TR.bm_h)
+    TR.lh = TR.bm
+  end
+end
+
+
 local function transport_teardown()
   intercepts(false)
-  if TR.hwnd and TR.bm and TR.linked and reaper.ValidatePtr(TR.hwnd, "HWND*") then
-    reaper.JS_Composite_Unlink(TR.hwnd, TR.bm)
+  if TR.hwnd and TR.linked and reaper.ValidatePtr(TR.hwnd, "HWND*") then
+    unlink_host()
     reaper.JS_Composite_Delay(TR.hwnd, 0, 0, 0)
     invalidate(TR.x, TR.y, TR.w, TR.h)
   end
+  unlink_ext()
+  TR.lh = nil
+  free_bm("bmh")
+  TR.split = nil
   TR.linked = false
   if TR.bm then reaper.JS_LICE_DestroyBitmap(TR.bm); TR.bm = nil end
   if TR.font then reaper.JS_LICE_DestroyFont(TR.font); TR.font = nil end
   TR.hwnd, TR.key, TR.drag, TR.hover = nil, nil, nil, nil
+  TR.ext, TR.ext_min, TR.fit_key, TR.fit, TR.ext_sig = nil, 0, nil, nil, nil
   edit = nil
 end
 
 local function set_mode(m)
   if m == mode then return end
-  if mode == "transport" then transport_teardown() end
+  if in_host() then transport_teardown() end
   mode = m
+  T = load_T(T_key())   -- (the Transport and the ruler space keep their own position and size)
+  TR.last_find, TR.hidden, TR.variant = 0, false, 1
   reaper.SetExtState(EXT_SECTION, MODE_KEY, m, true)
 end
 
@@ -1297,6 +1505,23 @@ local close_requested = false
 -- asked REAPER about thousands of points at once: everything in REAPER stuttered.)
 local sel_cache = { key = nil, t = 0, l = nil, r = nil, y = nil }
 
+-- The Transport's layout, beyond its size: where the time display sits and the theme in use
+-- (one lookup). Plus, for the first seconds after starting, a step every 2 seconds: REAPER may
+-- still be laying the Transport out (a fresh install, the theme loading), and a measurement
+-- taken then would otherwise stay until the window is resized.
+local LAYOUT_T0 = reaper.time_precise()
+local function layout_key()
+  local st = reaper.JS_Window_FindChildByID(TR.hwnd, 1010)
+  local pos = "-"
+  if st then
+    local _, l, t, r = reaper.JS_Window_GetRect(st)
+    pos = tostring(reaper.JS_Window_ScreenToClient(TR.hwnd, l, t)) .. ":" .. tostring(reaper.JS_Window_ScreenToClient(TR.hwnd, r, t))
+  end
+  local since = reaper.time_precise() - LAYOUT_T0
+  local settling = since < 12 and tostring(math.floor(since / 2)) or "s"
+  return pos .. "|" .. (reaper.GetLastColorThemeFile and reaper.GetLastColorThemeFile() or "") .. "|" .. settling
+end
+
 local function sel_at(cx, cy)
   local sx, sy = reaper.JS_Window_ClientToScreen(TR.hwnd, cx, cy)
   local _, thing = reaper.GetThingFromPoint(sx, sy)
@@ -1342,7 +1567,7 @@ end
 
 local function selection_edges()
   local _, ww, wh = reaper.JS_Window_GetClientSize(TR.hwnd)
-  local key = ww .. "x" .. wh
+  local key = ww .. "x" .. wh .. "|" .. layout_key()
   local now = reaper.time_precise()
   -- (no selection display at this size: don't look again until the size changes, or for
   -- 5 seconds; before, the whole Transport was searched again on every frame)
@@ -1376,6 +1601,7 @@ end
 
 local function anchor_base(a)
   local _, ww = reaper.JS_Window_GetClientSize(TR.hwnd)
+  if mode == "ruler" then return T.anchor == 1 and 0 or ww end   -- (next to the ruler: a side)
   if a == 1 then return 0 end
   if a == 2 then return ww end
   if a == 5 or a == 6 then
@@ -1394,38 +1620,69 @@ local function anchor_base(a)
 end
 
 local function settings_menu()
+  local in_ruler = mode == "ruler"
   local function attach(a)
     return function()
       T.anchor = a
       -- moves next to that edge (then drag the grip to fine-tune; it stays that far from it)
       local gap = math.floor(6 * TR.measure + 0.5)
-      if a == 1 or a == 4 or a == 6 then T.offset = gap else T.offset = -(TR.w + gap) end
+      if a == 1 or a == 4 then T.offset = gap else T.offset = -(TR.w + gap) end
       save_T()
     end
   end
+  local function vert(v) return function() RV = v; reaper.SetExtState(EXT_SECTION, RH_V_KEY, v, true); TR.fit_key = nil end end
+  local function dpi(v) return function() hidpi = v; reaper.SetExtState(EXT_SECTION, "grid_nudge_hidpi", v, true) end end
+  local function rows(n) return function() T.rows = n; save_T(); TR.fit_key = nil end end
+  local position, layout_items
+  if in_ruler then
+    position = {
+      { title = "Top",    checked = RV == "top",    run = vert("top") },
+      { title = "Middle", checked = RV == "middle", run = vert("middle") },
+      { title = "Bottom", checked = RV == "bottom", run = vert("bottom") },
+      { separator = true },
+      { title = "Lock size", checked = T.locked, run = function() T.locked = not T.locked; save_T() end },
+    }
+    layout_items = {
+      { title = "Automatic (two rows when there's room)", checked = T.rows ~= 2 and T.rows ~= 4, run = rows(0) },
+      { title = "Two rows (Grid above Nudge)", checked = T.rows == 2, run = rows(2) },
+      { title = "One column",                  checked = T.rows == 4, run = rows(4) },
+      { separator = true },
+      { title = "Reset size (fit the space)", grayed = T.size == nil,
+        run = function() T.size = nil; save_T(); TR.fit_key = nil end },
+    }
+  else
+    position = {   -- (in the order they usually sit, left to right)
+      { title = "Left edge of the Transport",    checked = T.anchor == 1, run = attach(1) },
+      { title = "Left of the time display",      checked = T.anchor == 3, run = attach(3) },
+      { title = "Right of the time display",     checked = T.anchor == 4, run = attach(4) },
+      { title = "Left of the selection display", checked = T.anchor == 5, run = attach(5) },
+      { title = "Right edge of the Transport",   checked = T.anchor == 2, run = attach(2) },
+      { separator = true },
+      { title = "Lock position", checked = T.locked, run = function() T.locked = not T.locked; save_T() end },
+      { title = "Reset position", run = function() T.anchor = 2; T.offset = nil; save_T() end },
+    }
+    layout_items = {
+      { title = "Two rows (Grid above Nudge)", checked = T.rows == 2, run = rows(2) },
+      { title = "One row",                     checked = T.rows == 1, run = rows(1) },
+      { separator = true },
+      { title = "Reset size (fit the Transport)", grayed = T.size == nil, run = function() T.size = nil; save_T() end },
+    }
+  end
+  layout_items[#layout_items + 1] = { separator = true }
+  layout_items[#layout_items + 1] = { title = "HiDPI (Retina)", sub = {
+    { title = "Automatic" .. (IS_MAC and (" (now " .. (retina >= 2 and "on" or "off") .. ")") or ""),
+      checked = hidpi == "auto", run = dpi("auto") },
+    { title = "Always on",  checked = hidpi == "on",  run = dpi("on") },
+    { title = "Always off", checked = hidpi == "off", run = dpi("off") },
+  } }
   show_menu({
-    { title = "Show as a window (dockable)", run = function() set_mode("window") end },
+    { title = "Show Grid and Nudge in:", grayed = true },
+    { title = "The Transport",               checked = mode == "transport", run = function() set_mode("transport") end },
+    { title = "The space next to the ruler", checked = in_ruler,            run = function() set_mode("ruler") end },
+    { title = "A window (dockable)",                                          run = function() set_mode("window") end },
     { separator = true },
-    { title = "Lock position", checked = T.locked, run = function() T.locked = not T.locked; save_T() end },
-    { title = "Attach to", sub = {
-      { title = "Left edge of the Transport",   checked = T.anchor == 1, run = attach(1) },
-      { title = "Right edge of the Transport",  checked = T.anchor == 2, run = attach(2) },
-      { title = "Left of the time display",     checked = T.anchor == 3, run = attach(3) },
-      { title = "Right of the time display",    checked = T.anchor == 4, run = attach(4) },
-      { title = "Left of the selection display",  checked = T.anchor == 5, run = attach(5) },
-    } },
-    { title = "Grid above Nudge (two rows)", checked = T.rows == 2, run = function() T.rows = 2; save_T() end },
-    { title = "Grid and Nudge in one row",   checked = T.rows == 1, run = function() T.rows = 1; save_T() end },
-    { separator = true },
-    { title = "HiDPI (Retina)", sub = {
-      { title = "Automatic" .. (IS_MAC and (" (now " .. (retina >= 2 and "on" or "off") .. ")") or ""),
-        checked = hidpi == "auto", run = function() hidpi = "auto"; reaper.SetExtState(EXT_SECTION, "grid_nudge_hidpi", hidpi, true) end },
-      { title = "Always on",  checked = hidpi == "on",  run = function() hidpi = "on";  reaper.SetExtState(EXT_SECTION, "grid_nudge_hidpi", hidpi, true) end },
-      { title = "Always off", checked = hidpi == "off", run = function() hidpi = "off"; reaper.SetExtState(EXT_SECTION, "grid_nudge_hidpi", hidpi, true) end },
-    } },
-    { separator = true },
-    { title = "Reset position", run = function() T.anchor = 2; T.offset = nil; save_T() end },
-    { title = "Reset size (fit the Transport)", grayed = T.size == nil, run = function() T.size = nil; save_T() end },
+    { title = in_ruler and "Height in the space" or "Position", sub = position },
+    { title = "Layout", sub = layout_items },
     { separator = true },
     { title = "Close Grid and Nudge", run = function() close_requested = true end },
   })
@@ -1437,17 +1694,34 @@ local function text_w(s)
   return (gfx.measurestr(s))
 end
 
+-- (next to the ruler: its side, plus however far the grip has moved it from there; it keeps
+-- to that side whatever its size)
+local function ruler_x(ww)
+  local inset, off = TR.inset or 0, T.offset or 0
+  local x = (T.anchor == 1) and (inset + off) or (ww - TR.w - inset + off)
+  return math.max(0, math.min(ww - TR.w, x))
+end
+-- (next to the ruler: the box's height in the space, from the grip menu)
+local function ruler_y(wh)
+  local inset = TR.inset or 0
+  local y = (RV == "top" and inset) or (RV == "middle" and math.floor((wh - TR.h) / 2)) or (wh - TR.h - inset)
+  return math.max(0, math.min(wh - TR.h, y))
+end
+
 local layout_sig = nil
 local function layout()
   local _, ww, wh = reaper.JS_Window_GetClientSize(TR.hwnd)
   local measure, draw = transport_scale()
   -- (the sizes only change with these: skip the text measuring otherwise)
-  local sig = table.concat({ ww, wh, measure, draw, T.rows, tostring(T.size), grid_index,
-                             nudge_text(nudge_val, unit_index), TR.shrink, tostring(TR.compact) }, "|")
+  local sig = table.concat({ mode, ww, wh, measure, draw, T.rows, tostring(T.size), grid_index,
+                             nudge_text(nudge_val, unit_index), TR.shrink, tostring(TR.compact), tostring(TR.stack),
+                             tostring(TR.rows_used), RV }, "|")
   TR.ww, TR.wh = ww, wh
   if sig == layout_sig and TR.font then
+    if mode == "ruler" then return end   -- (next to the ruler, nothing else moves it)
     local bx = anchor_base(T.anchor) + (T.offset or 0)
     TR.x = math.max(0, math.min(ww - TR.w, bx))
+    if mode == "ruler" then TR.x, TR.y = ruler_x(ww), ruler_y(wh) end
     return
   end
   layout_sig = sig
@@ -1456,8 +1730,21 @@ local function layout()
   -- row height (points/pixels of the Transport): the saved size, or the full height
   local fit = math.floor(wh / rows)
   local row_h = T.size and math.floor(T.size * measure + 0.5) or fit
-  row_h = math.max(math.floor(9 * measure + 0.5), math.min(row_h, fit))
-  row_h = math.max(math.floor(9 * measure + 0.5), math.floor(row_h * TR.shrink + 0.5))   -- (made smaller to fit)
+  TR.inset = math.floor(3 * measure + 0.5)
+  if mode == "ruler" then
+    -- (next to the ruler: two rows, or one column (Grid, division, Nudge, value); the
+    -- rows as tall as the space allows, up to about the Transport's, made smaller
+    -- (TR.shrink) until it's as wide as it should be: fit_box tries the sizes)
+    rows = TR.rows_used or 4
+    TR.stack = rows == 4
+    fit = math.max(1, math.floor((wh - TR.inset * 2) / rows))
+    row_h = math.min(fit, math.floor(18 * measure + 0.5))
+    row_h = math.max(math.floor(6 * measure + 0.5), math.floor(row_h * TR.shrink + 0.5))
+  else
+    TR.stack = false
+    row_h = math.max(math.floor(9 * measure + 0.5), math.min(row_h, fit))
+    row_h = math.max(math.floor(9 * measure + 0.5), math.floor(row_h * TR.shrink + 0.5))   -- (made smaller to fit)
+  end
   local rb = math.floor(row_h * TR.ratio + 0.5)   -- row height in bitmap pixels
   local font_px = math.max(6, math.floor(rb * 0.8 + 0.5))   -- (about the Transport's own text size)
   if font_px ~= TR.font_px or not TR.font then
@@ -1480,7 +1767,24 @@ local function layout()
   local segs = {}
   local function add(id, x, y, w, h) segs[#segs + 1] = { id = id, x = x, y = y, w = w, h = h } end
   local bm_w
-  if rows == 1 then
+  if TR.stack then
+    -- one column, for the narrow space next to the ruler: Grid / division / Nudge / value,
+    -- with a thin grip down the left
+    local sp = math.max(1, math.floor(rb * 0.15 + 0.5))
+    local sgrip = math.max(2, math.floor(rb * 0.3 + 0.5))
+    local sarrow = math.floor(rb * 0.45 + 0.5)
+    local fw = math.max(text_w(GL) + sp * 2, text_w(NL) + sp * 2,
+                        text_w(grid_options[grid_index] or "1/16") + sp * 2 + sarrow,
+                        text_w(nudge_text(nudge_val, unit_index)) + sp * 2 + sarrow)
+    add("grip", 0, 0, sgrip, rb * 4)
+    local x0 = sgrip
+    add("grid", x0, 0, fw, rb)
+    add("div", x0, rb, fw - sarrow, rb); add("divarrow", x0 + fw - sarrow, rb, sarrow, rb)
+    add("sep", x0, rb * 2 - 1, fw, 1)
+    add("nudge", x0, rb * 2, fw, rb)
+    add("value", x0, rb * 3, fw - sarrow, rb); add("arrow", x0 + fw - sarrow, rb * 3, sarrow, rb)
+    bm_w = x0 + fw + sp
+  elseif rows == 1 then
     local x = 0
     local function nxt(id, w) add(id, x, 0, w, rb); x = x + w end
     nxt("grip", grip); nxt("grid", text_w(GL) + pad * 2)
@@ -1503,29 +1807,55 @@ local function layout()
   end
   -- The background fills the Transport's full height; the rows sit in the middle
   local content_h = rb * rows
-  local bm_h = math.floor(wh * TR.ratio + 0.5)
+  if mode == "ruler" then
+    -- The background fills the whole space (and reaches left over the toolbar when the
+    -- box is wider than the space); the controls keep to its right, by the ruler, at the
+    -- height chosen in the grip menu
+    local m = TR.inset
+    local cw = math.ceil(bm_w / TR.ratio - 0.001)
+    local ch = math.ceil(content_h / TR.ratio - 0.001)
+    TR.cw, TR.ch = cw, ch
+    local L = math.min(0, ww - cw - m)   -- (no margin on the ruler side: right against it)
+    TR.x, TR.y, TR.w, TR.h = L, 0, ww - L, wh
+    TR.bm_w, TR.bm_h = math.floor(TR.w * TR.ratio + 0.5), math.floor(TR.h * TR.ratio + 0.5)
+    local top = (RV == "top" and m) or (RV == "middle" and math.floor((wh - ch) / 2)) or (wh - ch - m)
+    top = math.max(0, math.min(wh - ch, top))
+    local dx = math.floor((ww - cw - L) * TR.ratio + 0.5)
+    local dy = math.floor(top * TR.ratio + 0.5)
+    for _, sg in ipairs(segs) do sg.x, sg.y = sg.x + dx, sg.y + dy end
+    TR.segs = segs
+    return
+  end
+  local host_h = wh
+  if mode == "ruler" then
+    host_h = math.min(wh, math.ceil(content_h / TR.ratio - 0.001) + 2 * math.floor(2 * measure + 0.5))
+  end
+  local bm_h = math.floor(host_h * TR.ratio + 0.5)
   local top = math.max(0, math.floor((bm_h - content_h) / 2))
   for _, sg in ipairs(segs) do sg.y = sg.y + top end
   TR.segs = segs
   -- The bitmap must be exactly (size on screen) x (pixel density): any other size is
   -- stretched when it's shown, which is what made it look pixelated (3.1.1-3.1.3)
   TR.w = math.ceil(bm_w / TR.ratio - 0.001)
-  TR.h = wh
+  TR.h = host_h
   bm_w = math.floor(TR.w * TR.ratio + 0.5)
   bm_h = math.floor(TR.h * TR.ratio + 0.5)
   TR.bm_w, TR.bm_h = bm_w, bm_h
   -- position
-  if not T.offset then T.offset = -(TR.w + math.floor(8 * measure + 0.5)); T.anchor = 2 end
-  local bx = anchor_base(T.anchor) + T.offset
+  if not T.offset and mode ~= "ruler" then
+    T.offset = -(TR.w + (mode == "ruler" and TR.inset or math.floor(8 * measure + 0.5))); T.anchor = 2
+  end
+  local bx = anchor_base(T.anchor) + (T.offset or 0)
   TR.x = math.max(0, math.min(ww - TR.w, bx))
-  TR.y = 0
+  TR.y = mode == "ruler" and ruler_y(wh) or 0
+  if mode == "ruler" then TR.x = ruler_x(ww) end
 end
 
 local function seg_at(cx, cy)
   if cx < TR.x or cy < TR.y or cx >= TR.x + TR.w or cy >= TR.y + TR.h then return nil end
   local px, py = (cx - TR.x) * TR.ratio, (cy - TR.y) * TR.ratio
   -- the right edge resizes (unless locked)
-  if not T.locked and (cx - TR.x) >= TR.w - math.floor(6 * TR.measure + 0.5) then return "resize" end
+  if not T.locked and mode ~= "ruler" and (cx - TR.x) >= TR.w - math.floor(6 * TR.measure + 0.5) then return "resize" end
   for _, s in ipairs(TR.segs) do
     if s.id ~= "sep" and px >= s.x and px < s.x + s.w and py >= s.y and py < s.y + s.h then return s.id end
   end
@@ -1566,7 +1896,7 @@ local function draw()
       if not T.locked then
         local dot = math.max(1, math.floor(TR.row_b * 0.08))
         local gx = s.x + math.floor((s.w - dot * 3) / 2)
-        local n = T.rows == 1 and 3 or 5
+        local n = (T.rows == 1 and not TR.stack) and 3 or 5
         local gy0 = math.floor(s.y + s.h / 2 - dot * (n - 0.5))
         for row = 0, n - 1 do
           local gy = gy0 + row * dot * 2
@@ -1584,7 +1914,7 @@ local function draw()
       if hovered("divarrow") then box(s, COL.hover) end
       tri(s, COL.text)
     elseif s.id == "sep" then
-      if T.rows == 1 then
+      if T.rows == 1 and not TR.stack then
         FR(bm, s.x + math.floor(s.w / 2), s.y + math.floor(s.h * 0.2), math.max(1, math.floor(TR.ratio)), s.h - math.floor(s.h * 0.4), COL.sep, 1, "COPY")
       else
         FR(bm, s.x, s.y, s.w, math.max(1, math.floor(TR.ratio)), COL.sep, 1, "COPY")
@@ -1679,7 +2009,7 @@ local room = { key = nil, spans = {}, fine = false, changed = 0 }
 local function protected_spans()
   local ww, wh = TR.ww, TR.wh
   local centred = reaper.GetToggleCommandState(40533)
-  local key = table.concat({ ww, wh, centred }, "|")
+  local key = table.concat({ ww, wh, centred, layout_key() }, "|")
   local now = reaper.time_precise()
   if key ~= room.key then room.key, room.fine, room.changed = key, false, now
   elseif room.fine or now - room.changed < 0.25 then return room.spans end
@@ -1762,8 +2092,55 @@ local function find_spot(want, w, extra)
 end
 
 -- The largest form of the box that has room (variants in order), and where
+local RULER_VARIANTS = {   -- { one column, "G"/"N" labels, size }
+  { false, false, 1 }, { true, false, 1 }, { true, false, 0.85 }, { true, true, 0.85 },
+  { true, true, 0.7 }, { true, true, 0.6 },
+}
 local VARIANTS = { { 1, false } }   -- (3.3 also tried smaller versions; that looked unsteady)
 local function fit_box()
+  if mode == "ruler" then
+    -- (the space is empty, so nothing to avoid.) Its width: the one you've dragged it to,
+    -- else the space's. The largest size that fits that width, as two rows or one column
+    -- (Automatic: whichever is bigger); else the window shows. Worked out again only when
+    -- something it depends on changes
+    local measure = transport_scale()
+    local m = math.floor(3 * measure + 0.5)
+    local _, ww, wh = reaper.JS_Window_GetClientSize(TR.hwnd)
+    TR.ww, TR.wh = ww, wh
+    local W_max = ww - (TR.ext_min or 0) - m
+    local W = math.min(T.size or (ww - m), W_max)
+    TR.W, TR.W_max = W, W_max
+    local key = table.concat({ ww, wh, W, W_max, T.rows, measure, grid_index, nudge_text(nudge_val, unit_index),
+                               RV, hidpi, retina }, "|")
+    if key ~= TR.fit_key then
+      TR.fit_key, TR.fit = key, nil
+      local orders = (T.rows == 2 and { 2 }) or (T.rows == 4 and { 4 }) or { 2, 4 }
+      for _, r in ipairs(orders) do
+        for sh = 100, 30, -5 do
+          TR.rows_used, TR.shrink, TR.compact = r, sh / 100, (r == 4 and sh < 60)
+          layout()
+          if TR.cw <= W and TR.ch <= wh then
+            if not TR.fit or TR.row_b > TR.fit[4] then TR.fit = { r, sh / 100, TR.compact, TR.row_b } end
+            break
+          end
+        end
+      end
+    end
+    if not TR.fit then TR.hidden = true return false end
+    TR.rows_used, TR.shrink, TR.compact = TR.fit[1], TR.fit[2], TR.fit[3]
+    layout()
+    TR.variant, TR.hidden = 1, false
+    -- (DEV: "ReaTooled_DEV Grid and Nudge sharpness report.lua" turns this on)
+    if reaper.GetExtState(EXT_SECTION, "grid_nudge_debug") == "1" then
+      local m2, d2 = transport_scale()
+      local line = string.format("ruler: retina %s hidpi %s measure %s draw %s ratio %s | space %dx%d | box x%d y%d %dx%d pt, bitmap %dx%d px | rows %d shrink %.2f font %d px row %d px | toolbar part (px x,y,w,h) %s",
+        tostring(retina), hidpi, tostring(m2), tostring(d2), tostring(TR.ratio), ww, wh, TR.x, TR.y, TR.w, TR.h,
+        TR.bm_w, TR.bm_h, TR.rows_used or -1, TR.shrink or -1, TR.font_px or -1, TR.row_b or -1, (TR.eclip and TR.split) and table.concat(TR.eclip, ",") or "none")
+      if line ~= TR.debug_line then TR.debug_line = line; reaper.ShowConsoleMsg(line .. "\n") end
+    end
+    return true
+  end
+  TR.stack = false
   local cur = TR.variant or 1
   for i, v in ipairs(VARIANTS) do
     TR.shrink, TR.compact = v[1], v[2]
@@ -1794,9 +2171,13 @@ local function click(id, right)
 end
 
 local function peek(m)
-  local ok, _, t = reaper.JS_WindowMessage_Peek(TR.hwnd, m)
-  if ok and t ~= TR.stamps[m] then TR.stamps[m] = t; return true end
-  return false
+  local hit = false
+  for _, h in ipairs(TR.icpt or {}) do
+    local ok, _, t = reaper.JS_WindowMessage_Peek(h, m)
+    local k = tostring(h) .. m
+    if ok and t ~= TR.stamps[k] then TR.stamps[k] = t; hit = true end
+  end
+  return hit
 end
 
 -- One pass. False if the Transport can't be used (hidden, not found): the
@@ -1807,7 +2188,7 @@ local function transport_frame()
     if TR.hwnd then transport_teardown() end
     if now - TR.last_find < 0.5 then return false end
     TR.last_find = now
-    TR.hwnd = find_transport()
+    TR.hwnd = find_host()
     if not TR.hwnd then return false end
     check_retina(TR.hwnd)
     TR.key, TR.linked = nil, false
@@ -1818,49 +2199,66 @@ local function transport_frame()
   end
 
   if palette_changed() then load_col(); TR.key = nil end
+  if mode == "ruler" then
+    -- (the window just left of the space, if it's a toolbar: the box can reach over it)
+    local _, l, t, r, b = reaper.JS_Window_GetRect(TR.hwnd)
+    local h = reaper.JS_Window_FromPoint(l - 2, math.floor((t + b) / 2))
+    local title = h and h ~= main_hwnd and h ~= TR.hwnd and (reaper.JS_Window_GetTitle(h) or ""):lower() or ""
+    if title:find("toolbar", 1, true) then
+      local _, el, et = reaper.JS_Window_GetRect(h)
+      TR.ext, TR.ext_min = h, math.min(0, (reaper.JS_Window_ScreenToClient(TR.hwnd, el, et)))
+    else
+      TR.ext, TR.ext_min = nil, 0
+    end
+  end
   local old_x, old_y, old_w, old_h = TR.x, TR.y, TR.w, TR.h
   local was_hidden = TR.hidden
-  if TR.drag then layout() else fit_box() end   -- (while you drag it, it goes where you put it)
+  if TR.drag and mode ~= "ruler" then layout() else fit_box() end   -- (while you drag it, it goes where you put it)
   if TR.hidden then
     -- no room anywhere: out of the way until there is
     if not was_hidden then
       intercepts(false)
       if TR.bm and TR.linked then
-        reaper.JS_Composite_Unlink(TR.hwnd, TR.bm)
+        unlink_host()
         invalidate(old_x, old_y, old_w, old_h)
       end
+      if mode == "ruler" then invalidate_all() end
+      unlink_ext()
+      TR.ext_sig = nil
       TR.linked, TR.hover = false, nil
     end
-    return true
+    -- (next to the ruler: the window shows instead until there's room, so it never just vanishes)
+    return mode ~= "ruler"
   end
 
   -- mouse
   local pm = PROF.on and reaper.time_precise()
   local mx, my = reaper.GetMousePosition()
   local cx, cy = reaper.JS_Window_ScreenToClient(TR.hwnd, mx, my)
-  local over = reaper.JS_Window_FromPoint(mx, my) == TR.hwnd
+  local under = reaper.JS_Window_FromPoint(mx, my)
+  local over = under == TR.hwnd or (TR.linked_ext ~= nil and under == TR.linked_ext)
   local id = over and seg_at(cx, cy) or nil
   if TR.drag then
     if reaper.JS_Mouse_GetState(1) == 1 then
       local dx = cx - TR.drag.cx
       if math.abs(dx) > 2 then TR.drag.moved = true end
       if TR.drag.moved then
-        if TR.drag.resize then
+        if TR.drag.ruler then
+          -- (next to the ruler: wider to the left, narrower to the right; it stays by the ruler)
+          T.size = math.max(16, math.min(TR.W_max or TR.drag.W, TR.drag.W - dx))
+        elseif TR.drag.resize then
           -- the row height follows the width (it keeps its proportions)
           local w = math.max(10, TR.drag.w + dx)
           T.size = math.max(9, TR.drag.size * w / TR.drag.w)
         else
           T.offset = TR.drag.off + dx
         end
-        layout()
+        if mode == "ruler" then fit_box() else layout() end
       end
     else
-      local moved, was_resize = TR.drag.moved, TR.drag.resize
+      local moved, was_resize = TR.drag.moved, TR.drag.resize and not TR.drag.ruler
       TR.drag = nil
-      for _, m in ipairs(INTERCEPTS) do   -- (this release is handled here, not again below)
-        local ok, _, t = reaper.JS_WindowMessage_Peek(TR.hwnd, m)
-        if ok then TR.stamps[m] = t end
-      end
+      for _, m in ipairs(INTERCEPTS) do peek(m) end   -- (this release is handled here, not again below)
       if moved then save_T() elseif not was_resize then click("grip") end
     end
   end
@@ -1871,7 +2269,9 @@ local function transport_frame()
     local lup = peek("WM_LBUTTONUP")
     peek("WM_RBUTTONDOWN")
     local rup = peek("WM_RBUTTONUP")
-    if ldown and id == "grip" and not T.locked then
+    if ldown and id == "grip" and not T.locked and mode == "ruler" then
+      TR.drag = { cx = cx, ruler = true, W = TR.W or TR.cw }   -- (next to the ruler: the grip sizes it)
+    elseif ldown and id == "grip" and not T.locked then
       TR.drag = { cx = cx, off = T.offset or 0 }
     elseif ldown and id == "resize" then
       TR.drag = { cx = cx, resize = true, w = TR.w, size = TR.row_b / TR.ratio / TR.measure }
@@ -1881,6 +2281,7 @@ local function transport_frame()
       click(id, true)
     end
   end
+  if not TR.hwnd or not in_host() then return true end   -- (a menu choice moved it: next frame)
   if id ~= TR.hover then TR.hover = id end
   if TR.intercept and reaper.JS_Mouse_SetCursor then   -- (REAPER's own cursor is held back while over it)
     reaper.JS_Mouse_SetCursor(cursor_for(TR.drag and (TR.drag.resize and "resize" or "grip") or id))
@@ -1892,16 +2293,24 @@ local function transport_frame()
                     or TR.bm_h ~= (TR.bm and reaper.JS_LICE_GetHeight(TR.bm) or -1)
   if not TR.bm or size_changed then
     if TR.bm then
-      if TR.linked then reaper.JS_Composite_Unlink(TR.hwnd, TR.bm) end
+      if TR.linked then unlink_host() end
+      unlink_ext()
       reaper.JS_LICE_DestroyBitmap(TR.bm)
     end
     TR.bm = reaper.JS_LICE_CreateBitmap(true, TR.bm_w, TR.bm_h)
     TR.linked, TR.key = false, nil
   end
-  if not TR.linked or TR.x ~= old_x or TR.y ~= old_y or TR.w ~= old_w or TR.h ~= old_h then
-    if TR.linked then invalidate(old_x, old_y, old_w, old_h) end
-    reaper.JS_Composite_Delay(TR.hwnd, 0.03, 0.045, 2)
-    reaper.JS_Composite(TR.hwnd, TR.x, TR.y, TR.w, TR.h, TR.bm, 0, 0, TR.bm_w, TR.bm_h)
+  -- (where the toolbar is compared with where it was when the box was last placed on it: it
+  -- changes width when the panel does, and its part of the box has to move with it. Compared
+  -- within one frame, as before, it never looked changed, so that part was left behind)
+  local new_ext = TR.ext and table.concat({ tostring(TR.ext), ext_point(0, 0) }, ",") or ""
+  if not TR.linked or TR.x ~= old_x or TR.y ~= old_y or TR.w ~= old_w or TR.h ~= old_h or new_ext ~= (TR.ext_sig or "") then
+    if TR.linked then
+      if mode == "ruler" then invalidate_all() else invalidate(old_x, old_y, old_w, old_h) end
+    end
+    link()
+    TR.ext_sig = new_ext
+    if mode == "ruler" then invalidate_all() end
     TR.linked, TR.key = true, nil
     if PROF.on then PROF.add("re-attach to Transport (moved/resized)", 0) end
   end
@@ -1913,6 +2322,7 @@ local function transport_frame()
   if key ~= TR.key then
     TR.key = key
     draw()
+    present()
     invalidate(TR.x, TR.y, TR.w, TR.h)
   end
   return true
@@ -1944,7 +2354,7 @@ local function Main()
   -- Dead context (sleep/wake, monitor change, GPU reset, GC)?
   -- Replace it BEFORE any ImGui call touches it. Window position and
   -- dock state are restored from ReaImGui's ini for the same name.
-  if mode ~= "transport" and not context_is_valid() then   -- (Transport mode uses it only for the typed value)
+  if not in_host() and not context_is_valid() then   -- (Transport mode uses it only for the typed value)
     create_context()
   end
 
@@ -1956,7 +2366,7 @@ local function Main()
 
   if close_requested then return end   -- (Close, from the Transport menu; atexit cleans up)
 
-  if mode == "transport" then
+  if in_host() then
     local ok, handled = pcall(transport_frame)
     if not ok then
       reaper.ShowConsoleMsg("ReaTooled Grid & Nudge (Transport): " .. tostring(handled) .. "\n")
@@ -1979,9 +2389,10 @@ local function Main()
   -- (in Transport mode the context may have gone unused long enough to be released)
   if not context_is_valid() then create_context() end
   local ok, result = pcall(DrawFrame)
-  if window_menu_choice == "transport" then
+  if window_menu_choice then
+    local m = window_menu_choice
     window_menu_choice = nil
-    set_mode("transport")
+    set_mode(m)
   end
 
   if ok then

@@ -1,11 +1,12 @@
 -- @description ReaTooled - Razor Select Tool (Selector Tool)
--- @version 1.8.1
+-- @version 1.9
 -- @date 2026.10.30
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
 --   # This script loads a set of mouse modifiers focusing on creating razor edit selection, similar to ProTools' "Selector Tool."
 -- CHANGELOG
+-- # v1.9 Pressed together with another tool key (F6+F7, F7+F8, F6+F8), the Smart Tool is chosen, as in Pro Tools (ReaTooled_Tools lib.lua)
 -- # v1.8 Cmd+click or Option+click on the toolbar button shows a menu of the tool's options (Separation, Swap left and right drag) instead of choosing the tool; the swap now applies to the Selector too
 -- # v1.7 Stopping the Trim Tool and the toolbar buttons are shared with the other tools (ReaTooled_Tools lib.lua), which also knows the new Pencil Tool
 -- # v1.6 Puts right-drag back to marquee when "Toggle swap left and right drag" had changed it
@@ -26,6 +27,11 @@ do
   local ok, tools = pcall(dofile, dir .. "ReaTooled_Tools lib.lua")
   if ok and type(tools) == "table" and tools.options_click and tools.options_click() then
     tools.tool_options("selector")
+    reaper.defer(function() end)   -- no undo point
+    return
+  end
+  -- (pressed together with another tool key: the Smart Tool)
+  if ok and type(tools) == "table" and tools.smart_chord and tools.smart_chord("selector") then
     reaper.defer(function() end)   -- no undo point
     return
   end

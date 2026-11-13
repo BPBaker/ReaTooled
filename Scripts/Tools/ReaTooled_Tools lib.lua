@@ -1,5 +1,5 @@
 -- @description ReaTooled - Tools library (shared by the tool scripts)
--- @version 1.19
+-- @version 1.20
 -- @date 2026.11.11
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
@@ -17,6 +17,9 @@
 --     - lights the tool's toolbar button(s) and turns the others off
 --   Adding a tool means adding it to TOOLS below, and nowhere else.
 -- @changelog
+--   v1.20 smart_chord(tool): two tool keys pressed together choose the Smart Tool, as in Pro Tools
+--         (F6+F7, F7+F8, F6+F8: Trim, Selector, Move). Holding them doesn't switch back and
+--         forth (REAPER repeats a held shortcut)
 --   v1.19 The record of mouse modifiers switched for a moment, the yellow outline and the hover
 --         repair now come from ReaTooled's shared core (pasted in below), the same code that
 --         Shuffle and the left-edge ripple carry so they also work without this library. No
@@ -752,6 +755,48 @@ function M.finish(key)
   apply_spot(key)
   apply_shuffle(key)
   M.light(key)
+end
+
+------------------------------------------------------------
+-- Two tool keys at once = the Smart Tool (Pro Tools: F6+F7, F7+F8, F6+F8). Each of the three
+-- tool scripts calls this first with its own key; the second key of a chord runs while the
+-- first is still held, and sees it (js_ReaScriptAPI). true: handled, the script stops there.
+-- REAPER repeats a shortcut while its key is held: those repeats are ignored (a key that
+-- hasn't been let go since the chord), so holding the keys doesn't switch back and forth.
+------------------------------------------------------------
+local TOOL_KEYS = { trim = 0x75, selector = 0x76, grabber = 0x77 }   -- F6, F7, F8
+local CHORD_KEY = "ToolChord"    -- when the last chord was pressed
+local SEEN_KEY = "ToolChordSeen" -- when it, or a repeat of one of its keys, was last seen
+local CHORD_HOLD = 3             -- seconds a repeat keeps counting as part of the chord
+
+function M.smart_chord(tool)
+  local key = TOOL_KEYS[tool]
+  if not key or not (reaper.JS_VKeys_GetState and reaper.JS_VKeys_GetUp) then return false end
+  local down = reaper.JS_VKeys_GetState(0) or ""
+  local function held(k) return (down:byte(k) or 0) ~= 0 end
+  local now = reaper.time_precise()
+  local other = false
+  for t, k in pairs(TOOL_KEYS) do if t ~= tool and held(k) then other = true end end
+  if other then
+    reaper.SetExtState(NS, CHORD_KEY, tostring(now), false)
+    reaper.SetExtState(NS, SEEN_KEY, tostring(now), false)
+    if M.current_tool() ~= "smart" then
+      local cmd = command_of(M.find("smart"))
+      if cmd ~= 0 then reaper.Main_OnCommand(cmd, 0) end
+    end
+    return true
+  end
+  -- this key held since the chord and REAPER repeating it: not a new press
+  local t = tonumber(reaper.GetExtState(NS, CHORD_KEY))
+  local seen = tonumber(reaper.GetExtState(NS, SEEN_KEY)) or t
+  if t and now - seen < CHORD_HOLD and held(key) then
+    local up = reaper.JS_VKeys_GetUp(t) or ""   -- (let go since the chord: a new press)
+    if (up:byte(key) or 0) == 0 then
+      reaper.SetExtState(NS, SEEN_KEY, tostring(now), false)   -- (still held: keep ignoring)
+      return true
+    end
+  end
+  return false
 end
 
 return M

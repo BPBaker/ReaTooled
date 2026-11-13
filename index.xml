@@ -32,7 +32,7 @@
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="3.2026.1113.40" author="Brendan Baker" time="2026-11-13T05:41:07Z">
+      <version name="3.2026.1113.220" author="Brendan Baker" time="2026-11-13T07:20:57Z">
         <changelog><![CDATA[Configuration updated (no new entries in the release notes).
 
 To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or run "Update ReaTooled").]]></changelog>
@@ -44,7 +44,7 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
         <source file="ReaTooled/Config/themeconfig.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/themeconfig.ini</source>
         <source file="ReaTooled/Config/theme.txt">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/theme.txt</source>
         <source file="ReaTooled/Config/extstate.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/extstate.ini</source>
-        <source file="ReaTooled/Config/version.txt">https://github.com/BPBaker/ReaTooled/releases/download/v3.2026.1113.40/installs.txt</source>
+        <source file="ReaTooled/Config/version.txt">https://github.com/BPBaker/ReaTooled/releases/download/v3.2026.1113.220/installs.txt</source>
         <source file="ReaTooled/Config/reaper_sections.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/reaper_sections.ini</source>
         <source file="ReaTooled/Config/update_rules.txt">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/update_rules.txt</source>
         <source file="ReaTooled/Config/screensets.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/screensets.ini</source>
@@ -185,7 +185,7 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
 {\pard \ql \f0 \sa180 \li0 \fi0 ReaTooled's themes, installed into REAPER's ColorThemes folder. "Default_7.0 ReaTooled v3 Dark" is the default.\par}
 }]]></description>
       </metadata>
-      <version name="3.2026.1113.40" author="Brendan Baker" time="2026-11-13T05:41:07Z">
+      <version name="3.2026.1113.220" author="Brendan Baker" time="2026-11-13T07:20:57Z">
         <source file="Assembled_ReaTooled v1.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Assembled_ReaTooled%20v1.ReaperThemeZip</source>
         <source file="Default_7.0 ReaTooled v2 Light.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Default_7.0%20ReaTooled%20v2%20Light.ReaperThemeZip</source>
         <source file="Default_7.0 ReaTooled v3 Dark.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Default_7.0%20ReaTooled%20v3%20Dark.ReaperThemeZip</source>
@@ -579,16 +579,19 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
 {\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
 \widowctrl\hyphauto
 {\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 Grid and nudge settings, like Pro Tools' Edit window\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 Turn the grid on and off, choose its division, and set the nudge amount and unit, in a dockable window or right inside REAPER's Transport bar.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 Turn the grid on and off, choose its division, and set the nudge amount and unit, in a dockable window, right inside REAPER's Transport bar, or in the empty space next to the ruler (between the main toolbar and the ruler, above the track list).\par}
 {\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Grid: click to toggle the grid; the division menu has frame rate, 1 measure and musical divisions.\par}
 {\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Nudge: click the value to type one; the unit menu has milliseconds, seconds, measures and beats (with dotted and triplet), samples, frames and more.\par}
 {\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab In the Transport (right-click the window > Put in the Transport): Grid above Nudge (or one row), sharp on Retina/HiDPI screens and drawn in your theme's colors. Drag the grip to move it along the Transport and its right edge to resize it; the grip's menu attaches it to an edge of the Transport, either side of the time display or left of the selection display, locks it, or puts it back in a window.\par}
-{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab It moves and resizes with the Transport, never covers the transport buttons or time display, moves to free space when it runs out of room, and hides when there is none. Mapped to M. Starts with REAPER, in the window or the Transport, whichever you used last.\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab It moves and resizes with the Transport, never covers the transport buttons or time display, moves to free space when it runs out of room, and hides when there is none.\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Next to the ruler (right-click the window > Put next to the ruler): fills the empty space between the main toolbar's buttons and the ruler, following it as the track list or the toolbar changes width. Drag the grip left to make it bigger (it grows to the left, over the toolbar); the grip menu sets its height and layout there.\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab The grip menu: where to show it (Transport, next to the ruler, or a window), its position, its layout (rows, size, HiDPI), and Close. Mapped to M. Starts with REAPER, in the window or the Transport, whichever you used last.\par}
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="3.3.8" author="Brendan Baker" time="2026-11-06T20:19:01Z">
-        <changelog><![CDATA[• Optional timing report for testing: when "ReaTooled_DEV Interface smoothness monitor.lua" turns it on, it measures how long each part of the script takes per frame and shows it in the monitor. Off otherwise (no measuring, nothing written)]]></changelog>
+      <version name="3.4" author="Brendan Baker" time="2026-11-13T07:20:57Z">
+        <changelog><![CDATA[• New: Put next to the ruler (the window's right-click menu, or the grip menu). It fills the empty space between the main toolbar's buttons and the ruler (where REAPER shows the grid division, above the track list), covering it completely, with the controls kept to the right, by the ruler. It follows that space as the track list or the toolbar changes width. It fits itself to the space: two rows when there's room, else one column (Grid, division, Nudge, value), as large as fits. Drag the grip (or the background) to the left to make it bigger: it grows to the left, over the toolbar if need be; drag right to make it smaller; Reset size fits the space again. The grip menu sets its height in the space, the layout (automatic, two rows, one column) and Lock size. If it can't fit, the window shows instead. Its settings are kept apart from the Transport's
+• The grip menu is reorganised: where to show it first (Transport, next to the ruler, window, with a tick on the current one), then Position (in the Transport, its attach points in left-to-right order; then Lock and Reset position), then Layout (rows, Reset size, HiDPI), then Close]]></changelog>
         <source file="ReaTooled_Grid and Nudge Settings.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Grid%20and%20Nudge%20Settings.lua</source>
       </version>
     </reapack>
@@ -1220,8 +1223,7 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="2.4.29" author="Brendan Baker" time="2026-11-13T05:41:07Z">
-        <changelog><![CDATA[ReaTooled_Set up ReaTooled: Tools by other developers that are missing (SWS, js_ReaScriptAPI, ReaImGui, reAAF, the scripts ReaTooled's shortcuts use) are offered first and installed through ReaPack, which records and updates them (ReaTooled_Dependencies lib.lua); Set up then starts again by itself. An extension that's installed but not loaded yet (it loads at the restart) no longer counts as missing. ReaPack isn't called again at the end right after installing (it crashes REAPER while it's finishing); the repository's own setting is enough]]></changelog>
+      <version name="2.4.30" author="Brendan Baker" time="2026-11-13T07:20:57Z">
         <source file="ReaTooled_Dependencies lib.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Dependencies%20lib.lua</source>
         <source file="ReaTooled_Earlier shortcuts.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Earlier%20shortcuts.lua</source>
         <source file="ReaTooled_Earlier toolbars.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Earlier%20toolbars.lua</source>
@@ -1560,8 +1562,11 @@ ReaTooled_Shuffle move (background): Works without the Tools library (Shuffle on
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="7.16.2" author="Brendan Baker" time="2026-11-11T19:58:56Z">
-        <changelog><![CDATA[ReaTooled_Tools lib: The record of mouse modifiers switched for a moment, the yellow outline and the hover repair now come from ReaTooled's shared core (pasted in below), the same code that Shuffle and the left-edge ripple carry so they also work without this library. No change in what they do]]></changelog>
+      <version name="7.16.3" author="Brendan Baker" time="2026-11-13T07:20:57Z">
+        <changelog><![CDATA[Move Tool (Grabber)_ReaTooled: Pressed together with another tool key (F6+F7, F7+F8, F6+F8), the Smart Tool is chosen, as in Pro Tools (ReaTooled_Tools lib.lua)
+Razor Select Tool (Selector)_ReaTooled: Pressed together with another tool key (F6+F7, F7+F8, F6+F8), the Smart Tool is chosen, as in Pro Tools (ReaTooled_Tools lib.lua)
+ReaTooled_Tools lib: smart_chord(tool): two tool keys pressed together choose the Smart Tool, as in Pro Tools (F6+F7, F7+F8, F6+F8: Trim, Selector, Move). Holding them doesn't switch back and forth (REAPER repeats a held shortcut)
+Trim Tool_ReaTooled: Pressed together with another tool key (F6+F7, F7+F8, F6+F8), the Smart Tool is chosen, as in Pro Tools (ReaTooled_Tools lib.lua)]]></changelog>
         <source file="Default Multi Tool (Smart)_ReaTooled.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/Default%20Multi%20Tool%20%28Smart%29_ReaTooled.lua</source>
         <source file="Move Tool (Grabber)_ReaTooled.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/Move%20Tool%20%28Grabber%29_ReaTooled.lua</source>
         <source file="Pencil Tool_ReaTooled.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/Pencil%20Tool_ReaTooled.lua</source>
