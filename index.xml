@@ -32,7 +32,7 @@
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="3.2026.1111.1458" author="Brendan Baker" time="2026-11-11T19:58:56Z">
+      <version name="3.2026.1113.40" author="Brendan Baker" time="2026-11-13T05:41:07Z">
         <changelog><![CDATA[Configuration updated (no new entries in the release notes).
 
 To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or run "Update ReaTooled").]]></changelog>
@@ -44,7 +44,7 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
         <source file="ReaTooled/Config/themeconfig.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/themeconfig.ini</source>
         <source file="ReaTooled/Config/theme.txt">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/theme.txt</source>
         <source file="ReaTooled/Config/extstate.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/extstate.ini</source>
-        <source file="ReaTooled/Config/version.txt">https://github.com/BPBaker/ReaTooled/releases/download/v3.2026.1111.1458/installs.txt</source>
+        <source file="ReaTooled/Config/version.txt">https://github.com/BPBaker/ReaTooled/releases/download/v3.2026.1113.40/installs.txt</source>
         <source file="ReaTooled/Config/reaper_sections.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/reaper_sections.ini</source>
         <source file="ReaTooled/Config/update_rules.txt">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/update_rules.txt</source>
         <source file="ReaTooled/Config/screensets.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/screensets.ini</source>
@@ -185,7 +185,7 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
 {\pard \ql \f0 \sa180 \li0 \fi0 ReaTooled's themes, installed into REAPER's ColorThemes folder. "Default_7.0 ReaTooled v3 Dark" is the default.\par}
 }]]></description>
       </metadata>
-      <version name="3.2026.1111.1458" author="Brendan Baker" time="2026-11-11T19:58:56Z">
+      <version name="3.2026.1113.40" author="Brendan Baker" time="2026-11-13T05:41:07Z">
         <source file="Assembled_ReaTooled v1.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Assembled_ReaTooled%20v1.ReaperThemeZip</source>
         <source file="Default_7.0 ReaTooled v2 Light.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Default_7.0%20ReaTooled%20v2%20Light.ReaperThemeZip</source>
         <source file="Default_7.0 ReaTooled v3 Dark.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Default_7.0%20ReaTooled%20v3%20Dark.ReaperThemeZip</source>
@@ -1220,7 +1220,9 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="2.4.28" author="Brendan Baker" time="2026-11-09T20:24:20Z">
+      <version name="2.4.29" author="Brendan Baker" time="2026-11-13T05:41:07Z">
+        <changelog><![CDATA[ReaTooled_Set up ReaTooled: Tools by other developers that are missing (SWS, js_ReaScriptAPI, ReaImGui, reAAF, the scripts ReaTooled's shortcuts use) are offered first and installed through ReaPack, which records and updates them (ReaTooled_Dependencies lib.lua); Set up then starts again by itself. An extension that's installed but not loaded yet (it loads at the restart) no longer counts as missing. ReaPack isn't called again at the end right after installing (it crashes REAPER while it's finishing); the repository's own setting is enough]]></changelog>
+        <source file="ReaTooled_Dependencies lib.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Dependencies%20lib.lua</source>
         <source file="ReaTooled_Earlier shortcuts.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Earlier%20shortcuts.lua</source>
         <source file="ReaTooled_Earlier toolbars.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Earlier%20toolbars.lua</source>
         <source file="ReaTooled_Enable Link Edit Cursor and Play Cursor.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Enable%20Link%20Edit%20Cursor%20and%20Play%20Cursor.lua</source>
@@ -1492,8 +1494,8 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="1.19" author="Brendan Baker" time="2026-11-11T19:58:56Z">
-        <changelog><![CDATA[Works on its own, without the rest of ReaTooled (only js_ReaScriptAPI needed): it carries ReaTooled's shared core (the record of mouse modifiers switched for a moment, the yellow outline, Cmd = all tracks) instead of loading the Tools library. With ReaTooled installed it works exactly as before]]></changelog>
+      <version name="1.21" author="Brendan Baker" time="2026-11-13T05:41:07Z">
+        <changelog><![CDATA[Back to 1.19's behaviour (1.20's "edge follows the mouse, ripple on release" taken out)]]></changelog>
         <source file="ReaTooled_Toggle Ripple edit when editing media item left edges.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Toggles/ReaTooled_Toggle%20Ripple%20edit%20when%20editing%20media%20item%20left%20edges.lua</source>
       </version>
     </reapack>

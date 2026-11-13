@@ -63,7 +63,7 @@ Helpers/ReaTooled_Show Spectrogram on Selected Track(s).lua	1.4	d02c6905
 Mouse Actions/ReaTooled_Mousewheel adjust pitch of item under cursor.lua	1.1	7c4881e5
 Mouse Actions/ReaTooled_Mousewheel to change take volume for selected items.lua	1.1	b7729828
 Mouse Actions/ReaTooled_Mousewheel to zoom items peaks view gain.lua	1.1	e6939720
-Startup/ReaTooled Startup	2.4.28	27d78e55
+Startup/ReaTooled Startup	2.4.29	c65c562e
 Toggles/ReaTooled - Ripple Off (Slip).lua	1.2	55e703da
 Toggles/ReaTooled MULTI Icon toggle.lua	1.0	e80a68cc
 Toggles/ReaTooled_At loop end, move cursor to loop end and clear selection (only when loop button is off).lua	2.8	ab09eee2
@@ -82,7 +82,7 @@ Toggles/ReaTooled_Toggle Link Play Cursor to Edit Cursor.lua	1.5	a8a7ee82
 Toggles/ReaTooled_Toggle Link Track and Item and Razor Selection.lua	1.0	014536c9
 Toggles/ReaTooled_Toggle Markers Follow Ripple All vs Locked.lua	1.2	8742a405
 Toggles/ReaTooled_Toggle ReaTooled Shortcuts.lua	1.0	7253b2aa
-Toggles/ReaTooled_Toggle Ripple edit when editing media item left edges.lua	1.19	97ca5bcb
+Toggles/ReaTooled_Toggle Ripple edit when editing media item left edges.lua	1.21	99302fab
 Toggles/ReaTooled_Toggle Tab to Transient.lua	1.0	22d4150f
 Toggles/ReaTooled_Toggle envelope lanes visible or in lane.lua	1.0	8075ba1e
 Toggles/ReaTooled_Toggle item volume envelope for all items.lua	1.0	bb7b25b0

@@ -1,6 +1,6 @@
 --[[
 -- @description ReaTooled - Ripple edit when editing media item left edges
--- @version 1.19
+-- @version 1.21
 -- @date 2026.11.11
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
@@ -28,6 +28,7 @@
     ReaTooled Button States; on its own, without the rest of ReaTooled, add it to REAPER's
     startup actions). Works on its own too: it needs only the js_ReaScriptAPI extension. The rules: "Left edge ripple - design rules.md".
 -- CHANGELOG
+-- v1.21 Back to 1.19's behaviour (1.20's "edge follows the mouse, ripple on release" taken out)
 -- v1.19 Works on its own, without the rest of ReaTooled (only js_ReaScriptAPI needed): it carries
 --       ReaTooled's shared core (the record of mouse modifiers switched for a moment, the yellow
 --       outline, Cmd = all tracks) instead of loading the Tools library. With ReaTooled installed

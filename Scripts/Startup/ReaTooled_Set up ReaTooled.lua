@@ -1,13 +1,14 @@
 --[[
 -- @description ReaTooled - Set up ReaTooled
--- @version 2.3.14
+-- @version 2.4
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
     # Sets up ReaTooled after ReaBoot (or ReaPack) has installed it
     Run it once. Everything is backed up first, to Data/ReaTooled/Backups.
     While REAPER is open it:
-      - checks the extensions and scripts ReaTooled needs
+      - checks the extensions and scripts ReaTooled needs, and offers to install any
+        that are missing through ReaPack
       - merges the ReaTooled shortcuts into yours (a window shows any clashes)
       - applies saved script settings, cursors, menu sets, templates and FX chains
       - switches to the ReaTooled theme
@@ -19,6 +20,12 @@
     When you click OK at the end, REAPER quits, the helper writes those files,
     and the same copy of REAPER opens again by itself.
 -- CHANGELOG
+-- v2.4 Tools by other developers that are missing (SWS, js_ReaScriptAPI, ReaImGui, reAAF, the
+--      scripts ReaTooled's shortcuts use) are offered first and installed through ReaPack, which
+--      records and updates them (ReaTooled_Dependencies lib.lua); Set up then starts again by
+--      itself. An extension that's installed but not loaded yet (it loads at the restart) no
+--      longer counts as missing. ReaPack isn't called again at the end right after installing
+--      (it crashes REAPER while it's finishing); the repository's own setting is enough
 -- v2.3.14 Shortcut clashes are remembered (Data/ReaTooled/shortcut_choices.txt): a key you kept
 --         as yours isn't asked about again at the next update, as long as it's still your
 --         same action against ReaTooled's same action (if ReaTooled maps that key to
@@ -158,10 +165,10 @@ for i = 0, 15 do THEME_FONT_KEYS[#THEME_FONT_KEYS + 1] = "user_font" .. i end
 local KEY_SECTION = 16
 
 -- Extensions ReaTooled needs: { name, an API function that only exists when it's installed }
-local EXTENSIONS = {
-  { "SWS/S&M extension", "CF_GetSWSVersion" },
-  { "js_ReaScriptAPI",   "JS_ReaScriptAPI_Version" },
-  { "ReaImGui",          "ImGui_CreateContext" },
+local EXTENSIONS = {   -- (name, an API function it adds, the start of its file name in UserPlugins)
+  { "SWS/S&M extension", "CF_GetSWSVersion",        "reaper_sws" },
+  { "js_ReaScriptAPI",   "JS_ReaScriptAPI_Version", "reaper_js_ReaScriptAPI" },
+  { "ReaImGui",          "ImGui_CreateContext",     "reaper_imgui" },
 }
 
 -- Folders copied from the configuration into REAPER's folder.
@@ -751,9 +758,70 @@ local CONFIG_VER = (read_file(CONFIG .. "/version.txt") or ""):match("[%d%.]+") 
 
 local keymap_text = read_file(CONFIG .. "/keymap.ini") or ""
 
+------------------------------------------------------------
+-- 1b. Tools by other developers that ReaTooled uses: any that are missing are offered and
+-- installed through ReaPack first (asked once per REAPER session; not right after the package
+-- installer, which has just done it). When ReaPack has finished, Set up starts again.
+------------------------------------------------------------
+local DEPS
+do
+  local ok_d, d = pcall(dofile, RES .. "/Scripts/ReaTooled/Startup/ReaTooled_Dependencies lib.lua")
+  if ok_d and type(d) == "table" then DEPS = d end
+end
+if DEPS and _G.REATOOLED_PACKAGE_CONFIRMED ~= true and reaper.GetExtState("ReaTooled", "DepsAsked") ~= "1" then
+  local need = DEPS.quick_missing()
+  if #need > 0 then
+    reaper.SetExtState("ReaTooled", "DepsAsked", "1", false)
+    local names = {}
+    for _, d in ipairs(need) do names[#names + 1] = "  " .. DEPS.name_of(d) end
+    local a = msg("ReaTooled uses these tools by other developers, which aren't installed:\n\n" ..
+      table.concat(names, "\n") .. "\n\nInstall them now with ReaPack? (Recommended. ReaPack keeps " ..
+      "them up to date; extensions start working when REAPER restarts at the end of setup.)", 4)   -- Yes / No
+    if a == 6 then
+      local SELF = (debug.getinfo(1, "S").source or ""):match("^@(.+)$")
+      local saved_update, saved_pkg = _G.REATOOLED_UPDATE, _G.REATOOLED_PACKAGE_CONFIRMED
+      local function again()
+        _G.REATOOLED_UPDATE, _G.REATOOLED_PACKAGE_CONFIRMED = saved_update, saved_pkg
+        local ok_s, err_s = pcall(dofile, SELF)
+        if not ok_s then msg("Set up ReaTooled couldn't start again:\n\n" .. tostring(err_s)) end
+      end
+      DEPS.install({ list = need, on_done = function(r)
+        local failed = {}
+        for _, n in ipairs(r.failed) do failed[#failed + 1] = "  " .. n end
+        -- ReaPack must have completely finished (its report closed) before Set up goes on
+        local quiet
+        local function wait_reapack()
+          local busy = DEPS.reapack_busy()
+          if busy == nil then   -- (no js_ReaScriptAPI to see ReaPack's windows: ask)
+            msg((#failed > 0 and ("These couldn't be installed:\n" .. table.concat(failed, "\n") .. "\n\n") or "") ..
+              "When ReaPack has finished (close its report window if it's open), click OK to " ..
+              "continue setting up ReaTooled.")
+            return again()
+          end
+          if busy then quiet = nil
+          elseif not quiet then quiet = reaper.time_precise()
+          elseif reaper.time_precise() - quiet >= 1 then
+            if #failed > 0 then
+              msg("These couldn't be installed (the shortcuts that use them won't work until they " ..
+                "are):\n" .. table.concat(failed, "\n"))
+            end
+            return again()
+          end
+          reaper.defer(wait_reapack)
+        end
+        reaper.defer(wait_reapack)
+      end })
+      return
+    end
+  end
+end
+
 local missing = {}
 for _, ext in ipairs(EXTENSIONS) do
-  if not reaper.APIExists(ext[2]) then missing[#missing + 1] = "  " .. ext[1] end
+  -- (installed but not loaded yet counts: it loads at the restart at the end)
+  if not reaper.APIExists(ext[2]) and not (DEPS and DEPS.quick_has_file(ext[3])) then
+    missing[#missing + 1] = "  " .. ext[1]
+  end
 end
 -- Scripts by other developers that the shortcuts, menus and mouse modifiers use
 for _, line in ipairs(lines_of(keymap_text)) do
@@ -2264,9 +2332,16 @@ finish_setup = function()
   -- ReaPack: install every ReaTooled package, now and when new ones are added
   -- (not after the package installer: it added the repository and ReaPack has just
   -- installed everything; calling ReaPack again while it's finishing crashed REAPER)
+  -- (an existing repository needs no ReaPack run, and right after the tools above were
+  -- installed one would crash REAPER: ReaPack may still be finishing)
   local repo_ok = false
-  if not UPDATE and not FROM_PACKAGE then repo_ok = reaper.ReaPack_AddSetRepository(REPO_NAME, REPO_URL, true, 1, "") end
-  if repo_ok then reaper.ReaPack_ProcessQueue(true) end
+  if not UPDATE and not FROM_PACKAGE then
+    local existed = reaper.ReaPack_GetRepositoryInfo(REPO_NAME)
+    repo_ok = reaper.ReaPack_AddSetRepository(REPO_NAME, REPO_URL, true, 1, "")
+    if repo_ok and not existed and reaper.GetExtState("ReaTooled", "DepsAsked") ~= "1" then
+      reaper.ReaPack_ProcessQueue(true)
+    end
+  end
 
   reaper.SetExtState("ReaTooled", "SetupVersion", SETUP_VER, true)
   os.remove(RES .. "/Data/ReaTooled/starter_off.txt")   -- the ReaTooled Starter may start Set up again after a restore
