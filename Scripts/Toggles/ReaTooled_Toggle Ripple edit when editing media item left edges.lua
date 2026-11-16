@@ -1,7 +1,7 @@
 --[[
 -- @description ReaTooled - Ripple edit when editing media item left edges
--- @version 1.32
--- @date 2026.11.15
+-- @version 1.33
+-- @date 2026.11.16
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -32,6 +32,8 @@
     ReaTooled Button States; on its own, without the rest of ReaTooled, add it to REAPER's
     startup actions). Works on its own too: it needs only the js_ReaScriptAPI extension. The rules: "Left edge ripple - design rules.md".
 -- CHANGELOG
+-- v1.33 (testing) Each drag writes what the trim and the view were asked to do, and what REAPER
+--       did, to Data/ReaTooled/leftedge_view_log.txt (a new file each drag). To be taken out
 -- v1.32 The view following the drag: past the arrange's left or right side, the edge stays in
 --       sight just inside it and the trim carries on by itself, faster the further past the mouse
 --       is, as REAPER's own edge drag scrolls the view there (the audio after the edge moves on
@@ -685,6 +687,28 @@ local function auto_scroll(mx)
   end
 end
 
+-- (TEMPORARY, for testing 1.33: each drag writes what the trim and the view were asked to do,
+-- and what REAPER did, to Data/ReaTooled/leftedge_view_log.txt, a new file each drag)
+local VLOG = reaper.GetResourcePath() .. "/Data/ReaTooled/leftedge_view_log.txt"
+local vlog_fresh, vlog_last = true, nil
+local function vlog(z, want, note)
+  if not sh then return end
+  local got = reaper.GetSet_ArrangeView2(0, false, 0, 0)
+  local mx = reaper.GetMousePosition()
+  local ox = reaper.JS_Window_ClientToScreen(ARRANGE, 0, 0)
+  local _, w = reaper.JS_Window_GetClientSize(ARRANGE)
+  local line = string.format("mouse x %d of %d | mouse moved %.3f s, carried on %.3f s, past side %d | trim asked %s, trim now %.3f s%s | view start: at press %.3f, wanted %s, now %.3f%s | zoom %.2f px/s%s",
+    mx - ox, w, sh.mouse_d or 0, sh.auto_d or 0, sh.auto_past or 0,
+    sh.dbg_d and string.format("%.3f", sh.dbg_d) or "-", sh.d, sh.dbg_snapped and " (snapped)" or "",
+    sh.fv_s, want and string.format("%.3f", want / z) or "-", got,
+    (want and math.floor(got * z + 0.5) ~= want) and " NOT WHERE WANTED" or "", z, note or "")
+  if line == vlog_last then return end
+  vlog_last = line
+  local f = io.open(VLOG, vlog_fresh and "w" or "a")
+  if f then f:write(string.format("%8.3f  %s\n", reaper.time_precise() % 1000, line)); f:close() end
+  vlog_fresh = false
+end
+
 -- plain: ripple off (from a mode change during the drag): the left edge is trimmed as REAPER
 -- does without ripple (the item's start moves, nothing else does)
 local function trim_begin(grabbed, mx, plain)
@@ -692,6 +716,7 @@ local function trim_begin(grabbed, mx, plain)
   local all = ripple_all()
   if plain then grouped, all = {}, false end
   local vs, ve = reaper.GetSet_ArrangeView2(0, false, 0, 0)
+  if not sh then vlog_fresh, vlog_last = true, nil end   -- (TEMPORARY log: a new file each drag)
   if VIEW_FOLLOWS and not plain then mx = arrange_sides(mx) end   -- (a part begun past a side: from it)
   local s_ = { d = 0, t0 = mouse_time(mx), x0 = mx, fv_s = vs, fv_e = ve, auto_d = 0, auto_past = 0,
                follow = VIEW_FOLLOWS and not plain,
@@ -930,8 +955,10 @@ local function follow_view()
   if math.floor(s * z + 0.5) ~= want then
     local ts = (want + 0.25) / z
     reaper.GetSet_ArrangeView2(0, true, 0, 0, ts, ts + (sh.fv_e - sh.fv_s))
+    vlog(z, want, " (view moved)")
     return true
   end
+  vlog(z, want)
   return false
 end
 
@@ -951,6 +978,7 @@ local function trim_update(mx)
     if rel then d = s_ - sh.t0                              -- (relative grid: whole steps from the press)
     elseif math.abs(s_ - m) > EPS then d = s_ - sh.gP       -- (the cut lands on what the mouse is over)
     else d = m - sh.t0 end
+    sh.dbg_d, sh.dbg_snapped = d, snapped   -- (TEMPORARY log)
     if sh.follow then
       -- (the trim and the view's scroll in one redraw: two a frame made it heavier and could
       -- show the trim a moment before the scroll)

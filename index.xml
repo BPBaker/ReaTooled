@@ -32,7 +32,7 @@
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="3.2026.1116.1605" author="Brendan Baker" time="2026-11-16T21:05:35Z">
+      <version name="3.2026.1116.1701" author="Brendan Baker" time="2026-11-16T22:02:05Z">
         <changelog><![CDATA[Configuration updated (no new entries in the release notes).
 
 To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or run "Update ReaTooled").]]></changelog>
@@ -44,7 +44,7 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
         <source file="ReaTooled/Config/themeconfig.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/themeconfig.ini</source>
         <source file="ReaTooled/Config/theme.txt">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/theme.txt</source>
         <source file="ReaTooled/Config/extstate.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/extstate.ini</source>
-        <source file="ReaTooled/Config/version.txt">https://github.com/BPBaker/ReaTooled/releases/download/v3.2026.1116.1605/installs.txt</source>
+        <source file="ReaTooled/Config/version.txt">https://github.com/BPBaker/ReaTooled/releases/download/v3.2026.1116.1701/installs.txt</source>
         <source file="ReaTooled/Config/reaper_sections.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/reaper_sections.ini</source>
         <source file="ReaTooled/Config/update_rules.txt">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/update_rules.txt</source>
         <source file="ReaTooled/Config/screensets.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/screensets.ini</source>
@@ -185,7 +185,7 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
 {\pard \ql \f0 \sa180 \li0 \fi0 ReaTooled's themes, installed into REAPER's ColorThemes folder. "Default_7.0 ReaTooled v3 Dark" is the default.\par}
 }]]></description>
       </metadata>
-      <version name="3.2026.1116.1605" author="Brendan Baker" time="2026-11-16T21:05:35Z">
+      <version name="3.2026.1116.1701" author="Brendan Baker" time="2026-11-16T22:02:05Z">
         <source file="Assembled_ReaTooled v1.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Assembled_ReaTooled%20v1.ReaperThemeZip</source>
         <source file="Default_7.0 ReaTooled v2 Light.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Default_7.0%20ReaTooled%20v2%20Light.ReaperThemeZip</source>
         <source file="Default_7.0 ReaTooled v3 Dark.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Default_7.0%20ReaTooled%20v3%20Dark.ReaperThemeZip</source>
@@ -1499,8 +1499,8 @@ ReaTooled_Update ReaTooled: No longer asks you to close ReaPack's window: the up
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="1.32" author="Brendan Baker" time="2026-11-16T00:56:40Z">
-        <changelog><![CDATA[The view following the drag: past the arrange's left or right side, the edge stays in sight just inside it and the trim carries on by itself, faster the further past the mouse is, as REAPER's own edge drag scrolls the view there (the audio after the edge moves on screen meanwhile, as the view can't follow both). Moving back in carries on from there]]></changelog>
+      <version name="1.33" author="Brendan Baker" time="2026-11-16T22:02:05Z">
+        <changelog><![CDATA[(testing) Each drag writes what the trim and the view were asked to do, and what REAPER did, to Data/ReaTooled/leftedge_view_log.txt (a new file each drag). To be taken out]]></changelog>
         <source file="ReaTooled_Toggle Ripple edit when editing media item left edges.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Toggles/ReaTooled_Toggle%20Ripple%20edit%20when%20editing%20media%20item%20left%20edges.lua</source>
       </version>
     </reapack>
