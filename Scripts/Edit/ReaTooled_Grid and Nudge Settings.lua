@@ -1,6 +1,6 @@
 -- @description ReaTooled - Grid & Nudge Settings (Dockable GUI)
--- @version 3.4
--- @date 2026.11.13
+-- @version 3.4.1
+-- @date 2026.11.15
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -41,6 +41,13 @@
 --     the label shown when the project's grid can't be matched to a menu entry.
 --
 -- @changelog
+--   v3.4.1 (2026-11-15)
+--     • Transport: in the right spot on the first start after installing ReaTooled. What's
+--       where in the Transport (the transport buttons, the time and selection displays) is
+--       read from what REAPER has under each point, and on that first start the Scrolling
+--       window and ReaPack's download window can sit in front of the Transport: what was read
+--       there was theirs, and it was kept until REAPER's window was resized. A point covered by
+--       another window no longer counts: it's read again a second later, until nothing covers it
 --   v3.4 (2026-11-13)
 --     • New: Put next to the ruler (the window's right-click menu, or the grip menu). It
 --       fills the empty space between the main toolbar's buttons and the ruler (where REAPER
@@ -1503,6 +1510,18 @@ local close_requested = false
 -- there). Measured when the Transport's size changes; otherwise its left edge is only
 -- checked (two lookups) twice a second. (Re-measuring all of it every 2 s, as before,
 -- asked REAPER about thousands of points at once: everything in REAPER stuttered.)
+-- Is the Transport itself under this point (screen coordinates), not another window in front
+-- of it (on the first start after setup, the Scrolling window or ReaPack's)? What REAPER says is
+-- under a covered point is that window's, not the Transport's, so it isn't used
+local function host_at(sx, sy)
+  local h, i = reaper.JS_Window_FromPoint(sx, sy), 0
+  while h and i < 20 do
+    if h == TR.hwnd then return true end
+    h = reaper.JS_Window_GetParent(h); i = i + 1
+  end
+  return false
+end
+
 local sel_cache = { key = nil, t = 0, l = nil, r = nil, y = nil }
 
 -- The Transport's layout, beyond its size: where the time display sits and the theme in use
@@ -1522,8 +1541,10 @@ local function layout_key()
   return pos .. "|" .. (reaper.GetLastColorThemeFile and reaper.GetLastColorThemeFile() or "") .. "|" .. settling
 end
 
+local sel_covered = false   -- (a point read during the last full measure was covered)
 local function sel_at(cx, cy)
   local sx, sy = reaper.JS_Window_ClientToScreen(TR.hwnd, cx, cy)
+  if not host_at(sx, sy) then sel_covered = true end
   local _, thing = reaper.GetThingFromPoint(sx, sy)
   return thing ~= nil and thing:sub(1, 9) == "trans.sel"
 end
@@ -1569,6 +1590,11 @@ local function selection_edges()
   local _, ww, wh = reaper.JS_Window_GetClientSize(TR.hwnd)
   local key = ww .. "x" .. wh .. "|" .. layout_key()
   local now = reaper.time_precise()
+  -- (measured while a window covered part of the Transport: again a second later, from scratch)
+  if sel_cache.covered then
+    if now - sel_cache.t < 1 then return sel_cache.l, sel_cache.r end
+    sel_cache.l, sel_cache.key, sel_cache.none = nil, nil, false
+  end
   -- (no selection display at this size: don't look again until the size changes, or for
   -- 5 seconds; before, the whole Transport was searched again on every frame)
   if sel_cache.none and sel_cache.key == key and now - sel_cache.t < 5 then return nil end
@@ -1594,8 +1620,10 @@ local function selection_edges()
     end
   end
   sel_cache.key, sel_cache.t = key, now
+  sel_covered = false
   sel_cache.l, sel_cache.r, sel_cache.y = selection_scan(ww, wh)
   sel_cache.none = (sel_cache.l == nil)
+  sel_cache.covered = sel_covered
   return sel_cache.l, sel_cache.r
 end
 
@@ -2016,9 +2044,11 @@ local function protected_spans()
   local fine = room.key == key and now - room.changed >= 0.25
   local step = math.max(2, math.floor(6 * TR.measure))
   local ys = { math.floor(wh * 0.3), math.floor(wh * 0.7) }   -- (the box is centred, about full height)
+  local covered = false
   local function protected_at(cx)
     for _, cy in ipairs(ys) do
       local sx, sy = reaper.JS_Window_ClientToScreen(TR.hwnd, cx, cy)
+      if not host_at(sx, sy) then covered = true end
       local _, thing = reaper.GetThingFromPoint(sx, sy)
       if is_protected(thing) then return true end
     end
@@ -2057,7 +2087,9 @@ local function protected_spans()
   local m = math.floor((fine and 3 or 6) * TR.measure + 0.5)
   for _, sp in ipairs(spans) do sp[1], sp[2] = sp[1] - m, sp[2] + m end
   table.sort(spans, function(a, b) return a[1] < b[1] end)
-  room.spans, room.fine = spans, fine
+  room.spans, room.fine = spans, fine and not covered
+  -- (something in front of the Transport: read again in a second, until it's gone)
+  if covered then room.changed = now + 0.75 end
   return spans
 end
 

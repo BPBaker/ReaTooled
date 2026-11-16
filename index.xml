@@ -32,7 +32,7 @@
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="3.2026.1115.2133" author="Brendan Baker" time="2026-11-16T02:33:30Z">
+      <version name="3.2026.1115.2218" author="Brendan Baker" time="2026-11-16T03:18:48Z">
         <changelog><![CDATA[Configuration updated (no new entries in the release notes).
 
 To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or run "Update ReaTooled").]]></changelog>
@@ -44,7 +44,7 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
         <source file="ReaTooled/Config/themeconfig.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/themeconfig.ini</source>
         <source file="ReaTooled/Config/theme.txt">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/theme.txt</source>
         <source file="ReaTooled/Config/extstate.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/extstate.ini</source>
-        <source file="ReaTooled/Config/version.txt">https://github.com/BPBaker/ReaTooled/releases/download/v3.2026.1115.2133/installs.txt</source>
+        <source file="ReaTooled/Config/version.txt">https://github.com/BPBaker/ReaTooled/releases/download/v3.2026.1115.2218/installs.txt</source>
         <source file="ReaTooled/Config/reaper_sections.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/reaper_sections.ini</source>
         <source file="ReaTooled/Config/update_rules.txt">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/update_rules.txt</source>
         <source file="ReaTooled/Config/screensets.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/screensets.ini</source>
@@ -185,7 +185,7 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
 {\pard \ql \f0 \sa180 \li0 \fi0 ReaTooled's themes, installed into REAPER's ColorThemes folder. "Default_7.0 ReaTooled v3 Dark" is the default.\par}
 }]]></description>
       </metadata>
-      <version name="3.2026.1115.2133" author="Brendan Baker" time="2026-11-16T02:33:30Z">
+      <version name="3.2026.1115.2218" author="Brendan Baker" time="2026-11-16T03:18:48Z">
         <source file="Assembled_ReaTooled v1.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Assembled_ReaTooled%20v1.ReaperThemeZip</source>
         <source file="Default_7.0 ReaTooled v2 Light.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Default_7.0%20ReaTooled%20v2%20Light.ReaperThemeZip</source>
         <source file="Default_7.0 ReaTooled v3 Dark.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Default_7.0%20ReaTooled%20v3%20Dark.ReaperThemeZip</source>
@@ -589,9 +589,8 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="3.4" author="Brendan Baker" time="2026-11-13T07:20:57Z">
-        <changelog><![CDATA[• New: Put next to the ruler (the window's right-click menu, or the grip menu). It fills the empty space between the main toolbar's buttons and the ruler (where REAPER shows the grid division, above the track list), covering it completely, with the controls kept to the right, by the ruler. It follows that space as the track list or the toolbar changes width. It fits itself to the space: two rows when there's room, else one column (Grid, division, Nudge, value), as large as fits. Drag the grip (or the background) to the left to make it bigger: it grows to the left, over the toolbar if need be; drag right to make it smaller; Reset size fits the space again. The grip menu sets its height in the space, the layout (automatic, two rows, one column) and Lock size. If it can't fit, the window shows instead. Its settings are kept apart from the Transport's
-• The grip menu is reorganised: where to show it first (Transport, next to the ruler, window, with a tick on the current one), then Position (in the Transport, its attach points in left-to-right order; then Lock and Reset position), then Layout (rows, Reset size, HiDPI), then Close]]></changelog>
+      <version name="3.4.1" author="Brendan Baker" time="2026-11-16T03:18:48Z">
+        <changelog><![CDATA[• Transport: in the right spot on the first start after installing ReaTooled. What's where in the Transport (the transport buttons, the time and selection displays) is read from what REAPER has under each point, and on that first start the Scrolling window and ReaPack's download window can sit in front of the Transport: what was read there was theirs, and it was kept until REAPER's window was resized. A point covered by another window no longer counts: it's read again a second later, until nothing covers it]]></changelog>
         <source file="ReaTooled_Grid and Nudge Settings.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Grid%20and%20Nudge%20Settings.lua</source>
       </version>
     </reapack>
