@@ -1,6 +1,6 @@
 --[[
 -- @description ReaTooled - Set up ReaTooled
--- @version 2.4.2
+-- @version 2.4.5
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -20,6 +20,18 @@
     When you click OK at the end, REAPER quits, the helper writes those files,
     and the same copy of REAPER opens again by itself.
 -- CHANGELOG
+-- v2.4.5 Short messages about the tools by other developers: no long lists of names (the window
+--        could get taller than the screen, hiding OK). "Set up ReaTooled now?" says ReaPack installs
+--        more files first, to follow ReaPack's prompts, and that there's no need to restart REAPER
+--        yourself. Names of anything that couldn't be installed go to Data/ReaTooled/setup_report.txt
+-- v2.4.4 Installed through ReaPack by hand: the tools by other developers ReaTooled uses are no
+--        longer a separate Yes/No warning before setup. "Set up ReaTooled now?" lists them, and after
+--        OK, ReaPack installs them and setup carries on by itself (no second question). The package
+--        installer's route is unchanged (it installs them itself)
+-- v2.4.3 The last message no longer lists the ReaTooled actions left without a shortcut because
+--        you kept your own keys (you chose that in the shortcut window; they're still listed in
+--        Data/ReaTooled/setup_report.txt, without the blank "0" entries). Installation windows are
+--        titled "ReaTooled Installation: ..." (updates "ReaTooled Update: ...")
 -- v2.4.2 Each window's title says what it's for (ReaTooled Is Installed, ReaTooled Is Updated,
 --        Installing Required Tools, Choose Your Shortcuts, Installation Problem, ...); the last
 --        message reads "ReaTooled has been set up successfully". ReaPack's transaction report
@@ -740,8 +752,8 @@ if _G.REATOOLED_RELAUNCH_HELPER then
 end
 
 -- Window titles: each says what the window is for
-local T_PROBLEM = "ReaTooled: Installation Problem"
-local T_TOOLS   = "ReaTooled: Installing Required Tools"
+local T_PROBLEM = "ReaTooled Installation: Problem"
+local T_TOOLS   = "ReaTooled Installation: Required Tools"
 local T_CHOICES = "ReaTooled: Shortcut Choices"
 local T_UPDATE  = "Update ReaTooled"
 
@@ -771,74 +783,74 @@ local CONFIG_VER = (read_file(CONFIG .. "/version.txt") or ""):match("[%d%.]+") 
 local keymap_text = read_file(CONFIG .. "/keymap.ini") or ""
 
 ------------------------------------------------------------
--- 1b. Tools by other developers that ReaTooled uses: any that are missing are offered and
--- installed through ReaPack first (asked once per REAPER session; not right after the package
--- installer, which has just done it). When ReaPack has finished, Set up starts again.
+-- 1b. Tools by other developers that ReaTooled uses: any that are missing are installed through
+-- ReaPack once you've clicked OK to set up (once per REAPER session; not right after the package
+-- installer, which has just done it). When ReaPack has finished, Set up starts again by itself.
 ------------------------------------------------------------
 local DEPS
 do
   local ok_d, d = pcall(dofile, RES .. "/Scripts/ReaTooled/Startup/ReaTooled_Dependencies lib.lua")
   if ok_d and type(d) == "table" then DEPS = d end
 end
-if DEPS and _G.REATOOLED_PACKAGE_CONFIRMED ~= true and reaper.GetExtState("ReaTooled", "DepsAsked") ~= "1" then
-  local need = DEPS.quick_missing()
-  if #need > 0 then
-    reaper.SetExtState("ReaTooled", "DepsAsked", "1", false)
-    local names = {}
-    for _, d in ipairs(need) do names[#names + 1] = "  " .. DEPS.name_of(d) end
-    local a = msg("ReaTooled uses these tools by other developers, which aren't installed:\n\n" ..
-      table.concat(names, "\n") .. "\n\nInstall them now with ReaPack? (Recommended. ReaPack keeps " ..
-      "them up to date; extensions start working when REAPER restarts at the end of setup.)", 4, T_TOOLS)   -- Yes / No
-    if a == 6 then
-      local SELF = (debug.getinfo(1, "S").source or ""):match("^@(.+)$")
-      local saved_update, saved_pkg = _G.REATOOLED_UPDATE, _G.REATOOLED_PACKAGE_CONFIRMED
-      local function again()
-        _G.REATOOLED_UPDATE, _G.REATOOLED_PACKAGE_CONFIRMED = saved_update, saved_pkg
-        local ok_s, err_s = pcall(dofile, SELF)
-        if not ok_s then msg("Set up ReaTooled couldn't start again:\n\n" .. tostring(err_s), 0, T_PROBLEM) end
-      end
-      DEPS.install({ list = need, on_done = function(r)
-        local failed = {}
-        for _, n in ipairs(r.failed) do failed[#failed + 1] = "  " .. n end
-        -- ReaPack must have completely finished (its report closed) before Set up goes on
-        local quiet
-        local function wait_reapack()
-          -- (ReaPack's transaction report closes by itself: only its restart notice needs a click)
-          if DEPS.close_report then DEPS.close_report() end
-          local busy = DEPS.reapack_busy()
-          if busy == nil then   -- (no js_ReaScriptAPI to see ReaPack's windows: ask)
-            msg((#failed > 0 and ("These couldn't be installed:\n" .. table.concat(failed, "\n") .. "\n\n") or "") ..
-              "When ReaPack has finished (close its report window if it's open), click OK to " ..
-              "continue setting up ReaTooled.", 0, T_TOOLS)
-            return again()
-          end
-          if busy then quiet = nil
-          elseif not quiet then quiet = reaper.time_precise()
-          elseif reaper.time_precise() - quiet >= 1 then
-            if #failed > 0 then
-              msg("These couldn't be installed (the shortcuts that use them won't work until they " ..
-                "are):\n" .. table.concat(failed, "\n"), 0, T_PROBLEM)
-            end
-            return again()
-          end
-          reaper.defer(wait_reapack)
-        end
-        reaper.defer(wait_reapack)
-      end })
-      return
-    end
+-- (a manual ReaPack install: they're installed after you click OK at "Set up ReaTooled now?",
+-- without a separate question; not in Shortcut choices, and not after the package installer)
+local DEPS_NEED = {}
+if DEPS and _G.REATOOLED_PACKAGE_CONFIRMED ~= true and _G.REATOOLED_UPDATE ~= "choices" and
+    reaper.GetExtState("ReaTooled", "DepsAsked") ~= "1" then
+  DEPS_NEED = DEPS.quick_missing()
+end
+
+-- Install them through ReaPack, then start Set up again, already confirmed (update: the update
+-- goes on; setup: setup goes on)
+local function install_deps_then_again(update)
+  reaper.SetExtState("ReaTooled", "DepsAsked", "1", false)   -- (once a session: no loop if one fails)
+  local SELF = (debug.getinfo(1, "S").source or ""):match("^@(.+)$")
+  local function again()
+    if update then _G.REATOOLED_UPDATE = "confirmed" else _G.REATOOLED_SETUP_CONFIRMED = true end
+    local ok_s, err_s = pcall(dofile, SELF)
+    _G.REATOOLED_SETUP_CONFIRMED = nil
+    if not ok_s then msg("Set up ReaTooled couldn't start again:\n\n" .. tostring(err_s), 0, T_PROBLEM) end
   end
+  DEPS.install({ list = DEPS_NEED, on_done = function(r)
+    local failed = {}
+    for _, n in ipairs(r.failed) do failed[#failed + 1] = "  " .. n end
+    -- ReaPack must have completely finished (its report closed) before Set up goes on
+    local quiet
+    local function wait_reapack()
+      -- (ReaPack's transaction report closes by itself: only its restart notice needs a click)
+      if DEPS.close_report then DEPS.close_report() end
+      local busy = DEPS.reapack_busy()
+      if busy == nil then   -- (no js_ReaScriptAPI to see ReaPack's windows: ask)
+        msg((#failed > 0 and (#failed .. " tool(s) couldn't be installed.\n\n") or "") ..
+          "When ReaPack has finished (close its report window if it's open), click OK to " ..
+          "continue setting up ReaTooled.", 0, T_TOOLS)
+        return again()
+      end
+      if busy then quiet = nil
+      elseif not quiet then quiet = reaper.time_precise()
+      elseif reaper.time_precise() - quiet >= 1 then
+        if #failed > 0 then
+          msg(#failed .. " tool(s) by other developers couldn't be installed (no internet, or a site that " ..
+            "didn't answer), so the shortcuts that use them won't work yet. Setup carries on; to try again " ..
+            "later, restart REAPER and run \"Set up ReaTooled\" again.", 0, T_PROBLEM)
+        end
+        return again()
+      end
+      reaper.defer(wait_reapack)
+    end
+    reaper.defer(wait_reapack)
+  end })
 end
 
 local missing = {}
-for _, ext in ipairs(EXTENSIONS) do
+for _, ext in ipairs(#DEPS_NEED == 0 and EXTENSIONS or {}) do
   -- (installed but not loaded yet counts: it loads at the restart at the end)
   if not reaper.APIExists(ext[2]) and not (DEPS and DEPS.quick_has_file(ext[3])) then
     missing[#missing + 1] = "  " .. ext[1]
   end
 end
 -- Scripts by other developers that the shortcuts, menus and mouse modifiers use
-for _, line in ipairs(lines_of(keymap_text)) do
+for _, line in ipairs(#DEPS_NEED == 0 and lines_of(keymap_text) or {}) do
   if line:match("^SCR ") then
     local path = line:match('"([^"]+)"%s*$') or line:match("(%S+)%s*$")
     if path and not path:match("^ReaTooled/") and not exists(RES .. "/Scripts/" .. path) then
@@ -916,6 +928,9 @@ local UPDATE = false
 -- (Shortcut choices: an update showing every remembered shortcut choice)
 local CHOICES_MODE = _G.REATOOLED_UPDATE == "choices"
 local CONFIRMED = _G.REATOOLED_UPDATE == "confirmed" or CHOICES_MODE   -- (Update ReaTooled asked already)
+-- (started again after installing the tools above, from a setup you'd already said OK to)
+local SETUP_CONFIRMED = _G.REATOOLED_SETUP_CONFIRMED == true
+_G.REATOOLED_SETUP_CONFIRMED = nil
 if CHOICES_MODE and not BASE_REC then
   _G.REATOOLED_UPDATE = nil
   msg("ReaTooled isn't set up yet, so there are no shortcut choices to change.\n\n" ..
@@ -925,6 +940,8 @@ end
 if BASE_REC then
   if _G.REATOOLED_UPDATE then
     UPDATE = true
+  elseif SETUP_CONFIRMED then
+    UPDATE = false   -- (you chose to set up again, before the tools were installed)
   else
     local a = msg("ReaTooled is already set up" .. (BASE_VER ~= "" and (" (v" .. BASE_VER .. ")") or "") .. ".\n\n" ..
       "Yes: Update to v" .. CONFIG_VER .. ". Your own changes (shortcuts, toolbars, settings) and your " ..
@@ -942,22 +959,29 @@ local intro = "Set up ReaTooled" .. (CONFIG_VER ~= "" and (" v" .. CONFIG_VER) o
   "yours, you choose which to keep, then REAPER restarts."
 
 if #missing > 0 then
-  intro = "Some things ReaTooled uses are not installed:\n\n" ..
-    table.concat(missing, "\n") ..
-    "\n\nThe tools that use them won't work until they're installed " ..
-    "(the ReaBoot link from the guide adds them all).\n\n" .. intro
+  intro = #missing .. " tool(s) by other developers that ReaTooled uses aren't installed, so the " ..
+    "shortcuts that use them won't work yet. To try again, restart REAPER and run \"Set up ReaTooled\" " ..
+    "again (they're listed in Data/ReaTooled/setup_report.txt once setup has finished).\n\n" .. intro
 end
 
 if UPDATE then
-  intro = (#missing > 0 and ("Some things ReaTooled uses are not installed:\n\n" .. table.concat(missing, "\n") ..
-    "\n\nThe tools that use them won't work until they're installed.\n\n") or "") ..
+  intro = (#missing > 0 and (#missing .. " tool(s) by other developers that ReaTooled uses aren't installed, " ..
+    "so the shortcuts that use them won't work yet (they're listed in Data/ReaTooled/setup_report.txt once setup has finished).\n\n") or "") ..
     "Update ReaTooled" .. (BASE_VER ~= "" and (" from v" .. BASE_VER) or "") .. " to v" .. CONFIG_VER .. " now?\n\n" ..
     "Your current settings are backed up first. Your own changes and your window layout are kept. " ..
     "If any new ReaTooled shortcuts clash with yours, you choose which to keep, then REAPER restarts."
 end
--- (the package installer asked already)
+-- The tools by other developers still to install: installed first, after this OK
+if #DEPS_NEED > 0 then
+  intro = intro .. "\n\nReaTooled also needs a few more files (free tools by other developers). After " ..
+    "you click OK, ReaPack downloads and installs them, then " .. (UPDATE and "the update" or "setup") ..
+    " carries on by itself. If ReaPack shows any messages, just click OK. There's no need to " ..
+    "restart REAPER yourself: " .. (UPDATE and "the update" or "setup") .. " restarts it for you at the end."
+end
+-- (the package installer asked already; or you did, before the tools were installed)
 local FROM_PACKAGE = _G.REATOOLED_PACKAGE_CONFIRMED == true and not UPDATE
-if not ((UPDATE and CONFIRMED) or FROM_PACKAGE) and msg(intro, 1, UPDATE and T_UPDATE or TITLE) ~= 1 then return end   -- OK / Cancel
+if not ((UPDATE and CONFIRMED) or FROM_PACKAGE or SETUP_CONFIRMED) and msg(intro, 1, UPDATE and T_UPDATE or TITLE) ~= 1 then return end   -- OK / Cancel
+if #DEPS_NEED > 0 then install_deps_then_again(UPDATE); return end
 
 ------------------------------------------------------------
 -- 1a. ReaTooled Shortcuts off (your own mouse modifiers in place): back on first, so
@@ -1045,7 +1069,7 @@ end
 if #backup_failed > 0 or not exists(backup_dir .. "/backup_info.txt") then
   msg("The backup did not finish, so nothing was changed.\n\nCould not copy:\n  " ..
       table.concat(backup_failed, "\n  ") .. "\n\nBackup folder:\n" .. backup_dir, 0,
-      UPDATE and "ReaTooled: Update Problem" or T_PROBLEM)
+      UPDATE and "ReaTooled Update: Problem" or T_PROBLEM)
   return
 end
 
@@ -1921,7 +1945,7 @@ local function clash_window()
     end
 
     local flags = ImGui.WindowFlags_NoCollapse | ImGui.WindowFlags_AlwaysAutoResize | ImGui.WindowFlags_NoDocking
-    local visible, open = ImGui.Begin(ctx, CHOICES_MODE and T_CHOICES or "ReaTooled: Choose Your Shortcuts", true, flags)
+    local visible, open = ImGui.Begin(ctx, CHOICES_MODE and T_CHOICES or (UPDATE and "ReaTooled Update: Choose Your Shortcuts" or "ReaTooled Installation: Choose Your Shortcuts"), true, flags)
     if visible then
       if capture then record() end
       ImGui.PushFont(ctx, font_b); ImGui.Text(ctx, CHOICES_MODE and "Shortcut choices" or "Shortcut clashes"); ImGui.PopFont(ctx)
@@ -2500,14 +2524,24 @@ finish_setup = function()
     details[#details + 1] = "Script settings: only new ones added (" .. ext_count .. ")." ..
       (upd.files_kept > 0 and (" Your changed cursors/menu sets kept: " .. upd.files_kept .. ".") or "")
   end
-  if #left_without > 0 then
-    details[#details + 1] = "ReaTooled actions without a shortcut (you kept your own key): " .. table.concat(left_without, "; ")
+  local named = {}
+  for _, n in ipairs(left_without) do
+    if n and n ~= "" and not tostring(n):match("^%d+$") then named[#named + 1] = n end   -- (no blank "0" entries)
+  end
+  if #named > 0 then
+    details[#details + 1] = "ReaTooled actions without a shortcut (you kept your own key): " .. table.concat(named, "; ")
   end
   if #gave_away > 0 then
     details[#details + 1] = "Your actions now without a shortcut (their key went to ReaTooled): " .. table.concat(gave_away, "; ")
   end
   if clash_fallback then
     details[#details + 1] = "ReaImGui isn't installed, so the shortcut clashes weren't shown: every clashing key was kept as yours."
+  end
+  if #missing > 0 then
+    local names = {}
+    for _, m in ipairs(missing) do names[#names + 1] = (m:gsub("^%s+", "")) end
+    details[#details + 1] = "Tools by other developers not installed (install them from Extensions > ReaPack > Browse packages): " ..
+      table.concat(names, "; ")
   end
   write_file(RES .. "/Data/ReaTooled/setup_report.txt", table.concat(details, "\n") .. "\n")
 
@@ -2521,16 +2555,9 @@ finish_setup = function()
   end
   local problem_text = #problems > 0 and ("\n\nPlease note:\n" .. table.concat(problems, "\n")) or ""
 
-  -- ReaTooled actions left without a key, so nobody wonders where they went
+  -- (ReaTooled actions left without a key aren't listed here: the shortcut window already showed
+  -- them, and keeping your own keys there was the choice. They're in setup_report.txt)
   local skipped_text = ""
-  if #left_without > 0 and not clash_fallback then
-    local shown = {}
-    for i = 1, math.min(#left_without, 8) do shown[#shown + 1] = "  " .. left_without[i] end
-    if #left_without > 8 then shown[#shown + 1] = "  and " .. (#left_without - 8) .. " more (listed in Data/ReaTooled/setup_report.txt)" end
-    skipped_text = "\n\nThese ReaTooled actions have no shortcut, because you kept your own keys:\n" ..
-      table.concat(shown, "\n") ..
-      "\nGive them keys in the Actions list, or run \"Set up ReaTooled\" again to choose differently."
-  end
 
   local quit_cmd = find_cmd("File: Quit REAPER", 40004)
   local restart_now = false
@@ -2565,7 +2592,7 @@ finish_setup = function()
 
   if not launch_helper(restart_now) then
     msg("The finishing step couldn't be prepared (no permission to write in\n" .. PENDING ..
-        ").\n\nPlease contact support.", 0, UPDATE and "ReaTooled: Update Problem" or T_PROBLEM)
+        ").\n\nPlease contact support.", 0, UPDATE and "ReaTooled Update: Problem" or T_PROBLEM)
     return
   end
 
@@ -2578,7 +2605,7 @@ finish_setup = function()
       if reaper.time_precise() - t0 < 5 then reaper.defer(still_open) return end
       msg("REAPER didn't quit, so " .. (UPDATE and "the update" or "the setup") .. " isn't finished yet.\n\n" ..
           "It finishes by itself the next time you quit REAPER (File > Quit), and REAPER then opens again.",
-          0, "ReaTooled: Restart REAPER to Finish")
+          0, UPDATE and "ReaTooled Update: Restart REAPER to Finish" or "ReaTooled Installation: Restart REAPER to Finish")
     end
     reaper.defer(still_open)
   end

@@ -32,7 +32,7 @@
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="3.2026.1115.2218" author="Brendan Baker" time="2026-11-16T03:18:48Z">
+      <version name="3.2026.1116.1442" author="Brendan Baker" time="2026-11-16T19:42:28Z">
         <changelog><![CDATA[Configuration updated (no new entries in the release notes).
 
 To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or run "Update ReaTooled").]]></changelog>
@@ -44,7 +44,7 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
         <source file="ReaTooled/Config/themeconfig.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/themeconfig.ini</source>
         <source file="ReaTooled/Config/theme.txt">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/theme.txt</source>
         <source file="ReaTooled/Config/extstate.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/extstate.ini</source>
-        <source file="ReaTooled/Config/version.txt">https://github.com/BPBaker/ReaTooled/releases/download/v3.2026.1115.2218/installs.txt</source>
+        <source file="ReaTooled/Config/version.txt">https://github.com/BPBaker/ReaTooled/releases/download/v3.2026.1116.1442/installs.txt</source>
         <source file="ReaTooled/Config/reaper_sections.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/reaper_sections.ini</source>
         <source file="ReaTooled/Config/update_rules.txt">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/update_rules.txt</source>
         <source file="ReaTooled/Config/screensets.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/screensets.ini</source>
@@ -185,7 +185,7 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
 {\pard \ql \f0 \sa180 \li0 \fi0 ReaTooled's themes, installed into REAPER's ColorThemes folder. "Default_7.0 ReaTooled v3 Dark" is the default.\par}
 }]]></description>
       </metadata>
-      <version name="3.2026.1115.2218" author="Brendan Baker" time="2026-11-16T03:18:48Z">
+      <version name="3.2026.1116.1442" author="Brendan Baker" time="2026-11-16T19:42:28Z">
         <source file="Assembled_ReaTooled v1.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Assembled_ReaTooled%20v1.ReaperThemeZip</source>
         <source file="Default_7.0 ReaTooled v2 Light.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Default_7.0%20ReaTooled%20v2%20Light.ReaperThemeZip</source>
         <source file="Default_7.0 ReaTooled v3 Dark.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Default_7.0%20ReaTooled%20v3%20Dark.ReaperThemeZip</source>
@@ -1222,8 +1222,8 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="2.4.32" author="Brendan Baker" time="2026-11-16T02:33:30Z">
-        <changelog><![CDATA[ReaTooled_Set up ReaTooled: Each window's title says what it's for (ReaTooled Is Installed, ReaTooled Is Updated, Installing Required Tools, Choose Your Shortcuts, Installation Problem, ...); the last message reads "ReaTooled has been set up successfully". ReaPack's transaction report closes by itself once ReaPack has finished installing the tools ReaTooled uses]]></changelog>
+      <version name="2.4.33" author="Brendan Baker" time="2026-11-16T19:42:28Z">
+        <changelog><![CDATA[ReaTooled_Set up ReaTooled: Short messages about the tools by other developers: no long lists of names (the window could get taller than the screen, hiding OK). "Set up ReaTooled now?" says ReaPack installs more files first, to follow ReaPack's prompts, and that there's no need to restart REAPER yourself. Names of anything that couldn't be installed go to Data/ReaTooled/setup_report.txt]]></changelog>
         <source file="ReaTooled_Dependencies lib.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Dependencies%20lib.lua</source>
         <source file="ReaTooled_Earlier shortcuts.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Earlier%20shortcuts.lua</source>
         <source file="ReaTooled_Earlier toolbars.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Earlier%20toolbars.lua</source>
@@ -1789,18 +1789,19 @@ ReaTooled_Shuffle move (background): Works without the Tools library (Shuffle on
     <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
 {\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
 \widowctrl\hyphauto
-{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 ReaTooled: The Pro Tools Alternative\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 ReaTooled brings Pro Tools' editing features and workflow to REAPER while staying true to REAPER. Your projects stay normal REAPER projects, and ReaTooled works with any REAPER project, made with it or not.\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 {\b Note:} ReaTooled changes REAPER's appearance, preferences, shortcuts, menus, toolbars and mouse behavior. Setup backs up your current settings first and asks before replacing any of your shortcuts.\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 {\b Easy installation:} an illustrated installation guide and automated installer are available at {\field{\*\fldinst{HYPERLINK "https://8071910392990.gumroad.com/l/ReaTooled3"}}{\fldrslt{\ul https://8071910392990.gumroad.com/l/ReaTooled3}}}\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 {\b Manual installation:} install every package in this repository, then restart REAPER and "Set up ReaTooled" starts by itself. (You can also run "Script: ReaTooled_Set up ReaTooled.lua" from the Actions list.)\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 {\b Updates:} ReaTooled checks for a new version once a day and asks before updating. To update at any time, run "Script: ReaTooled_Update ReaTooled.lua".\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 {\b Going back:} run "Script: ReaTooled_Restore settings from a backup.lua" to restore your previous settings.\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 ReaTooled is a one-person project, built over 13 years of customizing REAPER for my radio and podcast work, so I can't offer individual support. If you find it useful, tips are always appreciated:\par}
-{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab {\field{\*\fldinst{HYPERLINK "https://venmo.com/brendanpbaker?txn=pay&audience=private&note=ReaTooled%20v3"}}{\fldrslt{\ul Venmo}}}\par}
-{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab {\field{\*\fldinst{HYPERLINK "https://www.paypal.com/paypalme/brendanpbaker"}}{\fldrslt{\ul PayPal}}}\par}
-{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab {\field{\*\fldinst{HYPERLINK "https://www.buymeacoffee.com/BrendanPBaker"}}{\fldrslt{\ul Buy me a coffee}}}\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 Many thanks, Brendan\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 ReaTooled: The Pro Tools Alternative in REAPER\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 ReaTooled emulates Pro Tools\u8217? features and workflow while staying true to REAPER.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 NOTE: ReaTooled changes REAPER\u8217?s appearance, preferences, key commands, menus, toolbars and mouse behavior. ReaTooled\u8217?s setup script backs up your existing settings first and asks before replacing any of your shortcuts.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 The easy installer package and detailed installation instructions can be purchased here: {\field{\*\fldinst{HYPERLINK "https://bpbaker.gumroad.com/l/ReaTooled"}}{\fldrslt{\ul https://bpbaker.gumroad.com/l/ReaTooled}}}\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 For manual installation, install everything in this repository then run \u8220?Script: ReaTooled_Set up ReaTooled.lua\u8221? from the Action list or restart REAPER and the setup script will launch automatically.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 ReaTooled checks for a new version once a day and if an update is available, it asks before updating. Or run \u8220?Script: ReaTooled_Update ReaTooled.lua\u8221? to update manually.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 To restore your previous settings, run \u8220?Script: ReaTooled_Restore settings from a backup.lua\u8221?\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 ReaTooled is a one-person project, built slowly over 13 years of customizing REAPER for my radio and podcast work. If you find this useful and want to support my work, tips and donations are always appreciated:\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab via {\field{\*\fldinst{HYPERLINK "https://venmo.com/brendanpbaker?txn=pay&audience=private&note=ReaTooled%20v3"}}{\fldrslt{\ul Venmo}}}: {\field{\*\fldinst{HYPERLINK "https://venmo.com/brendanpbaker?txn=pay&audience=private&note=ReaTooled%20v3"}}{\fldrslt{\ul https://venmo.com/brendanpbaker?txn=pay&audience=private&note=ReaTooled%20v3}}}\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab via {\field{\*\fldinst{HYPERLINK "https://www.paypal.com/paypalme/brendanpbaker"}}{\fldrslt{\ul PayPal}}}: {\field{\*\fldinst{HYPERLINK "https://www.paypal.com/paypalme/brendanpbaker"}}{\fldrslt{\ul https://www.paypal.com/paypalme/brendanpbaker}}}\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab or {\field{\*\fldinst{HYPERLINK "https://www.buymeacoffee.com/BrendanPBaker"}}{\fldrslt{\ul buy me a coffee}}}: {\field{\*\fldinst{HYPERLINK "https://www.buymeacoffee.com/BrendanPBaker"}}{\fldrslt{\ul https://www.buymeacoffee.com/BrendanPBaker}}}\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 Many thanks,\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 Brendan\par}
 }]]></description>
     <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
     <link rel="donation" href="https://venmo.com/brendanpbaker?txn=pay&amp;audience=private&amp;note=ReaTooled%20v3">Venmo</link>
