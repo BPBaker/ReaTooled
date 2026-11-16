@@ -1,6 +1,6 @@
 --[[
 -- @description ReaTooled - Dependencies library
--- @version 1.2
+-- @version 1.3
 -- @author Brendan Baker
 -- @noindex
 -- @about
@@ -377,6 +377,35 @@ end
 function M.name_of(d)
   local name = unurl(d.url:match("#p=.*/([^/]+)$") or d.url)
   return (name:gsub("%.ext$", ""):gsub("%.lua$", ""):gsub("%.eel$", ""):gsub("^reaper%-oss_", ""))
+end
+
+-- ReaPack's transaction report (shown once it has finished) closed by itself, so nobody has to
+-- click OK on it as well as on ReaPack's restart notice: its OK, once it has been showing for
+-- half a second (ReaPack has finished by then); if it's still open a second later, closed.
+-- Each report window once. true when one was closed just now. Needs js_ReaScriptAPI.
+local report_seen = {}
+function M.close_report(now)
+  if not (reaper.JS_Window_ListFind and reaper.JS_WindowMessage_Post) then return false end
+  now = now or reaper.time_precise()
+  local closed = false
+  local _, l = reaper.JS_Window_ListFind("Transaction report", false)
+  for addr in ((l or "") .. ","):gmatch("(.-),") do
+    local h = addr ~= "" and reaper.JS_Window_HandleFromAddress(addr)
+    local e = report_seen[addr]
+    if h and reaper.JS_Window_IsVisible(h) and e ~= false then
+      if not e then e = { t = now }; report_seen[addr] = e end
+      if not e.ok and now - e.t >= 0.5 then
+        reaper.JS_WindowMessage_Post(h, "WM_COMMAND", 1, 0, 0, 0)   -- (its OK)
+        e.ok = now; closed = true
+        M.log("closed ReaPack's transaction report")
+      elseif e.ok and now - e.ok >= 1 then
+        reaper.JS_WindowMessage_Post(h, "WM_CLOSE", 0, 0, 0, 0)
+        report_seen[addr] = false; closed = true
+        M.log("closed ReaPack's transaction report (WM_CLOSE)")
+      end
+    end
+  end
+  return closed
 end
 
 -- Is ReaPack still busy (its progress or report window open)? Needs js_ReaScriptAPI: nil

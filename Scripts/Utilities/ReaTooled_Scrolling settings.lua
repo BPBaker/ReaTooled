@@ -1,5 +1,5 @@
 -- @description ReaTooled - Scrolling settings
--- @version 1.2
+-- @version 1.3
 -- @date 2026.10.26
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
@@ -14,12 +14,13 @@
 --   never changed. Opens once after "Set up ReaTooled"; run it any time from
 --   the Actions list. Needs ReaImGui and SWS (both installed with ReaTooled).
 -- @changelog
+--   v1.3 The window's title is "ReaTooled: Scrolling and Zooming"
 --   v1.2 Pro Tools note reworded
 --   v1.1 Wording works on every system ("like your other apps", Alt instead of Option
 --        on Windows/Linux); says when the suggestions come from macOS natural scrolling
 --   v1.0 Initial version
 
-local TITLE = "Scrolling and zooming"
+local TITLE = "ReaTooled: Scrolling and Zooming"
 local REV_V, REV_H = 512, 1024   -- REAPER "multitouch" bits: Reverse vertical / horizontal scroll
 
 if not reaper.ImGui_GetBuiltinPath then

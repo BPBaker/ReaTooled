@@ -32,7 +32,7 @@
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="3.2026.1115.1956" author="Brendan Baker" time="2026-11-16T00:56:40Z">
+      <version name="3.2026.1115.2133" author="Brendan Baker" time="2026-11-16T02:33:30Z">
         <changelog><![CDATA[Configuration updated (no new entries in the release notes).
 
 To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or run "Update ReaTooled").]]></changelog>
@@ -44,7 +44,7 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
         <source file="ReaTooled/Config/themeconfig.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/themeconfig.ini</source>
         <source file="ReaTooled/Config/theme.txt">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/theme.txt</source>
         <source file="ReaTooled/Config/extstate.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/extstate.ini</source>
-        <source file="ReaTooled/Config/version.txt">https://github.com/BPBaker/ReaTooled/releases/download/v3.2026.1115.1956/installs.txt</source>
+        <source file="ReaTooled/Config/version.txt">https://github.com/BPBaker/ReaTooled/releases/download/v3.2026.1115.2133/installs.txt</source>
         <source file="ReaTooled/Config/reaper_sections.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/reaper_sections.ini</source>
         <source file="ReaTooled/Config/update_rules.txt">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/update_rules.txt</source>
         <source file="ReaTooled/Config/screensets.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/screensets.ini</source>
@@ -185,7 +185,7 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
 {\pard \ql \f0 \sa180 \li0 \fi0 ReaTooled's themes, installed into REAPER's ColorThemes folder. "Default_7.0 ReaTooled v3 Dark" is the default.\par}
 }]]></description>
       </metadata>
-      <version name="3.2026.1115.1956" author="Brendan Baker" time="2026-11-16T00:56:40Z">
+      <version name="3.2026.1115.2133" author="Brendan Baker" time="2026-11-16T02:33:30Z">
         <source file="Assembled_ReaTooled v1.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Assembled_ReaTooled%20v1.ReaperThemeZip</source>
         <source file="Default_7.0 ReaTooled v2 Light.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Default_7.0%20ReaTooled%20v2%20Light.ReaperThemeZip</source>
         <source file="Default_7.0 ReaTooled v3 Dark.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Default_7.0%20ReaTooled%20v3%20Dark.ReaperThemeZip</source>
@@ -1223,10 +1223,8 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="2.4.31" author="Brendan Baker" time="2026-11-16T00:56:40Z">
-        <changelog><![CDATA[ReaTooled_Restore settings from a backup: With ReaTooled Shortcuts off (your own mouse modifiers in place), turns them back on first (and off again if you cancel). "Put everything back exactly" puts back the backup's mouse modifiers exactly; "Keep my later changes" also keeps what you changed in your own mouse setup (shortcuts off) since setup. Removing ReaTooled also removes the two saved mouse setups
-ReaTooled_Set up ReaTooled: With ReaTooled Shortcuts off, turns them back on first, so the backup, the update and the record are of ReaTooled's setup (your own mouse setup is kept for when they go off)
-ReaTooled_Startup: With ReaTooled Shortcuts off, doesn't choose the Multi tool at startup (your own mouse modifiers stay in place; turning shortcuts on brings the tool back).]]></changelog>
+      <version name="2.4.32" author="Brendan Baker" time="2026-11-16T02:33:30Z">
+        <changelog><![CDATA[ReaTooled_Set up ReaTooled: Each window's title says what it's for (ReaTooled Is Installed, ReaTooled Is Updated, Installing Required Tools, Choose Your Shortcuts, Installation Problem, ...); the last message reads "ReaTooled has been set up successfully". ReaPack's transaction report closes by itself once ReaPack has finished installing the tools ReaTooled uses]]></changelog>
         <source file="ReaTooled_Dependencies lib.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Dependencies%20lib.lua</source>
         <source file="ReaTooled_Earlier shortcuts.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Earlier%20shortcuts.lua</source>
         <source file="ReaTooled_Earlier toolbars.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Earlier%20toolbars.lua</source>
@@ -1668,8 +1666,8 @@ ReaTooled_Shuffle move (background): Works without the Tools library (Shuffle on
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="1.2" author="Brendan Baker">
-        <changelog><![CDATA[Pro Tools note reworded]]></changelog>
+      <version name="1.3" author="Brendan Baker" time="2026-11-16T02:33:30Z">
+        <changelog><![CDATA[The window's title is "ReaTooled: Scrolling and Zooming"]]></changelog>
         <source file="ReaTooled_Scrolling settings.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Utilities/ReaTooled_Scrolling%20settings.lua</source>
       </version>
     </reapack>

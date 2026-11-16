@@ -1,6 +1,6 @@
 --[[
 -- @description ReaTooled - Set up ReaTooled
--- @version 2.4.1
+-- @version 2.4.2
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -20,6 +20,10 @@
     When you click OK at the end, REAPER quits, the helper writes those files,
     and the same copy of REAPER opens again by itself.
 -- CHANGELOG
+-- v2.4.2 Each window's title says what it's for (ReaTooled Is Installed, ReaTooled Is Updated,
+--        Installing Required Tools, Choose Your Shortcuts, Installation Problem, ...); the last
+--        message reads "ReaTooled has been set up successfully". ReaPack's transaction report
+--        closes by itself once ReaPack has finished installing the tools ReaTooled uses
 -- v2.4.1 With ReaTooled Shortcuts off, turns them back on first, so the backup, the update and
 --        the record are of ReaTooled's setup (your own mouse setup is kept for when they go off)
 -- v2.4 Tools by other developers that are missing (SWS, js_ReaScriptAPI, ReaImGui, reAAF, the
@@ -735,8 +739,14 @@ if _G.REATOOLED_RELAUNCH_HELPER then
   return
 end
 
-local function msg(text, buttons)
-  return reaper.ShowMessageBox(text, TITLE, buttons or 0)
+-- Window titles: each says what the window is for
+local T_PROBLEM = "ReaTooled: Installation Problem"
+local T_TOOLS   = "ReaTooled: Installing Required Tools"
+local T_CHOICES = "ReaTooled: Shortcut Choices"
+local T_UPDATE  = "Update ReaTooled"
+
+local function msg(text, buttons, title)
+  return reaper.ShowMessageBox(text, title or TITLE, buttons or 0)
 end
 
 ------------------------------------------------------------
@@ -745,7 +755,7 @@ end
 
 if not reaper.APIExists("ReaPack_AddSetRepository") then
   msg("ReaPack is not installed, so ReaTooled can't be set up.\n\n" ..
-      "Install ReaTooled with the ReaBoot link from the guide, then run this again.")
+      "Install ReaTooled with the ReaBoot link from the guide, then run this again.", 0, T_PROBLEM)
   return
 end
 
@@ -753,7 +763,7 @@ if not exists(CONFIG .. "/keymap.ini") then
   msg("The ReaTooled configuration isn't installed yet.\n\n" ..
       "Install ReaTooled with the ReaBoot link from the guide, or in ReaPack " ..
       "(Extensions > ReaPack > Browse packages) install \"ReaTooled Config\" and " ..
-      "\"ReaTooled Themes\". Then run this again.")
+      "\"ReaTooled Themes\". Then run this again.", 0, T_PROBLEM)
   return
 end
 local CONFIG_VER = (read_file(CONFIG .. "/version.txt") or ""):match("[%d%.]+") or ""
@@ -778,14 +788,14 @@ if DEPS and _G.REATOOLED_PACKAGE_CONFIRMED ~= true and reaper.GetExtState("ReaTo
     for _, d in ipairs(need) do names[#names + 1] = "  " .. DEPS.name_of(d) end
     local a = msg("ReaTooled uses these tools by other developers, which aren't installed:\n\n" ..
       table.concat(names, "\n") .. "\n\nInstall them now with ReaPack? (Recommended. ReaPack keeps " ..
-      "them up to date; extensions start working when REAPER restarts at the end of setup.)", 4)   -- Yes / No
+      "them up to date; extensions start working when REAPER restarts at the end of setup.)", 4, T_TOOLS)   -- Yes / No
     if a == 6 then
       local SELF = (debug.getinfo(1, "S").source or ""):match("^@(.+)$")
       local saved_update, saved_pkg = _G.REATOOLED_UPDATE, _G.REATOOLED_PACKAGE_CONFIRMED
       local function again()
         _G.REATOOLED_UPDATE, _G.REATOOLED_PACKAGE_CONFIRMED = saved_update, saved_pkg
         local ok_s, err_s = pcall(dofile, SELF)
-        if not ok_s then msg("Set up ReaTooled couldn't start again:\n\n" .. tostring(err_s)) end
+        if not ok_s then msg("Set up ReaTooled couldn't start again:\n\n" .. tostring(err_s), 0, T_PROBLEM) end
       end
       DEPS.install({ list = need, on_done = function(r)
         local failed = {}
@@ -793,11 +803,13 @@ if DEPS and _G.REATOOLED_PACKAGE_CONFIRMED ~= true and reaper.GetExtState("ReaTo
         -- ReaPack must have completely finished (its report closed) before Set up goes on
         local quiet
         local function wait_reapack()
+          -- (ReaPack's transaction report closes by itself: only its restart notice needs a click)
+          if DEPS.close_report then DEPS.close_report() end
           local busy = DEPS.reapack_busy()
           if busy == nil then   -- (no js_ReaScriptAPI to see ReaPack's windows: ask)
             msg((#failed > 0 and ("These couldn't be installed:\n" .. table.concat(failed, "\n") .. "\n\n") or "") ..
               "When ReaPack has finished (close its report window if it's open), click OK to " ..
-              "continue setting up ReaTooled.")
+              "continue setting up ReaTooled.", 0, T_TOOLS)
             return again()
           end
           if busy then quiet = nil
@@ -805,7 +817,7 @@ if DEPS and _G.REATOOLED_PACKAGE_CONFIRMED ~= true and reaper.GetExtState("ReaTo
           elseif reaper.time_precise() - quiet >= 1 then
             if #failed > 0 then
               msg("These couldn't be installed (the shortcuts that use them won't work until they " ..
-                "are):\n" .. table.concat(failed, "\n"))
+                "are):\n" .. table.concat(failed, "\n"), 0, T_PROBLEM)
             end
             return again()
           end
@@ -907,7 +919,7 @@ local CONFIRMED = _G.REATOOLED_UPDATE == "confirmed" or CHOICES_MODE   -- (Updat
 if CHOICES_MODE and not BASE_REC then
   _G.REATOOLED_UPDATE = nil
   msg("ReaTooled isn't set up yet, so there are no shortcut choices to change.\n\n" ..
-      "Run \"Set up ReaTooled\" first.")
+      "Run \"Set up ReaTooled\" first.", 0, T_CHOICES)
   return
 end
 if BASE_REC then
@@ -918,7 +930,7 @@ if BASE_REC then
       "Yes: Update to v" .. CONFIG_VER .. ". Your own changes (shortcuts, toolbars, settings) and your " ..
       "window layout and screensets are kept.\n\n" ..
       "No: Set up again from scratch. ReaTooled's settings, toolbars and window layout are applied " ..
-      "again (your shortcut clashes are still asked about).", 3)   -- Yes / No / Cancel
+      "again (your shortcut clashes are still asked about).", 3, "ReaTooled Is Already Set Up")   -- Yes / No / Cancel
     if a == 2 then return end
     UPDATE = (a == 6)
   end
@@ -945,7 +957,7 @@ if UPDATE then
 end
 -- (the package installer asked already)
 local FROM_PACKAGE = _G.REATOOLED_PACKAGE_CONFIRMED == true and not UPDATE
-if not ((UPDATE and CONFIRMED) or FROM_PACKAGE) and msg(intro, 1) ~= 1 then return end   -- OK / Cancel
+if not ((UPDATE and CONFIRMED) or FROM_PACKAGE) and msg(intro, 1, UPDATE and T_UPDATE or TITLE) ~= 1 then return end   -- OK / Cancel
 
 ------------------------------------------------------------
 -- 1a. ReaTooled Shortcuts off (your own mouse modifiers in place): back on first, so
@@ -1032,7 +1044,8 @@ if #backup_failed == 0 then
 end
 if #backup_failed > 0 or not exists(backup_dir .. "/backup_info.txt") then
   msg("The backup did not finish, so nothing was changed.\n\nCould not copy:\n  " ..
-      table.concat(backup_failed, "\n  ") .. "\n\nBackup folder:\n" .. backup_dir)
+      table.concat(backup_failed, "\n  ") .. "\n\nBackup folder:\n" .. backup_dir, 0,
+      UPDATE and "ReaTooled: Update Problem" or T_PROBLEM)
   return
 end
 
@@ -1908,7 +1921,7 @@ local function clash_window()
     end
 
     local flags = ImGui.WindowFlags_NoCollapse | ImGui.WindowFlags_AlwaysAutoResize | ImGui.WindowFlags_NoDocking
-    local visible, open = ImGui.Begin(ctx, TITLE .. " - shortcuts", true, flags)
+    local visible, open = ImGui.Begin(ctx, CHOICES_MODE and T_CHOICES or "ReaTooled: Choose Your Shortcuts", true, flags)
     if visible then
       if capture then record() end
       ImGui.PushFont(ctx, font_b); ImGui.Text(ctx, CHOICES_MODE and "Shortcut choices" or "Shortcut clashes"); ImGui.PopFont(ctx)
@@ -1996,7 +2009,7 @@ local function clash_window()
         if c.update ~= c.was_update or c.alt_ours or c.alt_yours then changed = true end
       end
       if not changed then
-        reaper.defer(function() msg("Nothing was changed.") end)
+        reaper.defer(function() msg("Nothing was changed.", 0, CHOICES_MODE and T_CHOICES or nil) end)
         return
       end
     end
@@ -2007,7 +2020,7 @@ local function clash_window()
     elseif outcome == "cancel" then
       reaper.defer(function()
         msg(CHOICES_MODE and "Nothing was changed." or ("Setup cancelled. Nothing was changed.\n\n" ..
-            "Run \"Set up ReaTooled\" again whenever you're ready."))
+            "Run \"Set up ReaTooled\" again whenever you're ready."), 0, CHOICES_MODE and T_CHOICES or (UPDATE and T_UPDATE or nil))
       end)
       return
     end
@@ -2521,6 +2534,13 @@ finish_setup = function()
 
   local quit_cmd = find_cmd("File: Quit REAPER", 40004)
   local restart_now = false
+  -- The last message: its title says what's done, and that REAPER restarts to finish
+  local done_title = CHOICES_MODE and T_CHOICES or (UPDATE and "ReaTooled Is Updated" or "ReaTooled Is Installed")
+  local done_text = (CHOICES_MODE and "Your shortcut choices are saved.")
+    or (UPDATE and ("ReaTooled has been updated to v" .. CONFIG_VER .. "."))
+    or "ReaTooled has been set up successfully."
+  local scroll_text = (UPDATE or CHOICES_MODE) and "" or
+    "\n\nWhen REAPER reopens, a small window lets you try scrolling and zooming, and adjust them if you like."
   if quit_cmd then
     local kept_text = ""
     if UPDATE and #upd.menus_merged > 0 then
@@ -2531,23 +2551,21 @@ finish_setup = function()
         "): ReaTooled's new versions of them weren't applied."
     end
     if kept_text ~= "" then kept_text = kept_text .. " Details in Data/ReaTooled/setup_report.txt." end
-    restart_now = (msg((UPDATE and ("ReaTooled is updated to v" .. CONFIG_VER .. ". Click OK to restart REAPER and finish." .. kept_text)
-      or ("ReaTooled is set up. Click OK to restart REAPER and finish." ..
-      "\n\nWhen REAPER reopens, a small window lets you try scrolling and zooming, and adjust them if you like.")) ..
+    restart_now = (msg(done_text .. " Click OK and REAPER will restart to finish. Save anything you're " ..
+      "working on first: REAPER will ask about unsaved projects." .. kept_text .. scroll_text ..
       problem_text .. skipped_text ..
       "\n\nYour old settings were backed up to:\n" .. backup_dir ..
-      "\n\nTo undo, run \"Restore settings from a backup\".", 1) == 1)
+      "\n\nTo undo, run \"Restore settings from a backup\".", 1, done_title) == 1)
   else
-    msg("ReaTooled is set up. Quit REAPER and open it again to finish." ..
-      "\n\nWhen REAPER reopens, a small window lets you try scrolling and zooming, and adjust them if you like." .. problem_text .. skipped_text ..
-      "\n\nYour old settings were backed up to:\n" .. backup_dir)
+    msg(done_text .. " Quit REAPER and open it again to finish." .. scroll_text .. problem_text .. skipped_text ..
+      "\n\nYour old settings were backed up to:\n" .. backup_dir, 0, done_title)
   end
 
   if not clash_fallback then save_choices() end
 
   if not launch_helper(restart_now) then
     msg("The finishing step couldn't be prepared (no permission to write in\n" .. PENDING ..
-        ").\n\nPlease contact support.")
+        ").\n\nPlease contact support.", 0, UPDATE and "ReaTooled: Update Problem" or T_PROBLEM)
     return
   end
 
@@ -2559,7 +2577,8 @@ finish_setup = function()
     local function still_open()
       if reaper.time_precise() - t0 < 5 then reaper.defer(still_open) return end
       msg("REAPER didn't quit, so " .. (UPDATE and "the update" or "the setup") .. " isn't finished yet.\n\n" ..
-          "It finishes by itself the next time you quit REAPER (File > Quit), and REAPER then opens again.")
+          "It finishes by itself the next time you quit REAPER (File > Quit), and REAPER then opens again.",
+          0, "ReaTooled: Restart REAPER to Finish")
     end
     reaper.defer(still_open)
   end
@@ -2568,7 +2587,7 @@ end
 local shown_rows = 0
 for _, c in ipairs(conflicts) do if not c.hidden then shown_rows = shown_rows + 1 end end
 if CHOICES_MODE and shown_rows == 0 then
-  msg("None of ReaTooled's shortcuts use keys you use for something else, so there are no choices to change.")
+  msg("None of ReaTooled's shortcuts use keys you use for something else, so there are no choices to change.", 0, T_CHOICES)
   return
 end
 if shown_rows > 0 then

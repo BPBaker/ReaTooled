@@ -63,7 +63,7 @@ Helpers/ReaTooled_Show Spectrogram on Selected Track(s).lua	1.4	d02c6905
 Mouse Actions/ReaTooled_Mousewheel adjust pitch of item under cursor.lua	1.1	7c4881e5
 Mouse Actions/ReaTooled_Mousewheel to change take volume for selected items.lua	1.1	b7729828
 Mouse Actions/ReaTooled_Mousewheel to zoom items peaks view gain.lua	1.1	e6939720
-Startup/ReaTooled Startup	2.4.31	d7a3725f
+Startup/ReaTooled Startup	2.4.32	c7a24581
 Toggles/ReaTooled - Ripple Off (Slip).lua	1.2	55e703da
 Toggles/ReaTooled MULTI Icon toggle.lua	1.0	e80a68cc
 Toggles/ReaTooled_At loop end, move cursor to loop end and clear selection (only when loop button is off).lua	2.8	ab09eee2
@@ -94,7 +94,7 @@ Transport/ReaTooled_Go to marker by number (keypad . number .).lua	1.1	c4a952d2
 Transport/ReaTooled_Play-Stop (with memory, edit-play toggles, and no undo).lua	2.7.7	08cebb82
 Utilities/ReaTooled_Create backup key map.lua	1.0	a9f9f8b9
 Utilities/ReaTooled_Merge backup key map with current key map.lua	1.0	b181a2b8
-Utilities/ReaTooled_Scrolling settings.lua	1.2	713819d4
+Utilities/ReaTooled_Scrolling settings.lua	1.3	195f4695
 Utilities/ReaTooled_Shortcut choices.lua	1.0	0c6dfed8
 Utilities/ReaTooled_Update key map from .ReaperConfigZip file.lua	1.0	7de8a313
 Zoom/ReaTooled Zoom Presets	1.1	31240b26
