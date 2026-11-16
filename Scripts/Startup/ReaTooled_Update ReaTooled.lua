@@ -1,6 +1,6 @@
 --[[
 -- @description ReaTooled - Update ReaTooled
--- @version 1.0.4
+-- @version 1.0.5
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -13,6 +13,7 @@
     Also run by ReaTooled's startup once a day (quietly): if a newer release is out, it
     asks whether to update now.
     CHANGELOG
+    v1.0.5 No longer asks you to close ReaPack's window: the update carries on by itself
     v1.0.4 Checks the newest release on GitHub's Releases page as well as the repository
            (whichever is newer counts). Each check adds one to that release's download
            count, which is how ReaTooled counts how many people use it; nothing about you
@@ -164,7 +165,8 @@ local function apply_when_reapack_done()
     if (busy or reaper.time_precise() - t0 < 2) and reaper.time_precise() - t0 < SYNC_WAIT then
       if busy and not told and reaper.time_precise() - t0 > 4 then
         told = true
-        msg("Close ReaPack's window when it has finished, and the update will be applied.")
+        msg("ReaPack is still finishing. The update will be applied by itself as soon as it's done: " ..
+            "if ReaPack shows a message, just click OK.")
       end
       reaper.defer(wait)
       return
@@ -201,7 +203,8 @@ local function download_then_apply(remote)
       if settle and not told and reaper.time_precise() - arrived > 4 then
         told = true
         msg("ReaTooled v" .. remote .. " has been downloaded.\n\n" ..
-            "Close ReaPack's window when it has finished, and the update will be applied.")
+            "ReaPack is still finishing. The update will be applied by itself as soon as it's done: " ..
+            "if ReaPack shows a message, just click OK.")
       end
       reaper.defer(wait)
       return

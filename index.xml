@@ -32,7 +32,7 @@
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="3.2026.1116.1442" author="Brendan Baker" time="2026-11-16T19:42:28Z">
+      <version name="3.2026.1116.1527" author="Brendan Baker" time="2026-11-16T20:27:17Z">
         <changelog><![CDATA[Configuration updated (no new entries in the release notes).
 
 To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or run "Update ReaTooled").]]></changelog>
@@ -44,7 +44,7 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
         <source file="ReaTooled/Config/themeconfig.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/themeconfig.ini</source>
         <source file="ReaTooled/Config/theme.txt">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/theme.txt</source>
         <source file="ReaTooled/Config/extstate.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/extstate.ini</source>
-        <source file="ReaTooled/Config/version.txt">https://github.com/BPBaker/ReaTooled/releases/download/v3.2026.1116.1442/installs.txt</source>
+        <source file="ReaTooled/Config/version.txt">https://github.com/BPBaker/ReaTooled/releases/download/v3.2026.1116.1527/installs.txt</source>
         <source file="ReaTooled/Config/reaper_sections.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/reaper_sections.ini</source>
         <source file="ReaTooled/Config/update_rules.txt">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/update_rules.txt</source>
         <source file="ReaTooled/Config/screensets.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/screensets.ini</source>
@@ -185,7 +185,7 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
 {\pard \ql \f0 \sa180 \li0 \fi0 ReaTooled's themes, installed into REAPER's ColorThemes folder. "Default_7.0 ReaTooled v3 Dark" is the default.\par}
 }]]></description>
       </metadata>
-      <version name="3.2026.1116.1442" author="Brendan Baker" time="2026-11-16T19:42:28Z">
+      <version name="3.2026.1116.1527" author="Brendan Baker" time="2026-11-16T20:27:17Z">
         <source file="Assembled_ReaTooled v1.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Assembled_ReaTooled%20v1.ReaperThemeZip</source>
         <source file="Default_7.0 ReaTooled v2 Light.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Default_7.0%20ReaTooled%20v2%20Light.ReaperThemeZip</source>
         <source file="Default_7.0 ReaTooled v3 Dark.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Default_7.0%20ReaTooled%20v3%20Dark.ReaperThemeZip</source>
@@ -589,8 +589,8 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="3.4.1" author="Brendan Baker" time="2026-11-16T03:18:48Z">
-        <changelog><![CDATA[• Transport: in the right spot on the first start after installing ReaTooled. What's where in the Transport (the transport buttons, the time and selection displays) is read from what REAPER has under each point, and on that first start the Scrolling window and ReaPack's download window can sit in front of the Transport: what was read there was theirs, and it was kept until REAPER's window was resized. A point covered by another window no longer counts: it's read again a second later, until nothing covers it]]></changelog>
+      <version name="3.4.2" author="Brendan Baker" time="2026-11-16T20:27:17Z">
+        <changelog><![CDATA[• Transport: in the right spot on the first start after installing ReaTooled, without having to resize REAPER's window. When the Transport changed (REAPER still laying it out at startup, or being resized) the left edge of the selection display was only followed from where it had been, which could latch onto the wrong edge and keep it until the next resize. Now, once a change has settled, the whole Transport is read again; and for the first minute after starting it's read again every 3 seconds until three reads agree. For the first 90 seconds, each placement is written to Data/ReaTooled/grid_nudge_placement.txt (for testing)]]></changelog>
         <source file="ReaTooled_Grid and Nudge Settings.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Grid%20and%20Nudge%20Settings.lua</source>
       </version>
     </reapack>
@@ -1222,8 +1222,9 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="2.4.33" author="Brendan Baker" time="2026-11-16T19:42:28Z">
-        <changelog><![CDATA[ReaTooled_Set up ReaTooled: Short messages about the tools by other developers: no long lists of names (the window could get taller than the screen, hiding OK). "Set up ReaTooled now?" says ReaPack installs more files first, to follow ReaPack's prompts, and that there's no need to restart REAPER yourself. Names of anything that couldn't be installed go to Data/ReaTooled/setup_report.txt]]></changelog>
+      <version name="2.4.34" author="Brendan Baker" time="2026-11-16T20:27:17Z">
+        <changelog><![CDATA[ReaTooled_Set up ReaTooled: Window titles in sentence case ("ReaTooled is installed"); no message asks you to close ReaPack's windows (the restart at the end closes them)
+ReaTooled_Update ReaTooled: No longer asks you to close ReaPack's window: the update carries on by itself]]></changelog>
         <source file="ReaTooled_Dependencies lib.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Dependencies%20lib.lua</source>
         <source file="ReaTooled_Earlier shortcuts.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Earlier%20shortcuts.lua</source>
         <source file="ReaTooled_Earlier toolbars.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Earlier%20toolbars.lua</source>

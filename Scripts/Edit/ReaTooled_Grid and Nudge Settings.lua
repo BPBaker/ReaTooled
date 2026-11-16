@@ -1,6 +1,6 @@
 -- @description ReaTooled - Grid & Nudge Settings (Dockable GUI)
--- @version 3.4.1
--- @date 2026.11.15
+-- @version 3.4.2
+-- @date 2026.11.16
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -41,6 +41,15 @@
 --     the label shown when the project's grid can't be matched to a menu entry.
 --
 -- @changelog
+--   v3.4.2 (2026-11-16)
+--     • Transport: in the right spot on the first start after installing ReaTooled, without
+--       having to resize REAPER's window. When the Transport changed (REAPER still laying it out
+--       at startup, or being resized) the left edge of the selection display was only followed
+--       from where it had been, which could latch onto the wrong edge and keep it until the next
+--       resize. Now, once a change has settled, the whole Transport is read again; and for the
+--       first minute after starting it's read again every 3 seconds until three reads agree.
+--       For the first 90 seconds, each placement is written to
+--       Data/ReaTooled/grid_nudge_placement.txt (for testing)
 --   v3.4.1 (2026-11-15)
 --     • Transport: in the right spot on the first start after installing ReaTooled. What's
 --       where in the Transport (the transport buttons, the time and selection displays) is
@@ -1590,15 +1599,53 @@ local function selection_edges()
   local _, ww, wh = reaper.JS_Window_GetClientSize(TR.hwnd)
   local key = ww .. "x" .. wh .. "|" .. layout_key()
   local now = reaper.time_precise()
+  -- (the whole Transport read again: its two edges found from scratch)
+  local function full()
+    sel_cache.key, sel_cache.t, sel_cache.scan_t = key, now, now
+    sel_covered = false
+    local l, r, y = selection_scan(ww, wh)
+    if l and l == sel_cache.l and r == sel_cache.r and not sel_covered then
+      sel_cache.agree = (sel_cache.agree or 0) + 1
+    else
+      sel_cache.agree = 0
+    end
+    sel_cache.l, sel_cache.r, sel_cache.y = l, r, y
+    sel_cache.none = (l == nil)
+    sel_cache.covered = sel_covered
+    sel_cache.pending = false
+    return l, r
+  end
   -- (measured while a window covered part of the Transport: again a second later, from scratch)
   if sel_cache.covered then
     if now - sel_cache.t < 1 then return sel_cache.l, sel_cache.r end
-    sel_cache.l, sel_cache.key, sel_cache.none = nil, nil, false
+    return full()
   end
   -- (no selection display at this size: don't look again until the size changes, or for
   -- 5 seconds; before, the whole Transport was searched again on every frame)
   if sel_cache.none and sel_cache.key == key and now - sel_cache.t < 5 then return nil end
-  if sel_cache.l and sel_cache.key == key then
+  if sel_cache.l and sel_cache.key ~= key then
+    -- Changing (being resized, or REAPER laying it out): the edge is followed cheaply so the
+    -- box moves with it, and once it has settled the whole Transport is read again. Following
+    -- alone could latch onto the wrong edge (one inside the selection display, or where it was
+    -- before REAPER finished laying the Transport out) and keep it until the next resize.
+    sel_covered = false
+    local l = selection_follow(ww)
+    if l and not sel_covered then
+      sel_cache.r = sel_cache.r and (sel_cache.r + (l - sel_cache.l)) or nil
+      sel_cache.l, sel_cache.key, sel_cache.t = l, key, now
+      sel_cache.pending, sel_cache.changed, sel_cache.agree = true, now, 0
+      return sel_cache.l, sel_cache.r
+    end
+    return full()
+  end
+  if sel_cache.l then
+    -- settled after a change: read it all once
+    if sel_cache.pending and now - (sel_cache.changed or 0) >= 0.5 then return full() end
+    -- for the first minute after starting (REAPER is still opening, windows come and go
+    -- in front of the Transport): read it all every 3 seconds until three reads agree
+    if (sel_cache.agree or 0) < 2 and now - LAYOUT_T0 < 60 and now - (sel_cache.scan_t or 0) >= 3 then
+      return full()
+    end
     if now - sel_cache.t < 0.5 then return sel_cache.l, sel_cache.r end
     sel_cache.t = now
     local l, y = sel_cache.l, sel_cache.y
@@ -1608,23 +1655,11 @@ local function selection_edges()
     if nl then
       sel_cache.r = sel_cache.r and (sel_cache.r + (nl - sel_cache.l)) or nil
       sel_cache.l = nl
+      sel_cache.pending, sel_cache.changed = true, now
       return sel_cache.l, sel_cache.r
     end
   end
-  if sel_cache.l and sel_cache.key ~= key then
-    local l = selection_follow(ww)
-    if l then
-      sel_cache.r = sel_cache.r and (sel_cache.r + (l - sel_cache.l)) or nil
-      sel_cache.l, sel_cache.key = l, key
-      return sel_cache.l, sel_cache.r
-    end
-  end
-  sel_cache.key, sel_cache.t = key, now
-  sel_covered = false
-  sel_cache.l, sel_cache.r, sel_cache.y = selection_scan(ww, wh)
-  sel_cache.none = (sel_cache.l == nil)
-  sel_cache.covered = sel_covered
-  return sel_cache.l, sel_cache.r
+  return full()
 end
 
 local function anchor_base(a)
@@ -2124,6 +2159,27 @@ local function find_spot(want, w, extra)
 end
 
 -- The largest form of the box that has room (variants in order), and where
+-- For the first 90 seconds after REAPER starts, each change in where the box goes in the
+-- Transport (and why) is written to Data/ReaTooled/grid_nudge_placement.txt (a new file each
+-- start), so a box in the wrong place on the first start can be explained
+local PLACE_LOG = reaper.GetResourcePath() .. "/Data/ReaTooled/grid_nudge_placement.txt"
+local place_last, place_fresh = nil, true
+local function place_log(want, x)
+  local t = reaper.time_precise() - LAYOUT_T0
+  if t > 90 then return end
+  local spans = {}
+  for _, sp in ipairs(room.spans or {}) do spans[#spans + 1] = sp[1] .. "-" .. sp[2] end
+  local line = string.format("Transport %dx%d | anchor %d offset %s | selection %s-%s%s%s | buttons/time %s | wanted x %d, placed %s, width %d",
+    TR.ww or -1, TR.wh or -1, T.anchor, tostring(T.offset), tostring(sel_cache.l), tostring(sel_cache.r),
+    sel_cache.covered and " (covered)" or "", sel_cache.pending and " (settling)" or "",
+    table.concat(spans, " "), want or -1, tostring(x), TR.w or -1)
+  if line == place_last then return end
+  place_last = line
+  local f = io.open(PLACE_LOG, place_fresh and "w" or "a")
+  if f then f:write(string.format("%6.2f s  %s\n", t, line)); f:close() end
+  place_fresh = false
+end
+
 local RULER_VARIANTS = {   -- { one column, "G"/"N" labels, size }
   { false, false, 1 }, { true, false, 1 }, { true, false, 0.85 }, { true, true, 0.85 },
   { true, true, 0.7 }, { true, true, 0.6 },
@@ -2181,6 +2237,7 @@ local function fit_box()
     -- (growing back takes a few points more than it needs, so it doesn't flicker)
     local extra = (i < cur) and math.floor(6 * TR.measure + 0.5) or 0
     local x = find_spot(want, TR.w, extra)
+    place_log(want, x)
     if x then
       TR.x, TR.variant, TR.hidden = x, i, false
       return true

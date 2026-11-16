@@ -1,6 +1,6 @@
 --[[
 -- @description ReaTooled - Set up ReaTooled
--- @version 2.4.5
+-- @version 2.4.6
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -20,6 +20,8 @@
     When you click OK at the end, REAPER quits, the helper writes those files,
     and the same copy of REAPER opens again by itself.
 -- CHANGELOG
+-- v2.4.6 Window titles in sentence case ("ReaTooled is installed"); no message asks you to
+--        close ReaPack's windows (the restart at the end closes them)
 -- v2.4.5 Short messages about the tools by other developers: no long lists of names (the window
 --        could get taller than the screen, hiding OK). "Set up ReaTooled now?" says ReaPack installs
 --        more files first, to follow ReaPack's prompts, and that there's no need to restart REAPER
@@ -822,7 +824,7 @@ local function install_deps_then_again(update)
       local busy = DEPS.reapack_busy()
       if busy == nil then   -- (no js_ReaScriptAPI to see ReaPack's windows: ask)
         msg((#failed > 0 and (#failed .. " tool(s) couldn't be installed.\n\n") or "") ..
-          "When ReaPack has finished (close its report window if it's open), click OK to " ..
+          "When ReaPack has finished, click OK to " ..
           "continue setting up ReaTooled.", 0, T_TOOLS)
         return again()
       end
@@ -947,7 +949,7 @@ if BASE_REC then
       "Yes: Update to v" .. CONFIG_VER .. ". Your own changes (shortcuts, toolbars, settings) and your " ..
       "window layout and screensets are kept.\n\n" ..
       "No: Set up again from scratch. ReaTooled's settings, toolbars and window layout are applied " ..
-      "again (your shortcut clashes are still asked about).", 3, "ReaTooled Is Already Set Up")   -- Yes / No / Cancel
+      "again (your shortcut clashes are still asked about).", 3, "ReaTooled is already set up")   -- Yes / No / Cancel
     if a == 2 then return end
     UPDATE = (a == 6)
   end
@@ -2562,7 +2564,7 @@ finish_setup = function()
   local quit_cmd = find_cmd("File: Quit REAPER", 40004)
   local restart_now = false
   -- The last message: its title says what's done, and that REAPER restarts to finish
-  local done_title = CHOICES_MODE and T_CHOICES or (UPDATE and "ReaTooled Is Updated" or "ReaTooled Is Installed")
+  local done_title = CHOICES_MODE and T_CHOICES or (UPDATE and "ReaTooled is updated" or "ReaTooled is installed")
   local done_text = (CHOICES_MODE and "Your shortcut choices are saved.")
     or (UPDATE and ("ReaTooled has been updated to v" .. CONFIG_VER .. "."))
     or "ReaTooled has been set up successfully."
