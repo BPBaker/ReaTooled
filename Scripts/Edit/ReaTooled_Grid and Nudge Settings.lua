@@ -1,5 +1,5 @@
 -- @description ReaTooled - Grid & Nudge Settings (Dockable GUI)
--- @version 3.4.2
+-- @version 3.4.5
 -- @date 2026.11.16
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
@@ -41,6 +41,26 @@
 --     the label shown when the project's grid can't be matched to a menu entry.
 --
 -- @changelog
+--   v3.4.5 (2026-11-16)
+--     • Transport: smoother still while REAPER's window is resized. The Transport no longer holds
+--       back its redraw during the resize (it waits 30-45 ms otherwise, so updates go out
+--       together), and the transport buttons aren't read again until the resize has stopped
+--       (the time display still is, on every frame). Both only while the Transport is changing
+--       size: a quarter of a second after it stops, everything is as before
+--   v3.4.4 (2026-11-16)
+--     • Transport: resizing REAPER's window is smooth again while the box is in the Transport.
+--       On every frame of a resize the whole Transport was read again (hundreds of lookups on
+--       REAPER's own thread). Now, while it's changing, the transport buttons are read again at
+--       most 5 times a second (the time display, one lookup, on every frame), the selection
+--       display is looked for first where the change in width puts it, and the full reading
+--       follows once the resize has stopped, as before. Less work overall, not more
+--     • The placement log (grid_nudge_placement.txt) is gone
+--   v3.4.3 (2026-11-16)
+--     • Transport: no jumps while REAPER opens. When the selection display isn't where it was
+--       and the Transport hasn't changed size, the whole Transport is read again (following the
+--       edge from there could land inside the selection display); and a reading taken while a
+--       window covers the Transport keeps the box where it last was, instead of moving it next
+--       to the time display
 --   v3.4.2 (2026-11-16)
 --     • Transport: in the right spot on the first start after installing ReaTooled, without
 --       having to resize REAPER's window. When the Transport changed (REAPER still laying it out
@@ -1294,8 +1314,13 @@ end
 
 -- (how soon it's redrawn after REAPER redraws the window: in the Transport a little later,
 -- which is lighter; next to the ruler at once, so both parts change together)
+-- How long the Transport may hold back its redraw, so updates go out together (fewer redraws).
+-- While the Transport is changing size (TR.resizing) there's no wait, so the box keeps up
+-- with it; once the size has settled it's back to the usual wait
 local function delay(h)
-  if mode == "ruler" then reaper.JS_Composite_Delay(h, 0, 0, 0)
+  local want = (mode == "ruler" or TR.resizing) and 0 or 1
+  if h == TR.hwnd then TR.delay_state = want end
+  if want == 0 then reaper.JS_Composite_Delay(h, 0, 0, 0)
   else reaper.JS_Composite_Delay(h, 0.03, 0.045, 2) end
 end
 
@@ -1587,10 +1612,14 @@ end
 local function selection_follow(ww)
   local l0, y = sel_cache.l, sel_cache.y
   if not l0 or not y then return nil end
+  -- (it usually keeps its distance from the Transport's right edge, so the search starts where
+  -- the change in width puts it: found in a lookup or two, instead of dozens on every frame of
+  -- a resize. If it's not there, the search widens from that point as before)
+  local g = l0 + (sel_cache.ww and (ww - sel_cache.ww) or 0)
   local function edge(x) return x >= 0 and x < ww and sel_at(x, y) and (x == 0 or not sel_at(x - 1, y)) end
   for d = 0, math.min(ww, 400) do
-    if edge(l0 + d) then return l0 + d end
-    if d > 0 and edge(l0 - d) then return l0 - d end
+    if edge(g + d) then return g + d end
+    if d > 0 and edge(g - d) then return g - d end
   end
   return nil
 end
@@ -1604,12 +1633,18 @@ local function selection_edges()
     sel_cache.key, sel_cache.t, sel_cache.scan_t = key, now, now
     sel_covered = false
     local l, r, y = selection_scan(ww, wh)
+    -- (read while a window covered part of the Transport: the last good reading is kept,
+    -- so the box stays where it was instead of jumping, and it's read again a second later)
+    if sel_covered and sel_cache.l then
+      sel_cache.covered, sel_cache.agree, sel_cache.pending = true, 0, false
+      return sel_cache.l, sel_cache.r
+    end
     if l and l == sel_cache.l and r == sel_cache.r and not sel_covered then
       sel_cache.agree = (sel_cache.agree or 0) + 1
     else
       sel_cache.agree = 0
     end
-    sel_cache.l, sel_cache.r, sel_cache.y = l, r, y
+    sel_cache.l, sel_cache.r, sel_cache.y, sel_cache.ww = l, r, y, ww
     sel_cache.none = (l == nil)
     sel_cache.covered = sel_covered
     sel_cache.pending = false
@@ -1632,7 +1667,7 @@ local function selection_edges()
     local l = selection_follow(ww)
     if l and not sel_covered then
       sel_cache.r = sel_cache.r and (sel_cache.r + (l - sel_cache.l)) or nil
-      sel_cache.l, sel_cache.key, sel_cache.t = l, key, now
+      sel_cache.l, sel_cache.key, sel_cache.t, sel_cache.ww = l, key, now, ww
       sel_cache.pending, sel_cache.changed, sel_cache.agree = true, now, 0
       return sel_cache.l, sel_cache.r
     end
@@ -1649,15 +1684,13 @@ local function selection_edges()
     if now - sel_cache.t < 0.5 then return sel_cache.l, sel_cache.r end
     sel_cache.t = now
     local l, y = sel_cache.l, sel_cache.y
-    if y and sel_at(l, y) and (l == 0 or not sel_at(l - 1, y)) then return sel_cache.l, sel_cache.r end
-    -- (it moved without the Transport changing size, e.g. a theme or layout change)
-    local nl = selection_follow(ww)
-    if nl then
-      sel_cache.r = sel_cache.r and (sel_cache.r + (nl - sel_cache.l)) or nil
-      sel_cache.l = nl
-      sel_cache.pending, sel_cache.changed = true, now
+    sel_covered = false
+    if y and sel_at(l, y) and (l == 0 or not sel_at(l - 1, y)) and not sel_covered then
       return sel_cache.l, sel_cache.r
     end
+    -- (not there any more without the Transport changing size: a window in front of it, or a
+    -- theme or layout change. Following from here could land on an edge inside the selection
+    -- display, so it's all read again)
   end
   return full()
 end
@@ -2068,15 +2101,54 @@ local function is_protected(thing)
   return name ~= nil and PROTECTED[name] == true
 end
 
-local room = { key = nil, spans = {}, fine = false, changed = 0 }
+local room = { key = nil, spans = {}, fine = false, changed = 0, read_t = 0, btn = nil, m = 0 }
+-- the time display: its own window (one lookup)
+local function time_span()
+  local st = reaper.JS_Window_FindChildByID(TR.hwnd, 1010)
+  if st and reaper.JS_Window_IsVisible(st) then
+    local _, l, t, r, b = reaper.JS_Window_GetRect(st)
+    local cl = reaper.JS_Window_ScreenToClient(TR.hwnd, l, t)
+    local cr = reaper.JS_Window_ScreenToClient(TR.hwnd, r, b)
+    return { math.min(cl, cr), math.max(cl, cr) }
+  end
+end
+-- the transport buttons as last read, the time display where it is now, a little clearance around each
+local function assemble(btn, m)
+  local spans = {}
+  for _, sp in ipairs(btn) do spans[#spans + 1] = { sp[1], sp[2] } end
+  local ts = time_span()
+  if ts then spans[#spans + 1] = ts end
+  for _, sp in ipairs(spans) do sp[1], sp[2] = sp[1] - m, sp[2] + m end
+  table.sort(spans, function(a, b) return a[1] < b[1] end)
+  return spans
+end
 local function protected_spans()
   local ww, wh = TR.ww, TR.wh
   local centred = reaper.GetToggleCommandState(40533)
   local key = table.concat({ ww, wh, centred, layout_key() }, "|")
   local now = reaper.time_precise()
-  if key ~= room.key then room.key, room.fine, room.changed = key, false, now
+  -- (the size changing: REAPER's window being resized, or a docker beside the Transport)
+  if ww ~= room.ww or wh ~= room.wh then
+    room.ww, room.wh = ww, wh
+    if room.btn then room.size_t = now end
+  end
+  TR.resizing = room.size_t ~= nil and now - room.size_t < 0.25
+  if key ~= room.key then
+    local had = room.btn ~= nil and room.key ~= nil
+    room.key, room.fine, room.changed = key, false, now
+    -- While REAPER's window is being resized this changes on every frame, and reading the
+    -- whole Transport each time (hundreds of lookups, on REAPER's own thread) made the resize
+    -- choppy. So while it's changing, the last reading of the buttons is used (the time
+    -- display, one lookup, where it is now), read again at most 5 times a second; the fine
+    -- reading follows once it has settled, as before
+    -- (v3.4.5: while the size is changing, not read at all: each reading is a few hundred
+    -- lookups, which showed as a hitch during the resize. Other changes are read as before)
+    if had and (TR.resizing or now - room.read_t < 0.2) then
+      room.spans = assemble(room.btn, room.m)
+      return room.spans
+    end
   elseif room.fine or now - room.changed < 0.25 then return room.spans end
-  local fine = room.key == key and now - room.changed >= 0.25
+  local fine = now - room.changed >= 0.25
   local step = math.max(2, math.floor(6 * TR.measure))
   local ys = { math.floor(wh * 0.3), math.floor(wh * 0.7) }   -- (the box is centred, about full height)
   local covered = false
@@ -2110,22 +2182,13 @@ local function protected_spans()
       sp[1], sp[2] = l, r + 1
     end
   end
-  -- the time display: its own window
-  local st = reaper.JS_Window_FindChildByID(TR.hwnd, 1010)
-  if st and reaper.JS_Window_IsVisible(st) then
-    local _, l, t, r, b = reaper.JS_Window_GetRect(st)
-    local cl = reaper.JS_Window_ScreenToClient(TR.hwnd, l, t)
-    local cr = reaper.JS_Window_ScreenToClient(TR.hwnd, r, b)
-    spans[#spans + 1] = { math.min(cl, cr), math.max(cl, cr) }
-  end
-  -- a little clearance around each, coarse ones a bit more
   local m = math.floor((fine and 3 or 6) * TR.measure + 0.5)
-  for _, sp in ipairs(spans) do sp[1], sp[2] = sp[1] - m, sp[2] + m end
-  table.sort(spans, function(a, b) return a[1] < b[1] end)
-  room.spans, room.fine = spans, fine and not covered
+  room.btn, room.m, room.read_t = spans, m, now
+  room.spans = assemble(spans, m)
+  room.fine = fine and not covered
   -- (something in front of the Transport: read again in a second, until it's gone)
   if covered then room.changed = now + 0.75 end
-  return spans
+  return room.spans
 end
 
 -- Where the box (w wide, plus 'extra' room) can go: its own spot if that's clear,
@@ -2159,27 +2222,6 @@ local function find_spot(want, w, extra)
 end
 
 -- The largest form of the box that has room (variants in order), and where
--- For the first 90 seconds after REAPER starts, each change in where the box goes in the
--- Transport (and why) is written to Data/ReaTooled/grid_nudge_placement.txt (a new file each
--- start), so a box in the wrong place on the first start can be explained
-local PLACE_LOG = reaper.GetResourcePath() .. "/Data/ReaTooled/grid_nudge_placement.txt"
-local place_last, place_fresh = nil, true
-local function place_log(want, x)
-  local t = reaper.time_precise() - LAYOUT_T0
-  if t > 90 then return end
-  local spans = {}
-  for _, sp in ipairs(room.spans or {}) do spans[#spans + 1] = sp[1] .. "-" .. sp[2] end
-  local line = string.format("Transport %dx%d | anchor %d offset %s | selection %s-%s%s%s | buttons/time %s | wanted x %d, placed %s, width %d",
-    TR.ww or -1, TR.wh or -1, T.anchor, tostring(T.offset), tostring(sel_cache.l), tostring(sel_cache.r),
-    sel_cache.covered and " (covered)" or "", sel_cache.pending and " (settling)" or "",
-    table.concat(spans, " "), want or -1, tostring(x), TR.w or -1)
-  if line == place_last then return end
-  place_last = line
-  local f = io.open(PLACE_LOG, place_fresh and "w" or "a")
-  if f then f:write(string.format("%6.2f s  %s\n", t, line)); f:close() end
-  place_fresh = false
-end
-
 local RULER_VARIANTS = {   -- { one column, "G"/"N" labels, size }
   { false, false, 1 }, { true, false, 1 }, { true, false, 0.85 }, { true, true, 0.85 },
   { true, true, 0.7 }, { true, true, 0.6 },
@@ -2237,7 +2279,6 @@ local function fit_box()
     -- (growing back takes a few points more than it needs, so it doesn't flicker)
     local extra = (i < cur) and math.floor(6 * TR.measure + 0.5) or 0
     local x = find_spot(want, TR.w, extra)
-    place_log(want, x)
     if x then
       TR.x, TR.variant, TR.hidden = x, i, false
       return true
@@ -2303,6 +2344,8 @@ local function transport_frame()
   local old_x, old_y, old_w, old_h = TR.x, TR.y, TR.w, TR.h
   local was_hidden = TR.hidden
   if TR.drag and mode ~= "ruler" then layout() else fit_box() end   -- (while you drag it, it goes where you put it)
+  -- (the resize has stopped: the Transport's usual redraw wait back)
+  if mode ~= "ruler" and TR.linked and TR.delay_state == 0 and not TR.resizing then delay(TR.hwnd) end
   if TR.hidden then
     -- no room anywhere: out of the way until there is
     if not was_hidden then
