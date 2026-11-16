@@ -1,6 +1,6 @@
 --[[
 -- @description ReaTooled - Restore settings from a backup
--- @version 1.1.4
+-- @version 1.1.5
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -19,6 +19,11 @@
     restoring that backup. REAPER quits, the files are put back, and the same
     copy of REAPER opens again.
 -- CHANGELOG
+-- v1.1.5 With ReaTooled Shortcuts off (your own mouse modifiers in place), turns them back on
+--        first (and off again if you cancel). "Put everything back exactly" puts back the
+--        backup's mouse modifiers exactly; "Keep my later changes" also keeps what you changed
+--        in your own mouse setup (shortcuts off) since setup. Removing ReaTooled also removes
+--        the two saved mouse setups
 -- v1.1.4 "Keep my later changes" also puts back earlier ReaTooled shortcuts that Set up
 --        removed when upgrading (if their key is still free), and settings Set up removed
 --        (such as an earlier theme's font lines), unless you've set them again since.
@@ -735,6 +740,74 @@ end
 -- Choose how, then confirm
 ------------------------------------------------------------
 
+------------------------------------------------------------
+-- ReaTooled Shortcuts off: your own mouse modifiers are in place, and ReaTooled's are
+-- kept aside. Turned back on first, so what's restored (and backed up) is judged
+-- against ReaTooled's setup; off again if nothing is restored.
+------------------------------------------------------------
+local SHORTCUTS_TOGGLE = RES .. "/Scripts/ReaTooled/Toggles/ReaTooled_Toggle ReaTooled Shortcuts.lua"
+local TOOLS_LIB = RES .. "/Scripts/ReaTooled/Tools/ReaTooled_Tools lib.lua"
+local SETUPS = "Data/ReaTooled/Mouse setups"
+local turned_on = false
+local function shortcuts_cmd()
+  return exists(SHORTCUTS_TOGGLE) and reaper.AddRemoveReaScript(true, 0, SHORTCUTS_TOGGLE, true) or 0
+end
+if reaper.GetExtState("ReaTooled", "MouseSetup") == "off" then
+  local cmd = shortcuts_cmd()
+  if cmd ~= 0 and reaper.GetToggleCommandState(cmd) ~= 1 then
+    reaper.Main_OnCommand(cmd, 0)
+    turned_on = reaper.GetExtState("ReaTooled", "MouseSetup") ~= "off"
+  end
+end
+local function back_off()   -- (nothing restored after all)
+  if not turned_on then return end
+  local cmd = shortcuts_cmd()
+  if cmd ~= 0 and reaper.GetToggleCommandState(cmd) == 1 then reaper.Main_OnCommand(cmd, 0) end
+end
+
+-- The saved mouse setups go with ReaTooled
+local function plan_remove_setups()
+  for _, f in ipairs({ "on.txt", "off.txt" }) do
+    if exists(RES .. "/" .. SETUPS .. "/" .. f) then plan_remove(SETUPS .. "/" .. f) end
+  end
+end
+
+-- "Keep my later changes": what you changed in your own mouse setup (shortcuts off)
+-- is kept too, over the same modifier in ReaTooled's
+local function plan_keep_own_mouse()
+  local ok, tools = pcall(dofile, TOOLS_LIB)
+  local own = ok and type(tools) == "table" and tools.mouse_setup_own_changes and tools.mouse_setup_own_changes()
+  if not own then return 0 end
+  local rel = "reaper-mouse.ini"
+  local ini = ini_parse(plan.merges[rel] or "")
+  local n = 0
+  local ctxs = {}
+  for c in pairs(own) do ctxs[#ctxs + 1] = c end
+  table.sort(ctxs)
+  for _, c in ipairs(ctxs) do
+    if not ini.sec[c] then ini.sec[c] = {}; ini.order[#ini.order + 1] = c end
+    for flag = 0, 15 do
+      local v = own[c][flag]
+      if v then
+        local key = "mm_" .. flag
+        local keep = {}
+        for _, l in ipairs(ini.sec[c]) do
+          if l ~= "!delete " .. key and not l:match("^" .. key .. "=") then keep[#keep + 1] = l end
+        end
+        keep[#keep + 1] = (v == "-1") and ("!delete " .. key) or (key .. "=" .. v)
+        ini.sec[c] = keep
+        n = n + 1
+        report("kept (you changed it)   reaper-mouse.ini  [" .. c .. "] " .. key .. " (your own setup, shortcuts off)")
+      end
+    end
+  end
+  if n > 0 then
+    plan.merges[rel] = ini_text(ini)
+    touch(rel)
+  end
+  return n
+end
+
 local keep_mode = false
 if records[1] and records[1] == chosen then
   local how = msg("How should \"" .. chosen.name .. "\" be restored?\n\n" ..
@@ -744,14 +817,20 @@ if records[1] and records[1] == chosen then
     "NO = Put everything back exactly as it was\n" ..
     "    Also undoes your own changes since then.\n\n" ..
     "CANCEL = Don't restore", 3)
-  if how == 6 then keep_mode = true elseif how ~= 7 then return end
+  if how == 6 then keep_mode = true elseif how ~= 7 then back_off(); return end
 end
 
 local confirm
 if keep_mode then
   local reverted, kept, kept_names = plan_keep()
+  kept = kept + plan_keep_own_mouse()
+  plan_remove_setups()
+  for _, k in ipairs({ "MouseSetup", "MouseSetupOnTool", "MouseSetupOnModeOverrides", "MouseSetupToolWhileOff" }) do
+    plan.ext[#plan.ext + 1] = { "ReaTooled", k, nil }
+  end
   if reverted == 0 then
     msg("Nothing to remove: every setting ReaTooled set has been changed since, or is already back.")
+    back_off()
     return
   end
   confirm = "Remove ReaTooled, keeping your later changes?\n\n" ..
@@ -763,9 +842,11 @@ if keep_mode then
     "\n\nThe full list goes in Data/ReaTooled/restore_report.txt."
 else
   plan_full()
+  if chosen.name == "Before ReaTooled" then plan_remove_setups() end   -- (ReaTooled's gone)
   if #plan.copies == 0 then
     msg("The backup \"" .. chosen.name .. "\" doesn't have any of the files ReaTooled changes, " ..
         "so there's nothing to restore.")
+    back_off()
     return
   end
   confirm = "Restore \"" .. chosen.name .. "\"" ..
@@ -781,7 +862,7 @@ local ok = msg(confirm .. "\n\n" ..
   "Your current settings are backed up first, so you can undo this by restoring that backup.\n\n" ..
   "Click OK and REAPER quits (you'll be asked to save anything unsaved), puts the files " ..
   "back, and opens again.", 1)
-if ok ~= 1 then return end
+if ok ~= 1 then back_off(); return end
 
 ------------------------------------------------------------
 -- Back up the current files first

@@ -32,7 +32,7 @@
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="3.2026.1113.220" author="Brendan Baker" time="2026-11-13T07:20:57Z">
+      <version name="3.2026.1115.1956" author="Brendan Baker" time="2026-11-16T00:56:40Z">
         <changelog><![CDATA[Configuration updated (no new entries in the release notes).
 
 To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or run "Update ReaTooled").]]></changelog>
@@ -44,7 +44,7 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
         <source file="ReaTooled/Config/themeconfig.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/themeconfig.ini</source>
         <source file="ReaTooled/Config/theme.txt">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/theme.txt</source>
         <source file="ReaTooled/Config/extstate.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/extstate.ini</source>
-        <source file="ReaTooled/Config/version.txt">https://github.com/BPBaker/ReaTooled/releases/download/v3.2026.1113.220/installs.txt</source>
+        <source file="ReaTooled/Config/version.txt">https://github.com/BPBaker/ReaTooled/releases/download/v3.2026.1115.1956/installs.txt</source>
         <source file="ReaTooled/Config/reaper_sections.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/reaper_sections.ini</source>
         <source file="ReaTooled/Config/update_rules.txt">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/update_rules.txt</source>
         <source file="ReaTooled/Config/screensets.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/screensets.ini</source>
@@ -185,7 +185,7 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
 {\pard \ql \f0 \sa180 \li0 \fi0 ReaTooled's themes, installed into REAPER's ColorThemes folder. "Default_7.0 ReaTooled v3 Dark" is the default.\par}
 }]]></description>
       </metadata>
-      <version name="3.2026.1113.220" author="Brendan Baker" time="2026-11-13T07:20:57Z">
+      <version name="3.2026.1115.1956" author="Brendan Baker" time="2026-11-16T00:56:40Z">
         <source file="Assembled_ReaTooled v1.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Assembled_ReaTooled%20v1.ReaperThemeZip</source>
         <source file="Default_7.0 ReaTooled v2 Light.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Default_7.0%20ReaTooled%20v2%20Light.ReaperThemeZip</source>
         <source file="Default_7.0 ReaTooled v3 Dark.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Default_7.0%20ReaTooled%20v3%20Dark.ReaperThemeZip</source>
@@ -1223,7 +1223,10 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="2.4.30" author="Brendan Baker" time="2026-11-13T07:20:57Z">
+      <version name="2.4.31" author="Brendan Baker" time="2026-11-16T00:56:40Z">
+        <changelog><![CDATA[ReaTooled_Restore settings from a backup: With ReaTooled Shortcuts off (your own mouse modifiers in place), turns them back on first (and off again if you cancel). "Put everything back exactly" puts back the backup's mouse modifiers exactly; "Keep my later changes" also keeps what you changed in your own mouse setup (shortcuts off) since setup. Removing ReaTooled also removes the two saved mouse setups
+ReaTooled_Set up ReaTooled: With ReaTooled Shortcuts off, turns them back on first, so the backup, the update and the record are of ReaTooled's setup (your own mouse setup is kept for when they go off)
+ReaTooled_Startup: With ReaTooled Shortcuts off, doesn't choose the Multi tool at startup (your own mouse modifiers stay in place; turning shortcuts on brings the tool back).]]></changelog>
         <source file="ReaTooled_Dependencies lib.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Dependencies%20lib.lua</source>
         <source file="ReaTooled_Earlier shortcuts.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Earlier%20shortcuts.lua</source>
         <source file="ReaTooled_Earlier toolbars.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Earlier%20toolbars.lua</source>
@@ -1474,11 +1477,12 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
         <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
 {\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
 \widowctrl\hyphauto
-{\pard \ql \f0 \sa180 \li0 \fi0 Toggles between the ReaTooled Keymap (alt 16) and Main Keymap\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 Toggles between the ReaTooled Keymap (alt 16) and Main Keymap. Off: the Main keymap and your own mouse modifiers (as they were before ReaTooled was set up, then as you left them the last time shortcuts were off), with no tool chosen. On: ReaTooled's keys and mouse modifiers exactly as they were when shortcuts went off, with the same tool. Changes made in one never reach the other. MIDI editor shortcuts and mouse modifiers stay ReaTooled's either way. Cmd+click or Option+click (Ctrl/Alt+click on Windows) the toolbar button for the option to switch only the shortcuts, and keep ReaTooled's mouse modifiers.\par}
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="1.0" author="Brendan Baker">
+      <version name="1.2" author="Brendan Baker" time="2026-11-16T00:56:40Z">
+        <changelog><![CDATA[Cmd/Option+click on the button: "Switch mouse modifiers too" (on by default). The first time shortcuts go off, a short note says what changed.]]></changelog>
         <source file="ReaTooled_Toggle ReaTooled Shortcuts.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Toggles/ReaTooled_Toggle%20ReaTooled%20Shortcuts.lua</source>
       </version>
     </reapack>
@@ -1492,12 +1496,13 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
 {\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Drag an item's left edge (REAPER's single left-edge cursor): the item's start stays, dragging right trims audio off the front, and what follows closes up as you drag.\par}
 {\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Cmd+drag (Ctrl+drag on Windows) a left edge: the same, rippling all tracks (REAPER switches to ripple all while Cmd is held on the edge, and back after).\par}
 {\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Butt joints, right edges, other modifier keys and plain clicks: as usual.\par}
-{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Trim Tool: in a ripple mode it hands left-edge trims (and left-side body drags) to this script; the trim then ends as the Trim Tool's own (selection, cursor, outline). Which items are trimmed: the grabbed one; if it's selected, the overlapping selected item on each other track; item groups; track groups (media editing); in ripple all, items starting at the same time on every other track. Locked items are never trimmed or moved. What follows: on tracks with a trimmed item, what comes after it; on grouped tracks (per track) and every track (ripple all), what starts after the grabbed item's start; markers with "Ripple edit all affects regions/markers"; automation with "Move envelope points with media items". Take envelopes, stretch markers and snap offsets stay with the audio. Snaps as REAPER's own edge drag (a line shows what it snapped to). Esc cancels; the view stays put; one undo step ("Resize media items"). Remembered when REAPER restarts (Recall ReaTooled Button States; on its own, without the rest of ReaTooled, add it to REAPER's startup actions). Works on its own too: it needs only the js_ReaScriptAPI extension. The rules: "Left edge ripple - design rules.md".\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab The view follows the drag (VIEW_FOLLOWS, on): the edge stays where it is on the timeline, and the view scrolls with the mouse so the edge stays under it and the audio after it stays put on screen, as in a plain trim. Past the arrange's left or right side the edge stays in sight there and the trim carries on by itself, faster the further past the mouse is (as REAPER's own edge drag scrolls). Off: the view stays put.\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Trim Tool: in a ripple mode it hands left-edge trims (and left-side body drags) to this script; the trim then ends as the Trim Tool's own (selection, cursor, outline). Which items are trimmed: the grabbed one; if it's selected, the overlapping selected item on each other track; item groups; track groups (media editing); in ripple all, items starting at the same time on every other track. Locked items are never trimmed or moved. What follows: on tracks with a trimmed item, what comes after it; on grouped tracks (per track) and every track (ripple all), what starts after the grabbed item's start; markers with "Ripple edit all affects regions/markers"; automation with "Move envelope points with media items". Take envelopes, stretch markers and snap offsets stay with the audio. Snaps as REAPER's own edge drag (a line shows what it snapped to). Esc cancels; one undo step ("Resize media items"). Remembered when REAPER restarts (Recall ReaTooled Button States; on its own, without the rest of ReaTooled, add it to REAPER's startup actions). Works on its own too: it needs only the js_ReaScriptAPI extension. The rules: "Left edge ripple - design rules.md".\par}
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="1.21" author="Brendan Baker" time="2026-11-13T05:41:07Z">
-        <changelog><![CDATA[Back to 1.19's behaviour (1.20's "edge follows the mouse, ripple on release" taken out)]]></changelog>
+      <version name="1.32" author="Brendan Baker" time="2026-11-16T00:56:40Z">
+        <changelog><![CDATA[The view following the drag: past the arrange's left or right side, the edge stays in sight just inside it and the trim carries on by itself, faster the further past the mouse is, as REAPER's own edge drag scrolls the view there (the audio after the edge moves on screen meanwhile, as the view can't follow both). Moving back in carries on from there]]></changelog>
         <source file="ReaTooled_Toggle Ripple edit when editing media item left edges.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Toggles/ReaTooled_Toggle%20Ripple%20edit%20when%20editing%20media%20item%20left%20edges.lua</source>
       </version>
     </reapack>
@@ -1562,11 +1567,8 @@ ReaTooled_Shuffle move (background): Works without the Tools library (Shuffle on
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="7.16.3" author="Brendan Baker" time="2026-11-13T07:20:57Z">
-        <changelog><![CDATA[Move Tool (Grabber)_ReaTooled: Pressed together with another tool key (F6+F7, F7+F8, F6+F8), the Smart Tool is chosen, as in Pro Tools (ReaTooled_Tools lib.lua)
-Razor Select Tool (Selector)_ReaTooled: Pressed together with another tool key (F6+F7, F7+F8, F6+F8), the Smart Tool is chosen, as in Pro Tools (ReaTooled_Tools lib.lua)
-ReaTooled_Tools lib: smart_chord(tool): two tool keys pressed together choose the Smart Tool, as in Pro Tools (F6+F7, F7+F8, F6+F8: Trim, Selector, Move). Holding them doesn't switch back and forth (REAPER repeats a held shortcut)
-Trim Tool_ReaTooled: Pressed together with another tool key (F6+F7, F7+F8, F6+F8), the Smart Tool is chosen, as in Pro Tools (ReaTooled_Tools lib.lua)]]></changelog>
+      <version name="7.16.4" author="Brendan Baker" time="2026-11-16T00:56:40Z">
+        <changelog><![CDATA[ReaTooled_Tools lib: mouse_setup_off() / mouse_setup_on(), for "Toggle ReaTooled Shortcuts": with shortcuts off, the user's own mouse modifiers and no tool; back on, everything as it was when they went off, same tool. The two setups never change each other. Shuffle mode keeps working with shortcuts off (as with the Move Tool)]]></changelog>
         <source file="Default Multi Tool (Smart)_ReaTooled.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/Default%20Multi%20Tool%20%28Smart%29_ReaTooled.lua</source>
         <source file="Move Tool (Grabber)_ReaTooled.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/Move%20Tool%20%28Grabber%29_ReaTooled.lua</source>
         <source file="Pencil Tool_ReaTooled.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/Pencil%20Tool_ReaTooled.lua</source>
@@ -1631,7 +1633,7 @@ Trim Tool_ReaTooled: Pressed together with another tool key (F6+F7, F7+F8, F6+F8
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="2.7.6" author="Brendan Baker">
+      <version name="2.7.7" author="Brendan Baker" time="2026-11-16T00:56:40Z">
         <source file="ReaTooled_Play-Stop (with memory, edit-play toggles, and no undo).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Transport/ReaTooled_Play-Stop%20%28with%20memory%2C%20edit-play%20toggles%2C%20and%20no%20undo%29.lua</source>
       </version>
     </reapack>

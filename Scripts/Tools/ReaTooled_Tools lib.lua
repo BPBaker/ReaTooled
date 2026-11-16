@@ -1,6 +1,6 @@
 -- @description ReaTooled - Tools library (shared by the tool scripts)
--- @version 1.20
--- @date 2026.11.11
+-- @version 1.21
+-- @date 2026.11.15
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -17,6 +17,10 @@
 --     - lights the tool's toolbar button(s) and turns the others off
 --   Adding a tool means adding it to TOOLS below, and nowhere else.
 -- @changelog
+--   v1.21 mouse_setup_off() / mouse_setup_on(), for "Toggle ReaTooled Shortcuts": with shortcuts
+--         off, the user's own mouse modifiers and no tool; back on, everything as it was when
+--         they went off, same tool. The two setups never change each other. Shuffle mode
+--         keeps working with shortcuts off (as with the Move Tool)
 --   v1.20 smart_chord(tool): two tool keys pressed together choose the Smart Tool, as in Pro Tools
 --         (F6+F7, F7+F8, F6+F8: Trim, Selector, Move). Holding them doesn't switch back and
 --         forth (REAPER repeats a held shortcut)
@@ -631,6 +635,9 @@ end
 -- tool or mode: the script stops by itself.
 local SHUFFLE_TOOL_KEY = "ShuffleMoveTool"
 function apply_shuffle(key)
+  -- Shortcuts off (no tool, your own mouse setup): Shuffle still works, as with the
+  -- Move Tool (as Toggle Shuffle mode does on its own, without the Tools library)
+  if (key == nil or key == "") and reaper.GetExtState(NS, "MouseSetup") == "off" then key = "grabber" end
   local separation = reaper.GetExtState(NS, "SeparationMode") == "1"
   -- Move Tool and Multi tool: item and razor area drags. Selector: razor area drags
   -- only (Option/Alt-drag copies; plain drags too with Separation Mode); its other
@@ -744,6 +751,9 @@ function M.finish(key)
     return not (WRITES_ITEM_MODS[key] and TOOL_CONTEXTS[e.ctx])
   end)
   reaper.SetExtState(NS, CUR_TOOL_KEY, key, true)
+  if reaper.GetExtState(NS, "MouseSetup") == "off" then   -- (chosen with shortcuts off)
+    reaper.SetExtState(NS, "MouseSetupToolWhileOff", "1", true)
+  end
   if key ~= "trim" then M.kill_trim_tool() end
   if key ~= "pencil" then M.leave_pencil(key) end
   local ok, swap = pcall(dofile, DIR .. "ReaTooled_Drag swap lib.lua")
@@ -797,6 +807,246 @@ function M.smart_chord(tool)
     end
   end
   return false
+end
+
+------------------------------------------------------------
+-- ReaTooled Shortcuts off and on: two mouse setups side by side
+-- Off: the user's own mouse modifiers (from before ReaTooled was set up, then as they
+-- left them the last time shortcuts were off), with no tool chosen. On: everything as
+-- it was the moment shortcuts went off, with the same tool. Nothing changed in one
+-- setup reaches the other. A tool chosen while off works on top of the off setup, but
+-- what it set isn't kept there. MIDI editor modifiers aren't swapped (ReaTooled's MIDI
+-- shortcuts stay on too).
+-- Saved in Data/ReaTooled/Mouse setups/ (on.txt, off.txt: "context|flag|value" lines)
+------------------------------------------------------------
+local RES_PATH = reaper.GetResourcePath():gsub("\\", "/")
+local SETUPS_DIR = RES_PATH .. "/Data/ReaTooled/Mouse setups"
+local ORIGINAL_INI = RES_PATH .. "/Data/ReaTooled/Backups/Before ReaTooled/reaper-mouse.ini"
+local SETUP_KEY      = "MouseSetup"                 -- "off" while the off setup is applied (kept)
+local ON_TOOL_KEY    = "MouseSetupOnTool"           -- the tool chosen when shortcuts went off (kept)
+local ON_SNAPS_KEY   = "MouseSetupOnModeOverrides"  -- the modes' record then (kept)
+local PICKED_KEY     = "MouseSetupToolWhileOff"     -- a tool was chosen while off (kept)
+
+local KNOWN_CONTEXTS = {
+  "MM_CTX_TRACK", "MM_CTX_TRACK_CLK", "MM_CTX_TRACK_DBLCLK", "MM_CTX_TCP_DBLCLK", "MM_CTX_MCP_DBLCLK",
+  "MM_CTX_ITEM", "MM_CTX_ITEM_CLK", "MM_CTX_ITEM_DBLCLK", "MM_CTX_ITEMLOWER", "MM_CTX_ITEMLOWER_CLK",
+  "MM_CTX_ITEMLOWER_DBLCLK", "MM_CTX_ITEMEDGE", "MM_CTX_ITEMEDGE_DBLCLK", "MM_CTX_ITEMFADE",
+  "MM_CTX_CROSSFADE", "MM_CTX_ITEMSTRETCHMARKER", "MM_CTX_ENVPT", "MM_CTX_ENVPT_DBLCLK",
+  "MM_CTX_ENVSEG", "MM_CTX_ENVSEG_DBLCLK", "MM_CTX_ENVLANE", "MM_CTX_ENVLANE_DBLCLK",
+  "MM_CTX_ENVCP_DBLCLK", "MM_CTX_POOLEDENV", "MM_CTX_RULER", "MM_CTX_RULER_CLK",
+  "MM_CTX_RULER_DBLCLK", "MM_CTX_MARKER_REGIONEDGE", "MM_CTX_REGION", "MM_CTX_CURSORHANDLE",
+  "MM_CTX_AREASEL", "MM_CTX_AREASEL_CLK", "MM_CTX_AREASEL_EDGE", "MM_CTX_ARRANGE_MMOUSE",
+  "MM_CTX_ARRANGE_MMOUSE_CLK", "MM_CTX_ARRANGE_RMOUSE", "MM_CTX_SAMPLEEDIT",
+}
+
+-- One way of writing each modifier: "-1" = not set (REAPER's default), "13" = "13 m"
+local function norm_mod(v)
+  v = tostring(v or ""):gsub("^%s+", ""):gsub("%s+$", "")
+  if v == "" or v:match("^%-1") then return "-1" end
+  if v:match("^%d+$") then return v .. " m" end
+  return v
+end
+
+-- reaper-mouse.ini: { context = { [flag] = value } } (the MIDI editor's left out)
+local function read_mouse_ini(path)
+  local f = io.open(path, "r")
+  if not f then return nil end
+  local t, cur = {}, nil
+  for line in f:lines() do
+    local sec = line:match("^%[(.-)%]")
+    if sec then
+      cur = (sec:match("^MM_CTX_") and not sec:match("^MM_CTX_MIDI")) and sec or nil
+      if cur then t[cur] = t[cur] or {} end
+    elseif cur then
+      local n, v = line:match("^mm_(%d+)=(.*)$")
+      if n then t[cur][tonumber(n)] = norm_mod(v) end
+    end
+  end
+  f:close()
+  return t
+end
+
+local function all_contexts()
+  local seen, list = {}, {}
+  local function add(c)
+    if not seen[c] and not c:match("^MM_CTX_MIDI") then seen[c] = true; list[#list + 1] = c end
+  end
+  for _, c in ipairs(KNOWN_CONTEXTS) do add(c) end
+  for _, p in ipairs({ RES_PATH .. "/reaper-mouse.ini", ORIGINAL_INI }) do
+    for c in pairs(read_mouse_ini(p) or {}) do add(c) end
+  end
+  return list
+end
+
+-- Every modifier as it is now, as reaper-mouse.ini has it (REAPER writes it at once):
+-- "-1" where nothing is set. (GetMouseModifier gives REAPER's default action there
+-- instead, which would make every default look like a change.)
+local function snapshot()
+  local ini = read_mouse_ini(RES_PATH .. "/reaper-mouse.ini") or {}
+  local set = {}
+  for _, c in ipairs(all_contexts()) do
+    set[c] = {}
+    for flag = 0, 15 do set[c][flag] = (ini[c] and ini[c][flag]) or "-1" end
+  end
+  return set
+end
+
+-- The user's own, from the backup "Set up ReaTooled" made (REAPER's default where it
+-- has nothing). nil: no backup, so the mouse is left alone
+local function original_setup()
+  local ini = read_mouse_ini(ORIGINAL_INI)
+  if not ini then return nil end
+  local set = {}
+  for _, c in ipairs(all_contexts()) do
+    set[c] = {}
+    for flag = 0, 15 do set[c][flag] = (ini[c] and ini[c][flag]) or "-1" end
+  end
+  return set
+end
+
+local function write_setup(name, set)
+  reaper.RecursiveCreateDirectory(SETUPS_DIR, 0)
+  local f = io.open(SETUPS_DIR .. "/" .. name .. ".txt", "w")
+  if not f then return false end
+  local ctxs = {}
+  for c in pairs(set) do ctxs[#ctxs + 1] = c end
+  table.sort(ctxs)
+  for _, c in ipairs(ctxs) do
+    for flag = 0, 15 do
+      if set[c][flag] then f:write(c, "|", flag, "|", set[c][flag], "\n") end
+    end
+  end
+  f:close()
+  return true
+end
+
+local function read_setup(name)
+  local f = io.open(SETUPS_DIR .. "/" .. name .. ".txt", "r")
+  if not f then return nil end
+  local set = {}
+  for line in f:lines() do
+    local c, flag, v = line:match("^(.-)|(%d+)|(.*)$")
+    if c then
+      set[c] = set[c] or {}
+      set[c][tonumber(flag)] = norm_mod(v)
+    end
+  end
+  f:close()
+  return next(set) and set or nil
+end
+
+local function apply_setup(set)
+  local now = snapshot()
+  for c, flags in pairs(set) do
+    for flag = 0, 15 do
+      local v = flags[flag] and norm_mod(flags[flag])
+      if v and ((now[c] and now[c][flag]) or "-1") ~= v then reaper.SetMouseModifier(c, flag, v) end
+    end
+  end
+end
+
+local function same(a, b)
+  for flag = 0, 15 do
+    if (a and a[flag] or "-1") ~= (b and b[flag] or "-1") then return false end
+  end
+  return true
+end
+
+local function every_context()
+  local c = {}
+  for _, k in ipairs(all_contexts()) do c[k] = true end
+  return c
+end
+
+-- No tool: nothing a tool started keeps running, no locking, no arrange override
+local function stop_tools()
+  M.kill_trim_tool()
+  reaper.SetExtState(NS, SHUFFLE_TOOL_KEY, "", false)   -- (Shuffle move stops by itself)
+  reaper.DeleteExtState(NS, M.PENCIL_KEY, true)
+  M.temp_forget(every_context())
+  reaper.DeleteExtState(NS, SNAP_KEY, true)
+end
+
+-- Restore settings from a backup ("keep my later changes"): what you changed in your own
+-- (shortcuts off) setup since ReaTooled was set up. { context = { [flag] = value } }
+-- ("-1" = REAPER's default), or nil when there's nothing saved
+function M.mouse_setup_own_changes()
+  local off, orig = read_setup("off"), original_setup()
+  if not (off and orig) then return nil end
+  local out, any = {}, false
+  for c, flags in pairs(off) do
+    for flag = 0, 15 do
+      local v, o = flags[flag], (orig[c] and orig[c][flag]) or "-1"
+      if v and v ~= o then
+        out[c] = out[c] or {}
+        out[c][flag] = v
+        any = true
+      end
+    end
+  end
+  return any and out or nil
+end
+
+function M.mouse_setup_is_off() return reaper.GetExtState(NS, SETUP_KEY) == "off" end
+
+-- Shortcuts going off: keep the on setup, put the off one in place, no tool
+function M.mouse_setup_off()
+  if M.mouse_setup_is_off() then return true end
+  local off = read_setup("off") or original_setup()
+  if not off then return false end
+  if not write_setup("on", snapshot()) then return false end
+  reaper.SetExtState(NS, ON_TOOL_KEY, M.current_tool(), true)
+  reaper.SetExtState(NS, ON_SNAPS_KEY, reaper.GetExtState(NS, SNAP_KEY), true)
+  stop_tools()
+  reaper.DeleteExtState(NS, CUR_TOOL_KEY, true)
+  reaper.DeleteExtState(NS, PICKED_KEY, true)
+  reaper.Main_OnCommand(40570, 0)   -- Locking: Disable locking
+  reaper.Main_OnCommand(42621, 0)   -- Clear arrange override mode
+  apply_setup(off)
+  reaper.SetExtState(NS, SETUP_KEY, "off", true)
+  M.light("")
+  M.reapply_tool()   -- (Shuffle mode keeps working, on top of the off setup)
+  return true
+end
+
+-- Shortcuts coming on: keep the off setup (without what a tool chosen meanwhile set),
+-- put the on one back, and choose its tool again
+function M.mouse_setup_on()
+  if not M.mouse_setup_is_off() then return end
+  local on = read_setup("on")
+  if not on then reaper.DeleteExtState(NS, SETUP_KEY, true); return end
+  release_overrides(nil, true)   -- (Shuffle's drags aren't part of the off setup)
+  local off = snapshot()
+  if reaper.GetExtState(NS, PICKED_KEY) == "1" then
+    -- Where the two setups differ, the tool wrote it: the off setup keeps what it had
+    local prev = read_setup("off") or original_setup() or {}
+    for c in pairs(off) do
+      if not same(on[c], prev[c]) then
+        local keep = {}
+        for flag = 0, 15 do keep[flag] = (prev[c] and prev[c][flag]) or "-1" end
+        off[c] = keep
+      end
+    end
+  end
+  write_setup("off", off)
+  stop_tools()
+  apply_setup(on)
+  local snaps = reaper.GetExtState(NS, ON_SNAPS_KEY)
+  if snaps ~= "" then reaper.SetExtState(NS, SNAP_KEY, snaps, true) end
+  reaper.DeleteExtState(NS, SETUP_KEY, true)
+  reaper.DeleteExtState(NS, PICKED_KEY, true)
+  local key = reaper.GetExtState(NS, ON_TOOL_KEY)
+  local tool = key ~= "" and M.find(key)
+  local cmd = tool and command_of(tool) or 0
+  if cmd ~= 0 then
+    reaper.SetExtState(NS, CUR_TOOL_KEY, key, true)
+    reaper.SetExtState(NS, M.BUSY_KEY, "1", false)   -- (not a Cmd/Option-click on its button)
+    reaper.Main_OnCommand(cmd, 0)
+    reaper.DeleteExtState(NS, M.BUSY_KEY, false)
+  else
+    reaper.DeleteExtState(NS, CUR_TOOL_KEY, true)
+    M.light("")
+  end
 end
 
 return M

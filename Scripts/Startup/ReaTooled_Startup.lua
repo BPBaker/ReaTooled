@@ -1,6 +1,6 @@
 --[[
 -- @description ReaTooled - Startup
--- @version 2.2.5
+-- @version 2.2.6
 -- @author Brendan Baker
 -- @link http://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -9,6 +9,8 @@
     ReaTooled installer adds. Edit the SCRIPTS list below to change
     what runs at startup; ReaPack updates this file like any other.
     CHANGELOG
+    v 2.2.6 - With ReaTooled Shortcuts off, doesn't choose the Multi tool at startup (your
+              own mouse modifiers stay in place; turning shortcuts on brings the tool back).
     v 2.2.5 - On every start (not just once a day), checks whether ReaPack has downloaded a
               newer ReaTooled that hasn't been applied yet (a synchronize done by hand or
               by ReaPack itself) and asks whether to apply it. This needs no internet; the
@@ -52,9 +54,15 @@ local DEBUG = false
 
 local base = reaper.GetResourcePath():gsub("\\", "/") .. "/Scripts/ReaTooled/"
 
+-- Shortcuts off: no tool (the Tools library's mouse setups)
+local SKIP_WHILE_OFF = { ["Tools/Default Multi Tool (Smart)_ReaTooled.lua"] = true }
+local shortcuts_off = reaper.GetExtState("ReaTooled", "MouseSetup") == "off"
+
 for _, rel in ipairs(SCRIPTS) do
   local path = base .. rel
-  if reaper.file_exists(path) then
+  if shortcuts_off and SKIP_WHILE_OFF[rel] then
+    -- (left as it is)
+  elseif reaper.file_exists(path) then
     -- Returns the script's command ID (registering it first if needed),
     -- so this keeps working without hard-coded _RS... IDs.
     local id = reaper.AddRemoveReaScript(true, 0, path, true)

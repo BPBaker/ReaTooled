@@ -1,7 +1,7 @@
 --[[
 -- @description ReaTooled - Ripple edit when editing media item left edges
--- @version 1.21
--- @date 2026.11.11
+-- @version 1.32
+-- @date 2026.11.15
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -14,6 +14,11 @@
       - Cmd+drag (Ctrl+drag on Windows) a left edge: the same, rippling all tracks (REAPER
         switches to ripple all while Cmd is held on the edge, and back after).
       - Butt joints, right edges, other modifier keys and plain clicks: as usual.
+      - The view follows the drag (VIEW_FOLLOWS, on): the edge stays where it is on the
+        timeline, and the view scrolls with the mouse so the edge stays under it and the audio
+        after it stays put on screen, as in a plain trim. Past the arrange's left or right side
+        the edge stays in sight there and the trim carries on by itself, faster the further
+        past the mouse is (as REAPER's own edge drag scrolls). Off: the view stays put.
       - Trim Tool: in a ripple mode it hands left-edge trims (and left-side body drags) to
         this script; the trim then ends as the Trim Tool's own (selection, cursor, outline).
     Which items are trimmed: the grabbed one; if it's selected, the overlapping selected item on
@@ -23,11 +28,51 @@
     track) and every track (ripple all), what starts after the grabbed item's start; markers
     with "Ripple edit all affects regions/markers"; automation with "Move envelope points with
     media items". Take envelopes, stretch markers and snap offsets stay with the audio.
-    Snaps as REAPER's own edge drag (a line shows what it snapped to). Esc cancels; the view
-    stays put; one undo step ("Resize media items"). Remembered when REAPER restarts (Recall
+    Snaps as REAPER's own edge drag (a line shows what it snapped to). Esc cancels; one undo step ("Resize media items"). Remembered when REAPER restarts (Recall
     ReaTooled Button States; on its own, without the rest of ReaTooled, add it to REAPER's
     startup actions). Works on its own too: it needs only the js_ReaScriptAPI extension. The rules: "Left edge ripple - design rules.md".
 -- CHANGELOG
+-- v1.32 The view following the drag: past the arrange's left or right side, the edge stays in
+--       sight just inside it and the trim carries on by itself, faster the further past the mouse
+--       is, as REAPER's own edge drag scrolls the view there (the audio after the edge moves on
+--       screen meanwhile, as the view can't follow both). Moving back in carries on from there
+-- v1.31 Cmd works as REAPER's own mouse modifiers do again: Cmd at the press decides the drag
+--       (ripple all tracks until the mouse goes up), as the Trim Tool does; 1.28's switching
+--       when Cmd is pressed or let go during the drag is taken out. Changing the ripple mode
+--       during a drag still carries on in the new mode (1.18, with 1.29-1.30's fixes)
+-- v1.30 No jump when switching modes a second time in one drag (Cmd for ripple all, let go, Cmd
+--       again, let go). Each switch kept the view's position from the first part of the drag
+--       where the view stayed put, so after the view had followed in between, it was put back
+--       there: the view jumped by everything the drag had scrolled since. Each part of the drag
+--       now starts from where the view is
+-- v1.29 No jump when the ripple mode changes during a drag (letting go of Cmd, or switching the
+--       mode by hand). The drag carried on measuring snaps from the item's start, not from the
+--       mouse: with the mouse a few pixels off the edge, or with something to snap to nearby,
+--       the trim jumped by that much at the switch. It now carries on from exactly where the
+--       mouse is, and doesn't snap until the mouse moves again
+-- v1.28 Cmd during a drag: pressing or letting go of Cmd switches ripple all tracks on and off
+--       right away (back to the ripple mode you started in, ripple off included), and the drag
+--       carries on in that mode (as 1.18). It used to switch back only after the mouse went up
+--     • The view readout (1.26) taken out
+-- v1.27 The view following the drag: no more vibration. The readout showed REAPER rounding the
+--       view's start down to a whole pixel, and the start asked for (a whole pixel, worked out
+--       in seconds) landing a hair under it about every other frame: the view went one pixel too
+--       far, then back. The start is now asked for a quarter pixel past the pixel wanted, so it
+--       always lands on it. (The readout, 1.26, stays for testing)
+-- v1.26 Testing: a per-frame readout of the view following the drag, to the ReaScript console,
+--       when "ReaTooled_DEV Left edge view readout.lua" turns it on (off otherwise: nothing
+--       measured or printed). No change to the trim or the view
+-- v1.25 Back to 1.23 (1.24's "trim by what REAPER really scrolled" made the drag shake more)
+-- v1.23 The view following the drag is steadier and lighter: the trim and the view's scroll are
+--       drawn in one redraw a frame (they were two), and the view scrolls in whole pixels, so
+--       the audio after the cut doesn't shimmer by a pixel as you drag
+-- v1.22 The view follows the drag (setting VIEW_FOLLOWS, on). What's edited is the same as 1.21:
+--       the item's start stays put on the timeline and what follows closes up; but the view
+--       scrolls by as much as the trim, so on screen the edge moves with the mouse and the
+--       audio after it stays where it is, as in a plain edge trim. The trim is measured from
+--       where you pressed, as before (snapping and grid alike); the snap line is drawn at the
+--       edge. Esc puts the view back too; on release the view stays where the drag left it.
+--       Ripple off during the drag (1.18): the view stops following, the edge moves instead
 -- v1.21 Back to 1.19's behaviour (1.20's "edge follows the mouse, ripple on release" taken out)
 -- v1.19 Works on its own, without the rest of ReaTooled (only js_ReaScriptAPI needed): it carries
 --       ReaTooled's shared core (the record of mouse modifiers switched for a moment, the yellow
@@ -50,6 +95,10 @@
 ------------------------------------------------------------
 local GUIDE_COLOR = 0xD0FFFFFF   -- the snap guide line: 0xAARRGGBB (alpha, red, green, blue)
 local DEBUG       = false        -- print what happens to the ReaScript console
+-- The view follows the drag: true = the view scrolls with the trim, so the edge stays under the
+-- mouse and the audio after it stays put on screen (the item's start still stays put on the
+-- timeline: only the view moves). false = the view stays put (1.21 and before)
+local VIEW_FOLLOWS = true
 
 -- REAPER actions read or used
 local RIPPLE_EDGES = 43475 -- Options: Ripple edit when editing media item edges
@@ -605,13 +654,48 @@ local function cfg_int(name)
   return ok and math.tointeger(tonumber(v)) or 0
 end
 
+-- The view following the drag, past the arrange's left or right side: the edge stays just
+-- inside it, and the trim carries on by itself (auto_d), faster the further past the mouse is,
+-- as REAPER's own edge drag scrolls the view there
+local AUTO_INSET_PX = 2       -- (the edge kept this far inside the side)
+local AUTO_BASE_PX_S = 300    -- speed at the side, in pixels a second
+local AUTO_PER_PX_S = 30      -- and this much faster for each pixel past it
+local AUTO_MAX_PX_S = 6000
+
+-- The mouse kept within the arrange's sides (and how far past them it is: - left, + right)
+local function arrange_sides(mx)
+  local ox = reaper.JS_Window_ClientToScreen(ARRANGE, 0, 0)
+  local _, w = reaper.JS_Window_GetClientSize(ARRANGE)
+  local lo, hi = ox + AUTO_INSET_PX, ox + w - 1 - AUTO_INSET_PX
+  if mx < lo then return lo, mx - lo end
+  if mx > hi then return hi, mx - hi end
+  return mx, 0
+end
+
+local function auto_scroll(mx)
+  local now = reaper.time_precise()
+  local dt = sh.auto_t and math.min(now - sh.auto_t, 0.1) or 0
+  sh.auto_t = now
+  local inside, past = arrange_sides(mx)
+  sh.mx_in, sh.auto_past = inside, past
+  if past ~= 0 and dt > 0 then
+    local speed = math.min(AUTO_MAX_PX_S, AUTO_BASE_PX_S + math.abs(past) * AUTO_PER_PX_S)
+    sh.auto_d = sh.auto_d + (past > 0 and 1 or -1) * speed * dt / reaper.GetHZoomLevel()
+    sh.last_mx = nil   -- (the trim carries on while the mouse stays still)
+  end
+end
+
 -- plain: ripple off (from a mode change during the drag): the left edge is trimmed as REAPER
 -- does without ripple (the item's start moves, nothing else does)
 local function trim_begin(grabbed, mx, plain)
   local drivers, grouped, gs = plan(grabbed)
   local all = ripple_all()
   if plain then grouped, all = {}, false end
-  local s_ = { d = 0, t0 = mouse_time(mx), trims = {}, movers = {}, markers = {}, envs = {},
+  local vs, ve = reaper.GetSet_ArrangeView2(0, false, 0, 0)
+  if VIEW_FOLLOWS and not plain then mx = arrange_sides(mx) end   -- (a part begun past a side: from it)
+  local s_ = { d = 0, t0 = mouse_time(mx), x0 = mx, fv_s = vs, fv_e = ve, auto_d = 0, auto_past = 0,
+               follow = VIEW_FOLLOWS and not plain,
+               trims = {}, movers = {}, markers = {}, envs = {},
                mode = ripple_mode(), plain = plain,
                gP = item_start(grabbed), started = reaper.time_precise(),
                grabbed = grabbed, grabbed_was_selected = reaper.IsMediaItemSelected(grabbed),
@@ -706,8 +790,9 @@ local function clamp(d)
   return d
 end
 
-local function apply(d)
-  if math.abs(d - sh.d) < EPS then return end
+-- (no_redraw: the caller redraws, once, with the view's scroll: see trim_update)
+local function apply(d, no_redraw)
+  if math.abs(d - sh.d) < EPS then return false end
   sh.d = d
   reaper.PreventUIRefresh(1)
   for _, c in ipairs(sh.trims) do
@@ -730,7 +815,8 @@ local function apply(d)
     reaper.SetProjectMarker3(0, m.num, m.isrgn, m.pos - d, m.isrgn and (m.rend - d) or 0, m.name, m.color)
   end
   reaper.PreventUIRefresh(-1)
-  reaper.UpdateArrange()
+  if not no_redraw then reaper.UpdateArrange() end
+  return true
 end
 
 ------------------------------------------------------------
@@ -823,19 +909,66 @@ local function guide(t)
   end
 end
 
+-- The view follows the trim (VIEW_FOLLOWS): scrolled back by as much as is trimmed, from where
+-- it was when this part of the drag began, so the edge stays under the mouse and the audio after
+-- it stays put on screen. Anything else scrolling it (REAPER's own drag) is undone; where REAPER
+-- won't scroll that far (before the project start), it's left where REAPER put it
+local function follow_view()
+  -- In whole pixels, worked out in pixels: the view's start at the press, back by the trim.
+  -- REAPER rounds the view's start down to a whole pixel, and a start worked out in seconds can
+  -- land a hair under the pixel meant (one pixel too far, then back: the view vibrated, 1.23-
+  -- 1.26), so it's asked for a quarter pixel past it. (A snapped trim can be a fraction of a
+  -- pixel: the view goes to the nearest one)
+  local z = reaper.GetHZoomLevel()
+  -- (what the trim carried on by itself past a side isn't scrolled: the edge stays in sight)
+  -- (while it carries on, the view stays put by the mouse alone: following the snapped trim it
+  -- went back and forth as the edge stepped from one snap to the next)
+  local vd = (sh.auto_past ~= 0 and sh.mouse_d) or (sh.d - sh.auto_d)
+  local want = math.floor(sh.fv_s * z + 0.5) - math.floor(vd * z + 0.5)
+  sh.fv_want = want
+  local s = reaper.GetSet_ArrangeView2(0, false, 0, 0)
+  if math.floor(s * z + 0.5) ~= want then
+    local ts = (want + 0.25) / z
+    reaper.GetSet_ArrangeView2(0, true, 0, 0, ts, ts + (sh.fv_e - sh.fv_s))
+    return true
+  end
+  return false
+end
+
 -- Snapping goes by what the mouse is over: within the snap distance of a target, the cut
 -- lands exactly there; otherwise the trim follows the mouse from where you pressed
 local function trim_update(mx)
+  if sh.follow then auto_scroll(mx); mx = sh.mx_in end
   if mx ~= sh.last_mx then   -- (the mouse hasn't moved: the trim stays as it is)
     sh.last_mx = mx
-    local m = mouse_time(mx)
-    local s_, rel, snapped = snap_time(m, sh.t0)
-    guide(snapped and s_ or nil)
+    -- (the view following: the mouse measured against the view as it was when the drag began,
+    -- so what's trimmed, and what snaps, is the same as with the view staying put)
+    if sh.follow then sh.mouse_d = (mx - sh.x0) / reaper.GetHZoomLevel() end
+    local m = sh.follow and (sh.t0 + sh.mouse_d + sh.auto_d) or mouse_time(mx)
+    local s_, rel, snapped = m, false, false
+    if not (sh.retargeted and mx == sh.x0) then s_, rel, snapped = snap_time(m, sh.t0) end
     local d
     if rel then d = s_ - sh.t0                              -- (relative grid: whole steps from the press)
     elseif math.abs(s_ - m) > EPS then d = s_ - sh.gP       -- (the cut lands on what the mouse is over)
     else d = m - sh.t0 end
-    apply(clamp(d))
+    if sh.follow then
+      -- (the trim and the view's scroll in one redraw: two a frame made it heavier and could
+      -- show the trim a moment before the scroll)
+      reaper.PreventUIRefresh(1)
+      local dc = clamp(d)
+      -- (as far as the trim can go: what carried on past that is dropped, so moving back in
+      -- turns straight back)
+      if dc > d + EPS and sh.auto_d < 0 then sh.auto_d = math.min(0, sh.auto_d + (dc - d)) end
+      if dc < d - EPS and sh.auto_d > 0 then sh.auto_d = math.max(0, sh.auto_d + (dc - d)) end
+      local changed = apply(dc, true)
+      local scrolled = follow_view()
+      reaper.PreventUIRefresh(-1)
+      if changed or scrolled then reaper.UpdateArrange() end
+      guide(snapped and sh.gP or nil)   -- (the line at the edge, which the view keeps under the mouse)
+    else
+      apply(clamp(d))
+      guide(snapped and s_ or nil)
+    end
   end
   if sh.outline then RTcore.outline("leftedge", sh.outline) end   -- (drawn right as the edge moves)
 end
@@ -873,8 +1006,12 @@ local reaper_drag   -- REAPER's own drag under the trim (see end_reaper_drag, be
 local function trim_retarget(mx, mode)
   local prev = sh
   trim_begin(prev.grabbed, mx, mode == "off")
-  for _, k in ipairs({ "started", "grabbed_was_selected", "trim_click", "no_jump", "view_s", "view_e" }) do sh[k] = prev[k] end
-  if sh.no_jump then sh.gP = sh.t0 end
+  -- (not the view's position: each part starts from where the view is now; carrying it over put
+  -- the view back after a part where it followed the drag, 1.29)
+  for _, k in ipairs({ "started", "grabbed_was_selected", "trim_click", "no_jump" }) do sh[k] = prev[k] end
+  -- (carries on from exactly where the mouse is: snaps measured from it, not from the item's start,
+  -- and none until the mouse moves again; otherwise the trim jumped at the switch)
+  sh.gP, sh.no_jump, sh.retargeted = sh.t0, true, true
   if prev.outline and not sh.outline then RTcore.outline("leftedge", nil) end
   log("ripple mode changed to " .. mode .. ": carrying on from here")
 end
@@ -884,9 +1021,14 @@ local function trim_end(cancel)
   local top = sh
   if top.outline then RTcore.outline("leftedge", nil) end
   if cancel then   -- (the whole drag goes back, mode changes and all: latest first)
-    local seg = top
-    while seg do sh = seg; apply(0); seg = seg.prev end
+    local seg, first = top, top
+    while seg do sh = seg; apply(0); first = seg; seg = seg.prev end
     sh = top
+    -- (the view followed: back to where it was at the press)
+    local followed = false
+    seg = top
+    while seg do if seg.follow then followed = true end; seg = seg.prev end
+    if followed then reaper.GetSet_ArrangeView2(0, true, 0, 0, first.fv_s, first.fv_e) end
   end
   local changed, trimmed, seen = false, {}, {}
   local seg = top
@@ -1082,7 +1224,7 @@ local function loop()
         end_reaper_drag(mx, my)
         local mode = ripple_mode()
         if mode ~= sh.mode then trim_retarget(mx, mode) end
-        keep_view()
+        if sh.follow then follow_view() else keep_view() end
         trim_update(mx)
         reaper.JS_Mouse_SetCursor(CURSOR_TRIM)
       end

@@ -1,6 +1,6 @@
 --[[
 -- @description ReaTooled - Set up ReaTooled
--- @version 2.4
+-- @version 2.4.1
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -20,6 +20,8 @@
     When you click OK at the end, REAPER quits, the helper writes those files,
     and the same copy of REAPER opens again by itself.
 -- CHANGELOG
+-- v2.4.1 With ReaTooled Shortcuts off, turns them back on first, so the backup, the update and
+--        the record are of ReaTooled's setup (your own mouse setup is kept for when they go off)
 -- v2.4 Tools by other developers that are missing (SWS, js_ReaScriptAPI, ReaImGui, reAAF, the
 --      scripts ReaTooled's shortcuts use) are offered first and installed through ReaPack, which
 --      records and updates them (ReaTooled_Dependencies lib.lua); Set up then starts again by
@@ -944,6 +946,22 @@ end
 -- (the package installer asked already)
 local FROM_PACKAGE = _G.REATOOLED_PACKAGE_CONFIRMED == true and not UPDATE
 if not ((UPDATE and CONFIRMED) or FROM_PACKAGE) and msg(intro, 1) ~= 1 then return end   -- OK / Cancel
+
+------------------------------------------------------------
+-- 1a. ReaTooled Shortcuts off (your own mouse modifiers in place): back on first, so
+-- what's backed up, updated and recorded is ReaTooled's setup. Your own mouse setup
+-- is kept, for the next time shortcuts go off.
+------------------------------------------------------------
+if reaper.GetExtState("ReaTooled", "MouseSetup") == "off" then
+  local toggle = RES .. "/Scripts/ReaTooled/Toggles/ReaTooled_Toggle ReaTooled Shortcuts.lua"
+  local cmd = exists(toggle) and reaper.AddRemoveReaScript(true, 0, toggle, true) or 0
+  if cmd ~= 0 and reaper.GetToggleCommandState(cmd) ~= 1 then
+    reaper.Main_OnCommand(cmd, 0)
+  else
+    local ok, tools = pcall(dofile, RES .. "/Scripts/ReaTooled/Tools/ReaTooled_Tools lib.lua")
+    if ok and type(tools) == "table" and tools.mouse_setup_on then tools.mouse_setup_on() end
+  end
+end
 
 ------------------------------------------------------------
 -- 1b. Mousewheel direction for ReaTooled's wheel scripts (zoom, pitch,
