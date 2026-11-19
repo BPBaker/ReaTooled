@@ -1,11 +1,12 @@
 -- @description ReaTooled - Razor Select Tool (Selector Tool)
--- @version 1.9
+-- @version 1.10
 -- @date 2026.10.30
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
 --   # This script loads a set of mouse modifiers focusing on creating razor edit selection, similar to ProTools' "Selector Tool."
 -- CHANGELOG
+-- # v1.10 A plain click on empty track space runs ReaTooled's "Empty track left click": it also clears razor areas, the time selection and track selection, and the loop points with Link Timeline and Edit Selection on
 -- # v1.9 Pressed together with another tool key (F6+F7, F7+F8, F6+F8), the Smart Tool is chosen, as in Pro Tools (ReaTooled_Tools lib.lua)
 -- # v1.8 Cmd+click or Option+click on the toolbar button shows a menu of the tool's options (Separation, Swap left and right drag) instead of choosing the tool; the swap now applies to the Selector too
 -- # v1.7 Stopping the Trim Tool and the toolbar buttons are shared with the other tools (ReaTooled_Tools lib.lua), which also knows the new Pencil Tool
@@ -94,6 +95,19 @@ local mouseMods = {
     [14]='-1', [15]='_047b1ae44c6a4c398916caefec363247'
   }
 }
+
+-- A plain click on empty track space: ReaTooled's "Empty track left click" (deselect all, clear
+-- razor areas and the time selection, the loop points too with Link Timeline and Edit Selection
+-- on, and move the edit cursor), found by its file; REAPER's own if it's missing
+local function empty_track_click()
+  local path = reaper.GetResourcePath():gsub("\\", "/") .. "/Scripts/ReaTooled/Edit/ReaTooled_Empty track left click (deselect all and move edit cursor).lua"
+  if reaper.file_exists(path) then
+    local cmd = reaper.AddRemoveReaScript(true, 0, path, true) or 0
+    if cmd ~= 0 then return "_" .. reaper.ReverseNamedCommandLookup(cmd) end
+  end
+  return '1 m'
+end
+mouseMods.MM_CTX_TRACK_CLK[0] = empty_track_click()
 
 for context, mods in pairs(mouseMods) do
   setModifiers(context, mods)

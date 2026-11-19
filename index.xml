@@ -32,8 +32,20 @@
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="3.2026.1116.1704" author="Brendan Baker" time="2026-11-16T22:04:55Z">
-        <changelog><![CDATA[Configuration updated (no new entries in the release notes).
+      <version name="3.2026.1119.1520" author="Brendan Baker" time="2026-11-19T20:20:41Z">
+        <changelog><![CDATA[v3.01 - November 19, 2026
++ Script: ReaTooled_Empty track left click (deselect all and move edit cursor).lua, now the plain click on empty track space for the Smart, Move, Selector and Trim tools. It clears razor areas, the time selection and the selection of tracks, items and envelope points, and moves the edit cursor to the mouse. With Link Timeline and Edit Selection on, it clears the loop points too
++ Link Timeline and Edit Selection: after dragging an item (moving, copying or trimming it), the loop points follow the selected items, as a click on one does (setting LOOP_FOLLOWS_ITEM_DRAG in "ReaTooled_Enable Link Edit Cursor and Play Cursor.lua", on by default)
++ Link Timeline and Edit Selection: works the same with ReaTooled Shortcuts off. A click that selects an item sets the loop points to it
++ Smart Nudge: with Link Timeline and Edit Selection on, loop points over the nudged items move with them
+# Link Timeline and Edit Selection: a razor area on the master track sets the loop points too
+# Link Timeline and Edit Selection: loop points adjusted by dragging in the ruler no longer jump back when you let go
+# Left-edge ripple: what follows is now what REAPER's own right-edge ripple moves. Items after the trimmed item, butted or crossfaded into it, move; items inside it, and items that run across it, stay put
+# Left-edge ripple: automation, markers and regions stick with item placement. They move where the items move and stay where the items stay
+# Left-edge ripple: on grouped tracks, only an item starting where the grabbed one does is trimmed. In ripple all, other tracks' items are trimmed only when they're selected or grouped, as in REAPER
+# Left-edge ripple: with auto-crossfade on, overlaps the drag makes get crossfades, shown live while dragging. Content behind is never trimmed, as with REAPER's own ripple
+# Left-edge ripple: snapping snaps to what moves towards the edge (the items and markers that ripple), and the snap line shows at the edge
+# Grid and Nudge: smoother while REAPER's window is resized with the box in the Transport
 
 To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or run "Update ReaTooled").]]></changelog>
         <source file="ReaTooled/Config/keymap.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/keymap.ini</source>
@@ -44,7 +56,7 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
         <source file="ReaTooled/Config/themeconfig.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/themeconfig.ini</source>
         <source file="ReaTooled/Config/theme.txt">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/theme.txt</source>
         <source file="ReaTooled/Config/extstate.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/extstate.ini</source>
-        <source file="ReaTooled/Config/version.txt">https://github.com/BPBaker/ReaTooled/releases/download/v3.2026.1116.1704/installs.txt</source>
+        <source file="ReaTooled/Config/version.txt">https://github.com/BPBaker/ReaTooled/releases/download/v3.2026.1119.1520/installs.txt</source>
         <source file="ReaTooled/Config/reaper_sections.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/reaper_sections.ini</source>
         <source file="ReaTooled/Config/update_rules.txt">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/update_rules.txt</source>
         <source file="ReaTooled/Config/screensets.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/screensets.ini</source>
@@ -185,7 +197,7 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
 {\pard \ql \f0 \sa180 \li0 \fi0 ReaTooled's themes, installed into REAPER's ColorThemes folder. "Default_7.0 ReaTooled v3 Dark" is the default.\par}
 }]]></description>
       </metadata>
-      <version name="3.2026.1116.1704" author="Brendan Baker" time="2026-11-16T22:04:55Z">
+      <version name="3.2026.1119.1520" author="Brendan Baker" time="2026-11-19T20:20:41Z">
         <source file="Assembled_ReaTooled v1.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Assembled_ReaTooled%20v1.ReaperThemeZip</source>
         <source file="Default_7.0 ReaTooled v2 Light.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Default_7.0%20ReaTooled%20v2%20Light.ReaperThemeZip</source>
         <source file="Default_7.0 ReaTooled v3 Dark.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Default_7.0%20ReaTooled%20v3%20Dark.ReaperThemeZip</source>
@@ -206,8 +218,8 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="1.3.1" author="Brendan Baker" time="2026-11-05T20:03:31Z">
-        <changelog><![CDATA[ReaTooled_SmartNudge_Core: Fixes: a track with several razor areas keeps them all (only the first was read, the others were dropped); items nudge by samples and frames (they moved by 256th notes and by the grid); the sample rate is the project's (it was always 44.1 kHz); grid units are the grid's size (they were a quarter of it); measures. beats move razor areas, the cursor and envelopes by the same amount as items; pixels work for razor areas, the cursor and envelopes; razor areas nudged left stop at the project start instead of shrinking]]></changelog>
+      <version name="1.3.2" author="Brendan Baker" time="2026-11-19T20:20:41Z">
+        <changelog><![CDATA[ReaTooled_SmartNudge_Core: Items: with Link Timeline and Edit Selection on, loop points over the selected items move with them (loop points covering something else are left alone)]]></changelog>
         <source file="ReaTooled_Smart Nudge Left.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Smart%20Nudge%20Left.lua</source>
         <source file="ReaTooled_Smart Nudge Right.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Smart%20Nudge%20Right.lua</source>
         <source file="ReaTooled_SmartNudge_Core.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_SmartNudge_Core.lua</source>
@@ -399,6 +411,21 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
       </metadata>
       <version name="1.0" author="Brendan Baker">
         <source file="ReaTooled_Create Tone Generator from Time selection.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Create%20Tone%20Generator%20from%20Time%20selection.lua</source>
+      </version>
+    </reapack>
+    <reapack name="ReaTooled_Empty track left click (deselect all and move edit cursor).lua" type="script" desc="ReaTooled - Empty track left click (deselect all and move edit cursor)">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 A plain left click on empty track space, for ReaTooled's tools\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 Clears all razor areas, unselects all tracks, items and envelope points, removes the time selection, and moves the edit cursor to the mouse (snapping as REAPER's own click does). With Link Timeline and Edit Selection on, the loop points are cleared too, since they're the edit selection; off, they're left alone. Set as the plain empty-track click by the Smart, Move, Selector and Trim tools (it replaces REAPER's "Deselect all items and move edit cursor", which left razor areas, the time selection and the loop points behind).\par}
+}]]></description>
+        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+      </metadata>
+      <version name="1.0" author="Brendan Baker" time="2026-11-19T20:20:41Z">
+        <changelog><![CDATA[First version]]></changelog>
+        <source file="ReaTooled_Empty track left click (deselect all and move edit cursor).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Empty%20track%20left%20click%20%28deselect%20all%20and%20move%20edit%20cursor%29.lua</source>
       </version>
     </reapack>
     <reapack name="ReaTooled_Extend razor area to mouse.lua" type="script" desc="ReaTooled - Razor From Cursor To Mouse">
@@ -1222,9 +1249,9 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="2.4.34" author="Brendan Baker" time="2026-11-16T20:27:17Z">
-        <changelog><![CDATA[ReaTooled_Set up ReaTooled: Window titles in sentence case ("ReaTooled is installed"); no message asks you to close ReaPack's windows (the restart at the end closes them)
-ReaTooled_Update ReaTooled: No longer asks you to close ReaPack's window: the update carries on by itself]]></changelog>
+      <version name="2.4.35" author="Brendan Baker" time="2026-11-19T20:20:41Z">
+        <changelog><![CDATA[ReaTooled_Enable Link Edit Cursor and Play Cursor: With ReaTooled Shortcuts off (your own mouse modifiers), a click that leaves an item selected sets the loop points to the selected items too, as the Move Tool's click does with the tools: Link Timeline and Edit Selection works the same without them. A drag also counts when the item pressed on moved or changed length (REAPER can move it by less than 4 px)
+ReaTooled_Update ReaTooled: When an update is offered, Cancel opens what's new (whatsnew.txt on GitHub) in your browser first, then asks again]]></changelog>
         <source file="ReaTooled_Dependencies lib.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Dependencies%20lib.lua</source>
         <source file="ReaTooled_Earlier shortcuts.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Earlier%20shortcuts.lua</source>
         <source file="ReaTooled_Earlier toolbars.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Earlier%20toolbars.lua</source>
@@ -1495,12 +1522,12 @@ ReaTooled_Update ReaTooled: No longer asks you to close ReaPack's window: the up
 {\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Cmd+drag (Ctrl+drag on Windows) a left edge: the same, rippling all tracks (REAPER switches to ripple all while Cmd is held on the edge, and back after).\par}
 {\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Butt joints, right edges, other modifier keys and plain clicks: as usual.\par}
 {\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab The view follows the drag (VIEW_FOLLOWS, on): the edge stays where it is on the timeline, and the view scrolls with the mouse so the edge stays under it and the audio after it stays put on screen, as in a plain trim. Past the arrange's left or right side the edge stays in sight there and the trim carries on by itself, faster the further past the mouse is (as REAPER's own edge drag scrolls). Off: the view stays put.\par}
-{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Trim Tool: in a ripple mode it hands left-edge trims (and left-side body drags) to this script; the trim then ends as the Trim Tool's own (selection, cursor, outline). Which items are trimmed: the grabbed one; if it's selected, the overlapping selected item on each other track; item groups; track groups (media editing); in ripple all, items starting at the same time on every other track. Locked items are never trimmed or moved. What follows: on tracks with a trimmed item, what comes after it; on grouped tracks (per track) and every track (ripple all), what starts after the grabbed item's start; markers with "Ripple edit all affects regions/markers"; automation with "Move envelope points with media items". Take envelopes, stretch markers and snap offsets stay with the audio. Snaps as REAPER's own edge drag (a line shows what it snapped to). Esc cancels; one undo step ("Resize media items"). Remembered when REAPER restarts (Recall ReaTooled Button States; on its own, without the rest of ReaTooled, add it to REAPER's startup actions). Works on its own too: it needs only the js_ReaScriptAPI extension. The rules: "Left edge ripple - design rules.md".\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Trim Tool: in a ripple mode it hands left-edge trims (and left-side body drags) to this script; the trim then ends as the Trim Tool's own (selection, cursor, outline). Which items are trimmed: the grabbed one; if it's selected, the overlapping selected item on each other track; item groups; on grouped tracks (media editing), an item starting at the same time. In ripple all, as REAPER's own ripple, nothing more (select or group items to trim them together). Locked items are never trimmed or moved. What follows, as REAPER's own right-edge ripple: what reaches past the trimmed item's right edge (items after it, butted or crossfaded into it), on its track, on grouped tracks (per track) and every track (ripple all). Items inside it, and items that started earlier and run across, stay put. With auto-crossfade on, overlaps the drag makes get crossfades, live (content behind is never trimmed, as REAPER's own ripple); markers with "Ripple edit all affects regions/markers"; automation with "Move envelope points with media items". Take envelopes, stretch markers and snap offsets stay with the audio. Snaps as REAPER's own edge drag (a line shows what it snapped to). Esc cancels; one undo step ("Resize media items"). Remembered when REAPER restarts (Recall ReaTooled Button States; on its own, without the rest of ReaTooled, add it to REAPER's startup actions). Works on its own too: it needs only the js_ReaScriptAPI extension. The rules: "Left edge ripple - design rules.md".\par}
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="1.33.1" author="Brendan Baker" time="2026-11-16T22:04:55Z">
-        <changelog><![CDATA[The test log (1.33) is taken out]]></changelog>
+      <version name="1.41" author="Brendan Baker" time="2026-11-19T20:20:41Z">
+        <changelog><![CDATA[Lighter press with auto-crossfade on (ripple all in a big session): only the pairs of items whose overlap can change are tracked (not two that both move, or both stay), items the trim can never reach aren't read, and lanes and fades are read only for the pairs kept. The crossfades are the same]]></changelog>
         <source file="ReaTooled_Toggle Ripple edit when editing media item left edges.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Toggles/ReaTooled_Toggle%20Ripple%20edit%20when%20editing%20media%20item%20left%20edges.lua</source>
       </version>
     </reapack>
@@ -1565,8 +1592,11 @@ ReaTooled_Shuffle move (background): Works without the Tools library (Shuffle on
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="7.16.4" author="Brendan Baker" time="2026-11-16T00:56:40Z">
-        <changelog><![CDATA[ReaTooled_Tools lib: mouse_setup_off() / mouse_setup_on(), for "Toggle ReaTooled Shortcuts": with shortcuts off, the user's own mouse modifiers and no tool; back on, everything as it was when they went off, same tool. The two setups never change each other. Shuffle mode keeps working with shortcuts off (as with the Move Tool)]]></changelog>
+      <version name="7.16.5" author="Brendan Baker" time="2026-11-19T20:20:41Z">
+        <changelog><![CDATA[Default Multi Tool (Smart)_ReaTooled: A plain click on empty track space runs ReaTooled's "Empty track left click": it also clears razor areas, the time selection and track selection, and the loop points with Link Timeline and Edit Selection on
+Move Tool (Grabber)_ReaTooled: A plain click on empty track space runs ReaTooled's "Empty track left click": it also clears razor areas, the time selection and track selection, and the loop points with Link Timeline and Edit Selection on
+Razor Select Tool (Selector)_ReaTooled: A plain click on empty track space runs ReaTooled's "Empty track left click": it also clears razor areas, the time selection and track selection, and the loop points with Link Timeline and Edit Selection on
+Trim Tool_ReaTooled: A plain click on empty track space runs ReaTooled's "Empty track left click": it also clears razor areas, the time selection and track selection, and the loop points with Link Timeline and Edit Selection on]]></changelog>
         <source file="Default Multi Tool (Smart)_ReaTooled.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/Default%20Multi%20Tool%20%28Smart%29_ReaTooled.lua</source>
         <source file="Move Tool (Grabber)_ReaTooled.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/Move%20Tool%20%28Grabber%29_ReaTooled.lua</source>
         <source file="Pencil Tool_ReaTooled.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/Pencil%20Tool_ReaTooled.lua</source>
@@ -1796,6 +1826,7 @@ ReaTooled_Shuffle move (background): Works without the Tools library (Shuffle on
 {\pard \ql \f0 \sa180 \li0 \fi0 The easy installer package and detailed installation instructions can be purchased here: {\field{\*\fldinst{HYPERLINK "https://bpbaker.gumroad.com/l/ReaTooled"}}{\fldrslt{\ul https://bpbaker.gumroad.com/l/ReaTooled}}}\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 For manual installation, install everything in this repository then run \u8220?Script: ReaTooled_Set up ReaTooled.lua\u8221? from the Action list or restart REAPER and the setup script will launch automatically.\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 ReaTooled checks for a new version once a day and if an update is available, it asks before updating. Or run \u8220?Script: ReaTooled_Update ReaTooled.lua\u8221? to update manually.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 What's new in each version: {\field{\*\fldinst{HYPERLINK "https://github.com/BPBaker/ReaTooled/blob/main/whatsnew.txt"}}{\fldrslt{\ul whatsnew.txt}}}\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 To restore your previous settings, run \u8220?Script: ReaTooled_Restore settings from a backup.lua\u8221?\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 ReaTooled is a one-person project, built slowly over 13 years of customizing REAPER for my radio and podcast work. If you find this useful and want to support my work, tips and donations are always appreciated:\par}
 {\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab via {\field{\*\fldinst{HYPERLINK "https://venmo.com/brendanpbaker?txn=pay&audience=private&note=ReaTooled%20v3"}}{\fldrslt{\ul Venmo}}}\par}
@@ -1805,6 +1836,7 @@ ReaTooled_Shuffle move (background): Works without the Tools library (Shuffle on
 {\pard \ql \f0 \sa180 \li0 \fi0 Brendan\par}
 }]]></description>
     <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
+    <link rel="website" href="https://github.com/BPBaker/ReaTooled/blob/main/whatsnew.txt">What's new</link>
     <link rel="donation" href="https://venmo.com/brendanpbaker?txn=pay&amp;audience=private&amp;note=ReaTooled%20v3">Venmo</link>
     <link rel="donation" href="https://www.paypal.com/paypalme/brendanpbaker">PayPal</link>
     <link rel="donation" href="https://www.buymeacoffee.com/BrendanPBaker">Buy me a coffee</link>

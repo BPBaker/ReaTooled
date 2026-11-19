@@ -1,5 +1,5 @@
 -- @description ReaTooled - Trim Tool (Controller)
--- @version 2.7
+-- @version 2.8
 -- @date 2026.10.30
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
@@ -7,6 +7,7 @@
 --        If already running, simply reapplies Trim modifiers/locks and syncs toolbar.
 --        Does NOT toggle off and does NOT spawn duplicates.
 -- CHANGELOG
+-- v2.8  A plain click on empty track space runs ReaTooled's "Empty track left click": it also clears razor areas, the time selection and track selection, and the loop points with Link Timeline and Edit Selection on
 -- v2.7  Pressed together with another tool key (F6+F7, F7+F8, F6+F8), the Smart Tool is chosen, as in Pro Tools (ReaTooled_Tools lib.lua)
 -- v2.6  Cmd+click or Option+click on the toolbar button shows a menu of tool options (Separation, Swap left and right drag) instead of choosing the tool
 -- v2.5  Left click in empty track space deselects all items and moves the edit cursor (as in the other tools), so you can clear the selection and move around
@@ -42,7 +43,20 @@ do
   end
 end
 
+-- A plain click on empty track space: ReaTooled's "Empty track left click" (deselect all, clear
+-- razor areas and the time selection, the loop points too with Link Timeline and Edit Selection
+-- on, and move the edit cursor), found by its file; REAPER's own if it's missing
+local function empty_track_click()
+  local path = reaper.GetResourcePath():gsub("\\", "/") .. "/Scripts/ReaTooled/Edit/ReaTooled_Empty track left click (deselect all and move edit cursor).lua"
+  if reaper.file_exists(path) then
+    local cmd = reaper.AddRemoveReaScript(true, 0, path, true) or 0
+    if cmd ~= 0 then return "_" .. reaper.ReverseNamedCommandLookup(cmd) end
+  end
+  return '1 m'
+end
+
 local function SetAllMouseModifiers()
+  local track_click = empty_track_click()
   for i = 0, 15 do
     reaper.SetMouseModifier('MM_CTX_ITEM', i, '0')
     reaper.SetMouseModifier('MM_CTX_ITEMLOWER', i, '0')
@@ -51,7 +65,7 @@ local function SetAllMouseModifiers()
     reaper.SetMouseModifier('MM_CTX_ITEM_CLK', i, (i == 0) and '3' or '-1')
     reaper.SetMouseModifier('MM_CTX_ITEMLOWER_CLK', i, (i == 0) and '3' or '-1')
     -- Track (empty space) left click: deselect all items and move edit cursor ('1 m'); other keys no action
-    reaper.SetMouseModifier('MM_CTX_TRACK_CLK', i, (i == 0) and '1 m' or '0')
+    reaper.SetMouseModifier('MM_CTX_TRACK_CLK', i, (i == 0) and track_click or '0')
     reaper.SetMouseModifier('MM_CTX_TRACK', i, '0')
   end
 

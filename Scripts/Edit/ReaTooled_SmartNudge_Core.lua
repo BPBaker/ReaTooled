@@ -1,5 +1,5 @@
 -- @description ReaTooled Smart Nudge Core Logic
--- @version 1.3.1
+-- @version 1.3.2
 -- @about
 --   Shared logic for smart nudge, direction passed via wrapper script.
 --   NUDGE_LARGER = true in the wrapper: nudges by the next larger of the Grid and Nudge
@@ -9,6 +9,8 @@
 --   Measures.beats values use REAPER's notation (1.15 = 1 measure + 1.5 beats), as REAPER's
 --   own nudge does, for razor areas, the cursor and envelopes too.
 -- @changelog
+--   v1.3.2 Items: with Link Timeline and Edit Selection on, loop points over the selected items move
+--          with them (loop points covering something else are left alone)
 --   v1.3.1 Fixes: a track with several razor areas keeps them all (only the first was read,
 --          the others were dropped); items nudge by samples and frames (they moved by
 --          256th notes and by the grid); the sample rate is the project's (it was always
@@ -218,9 +220,39 @@ local function manually_nudge_envelope_points(offset_sec)
   end)
 end
 
+-- The selected items' span (start, end), or nil
+local function selected_span()
+  local s, e = math.huge, -math.huge
+  for i = 0, reaper.CountSelectedMediaItems(0) - 1 do
+    local it = reaper.GetSelectedMediaItem(0, i)
+    local p = reaper.GetMediaItemInfo_Value(it, "D_POSITION")
+    s = math.min(s, p); e = math.max(e, p + reaper.GetMediaItemInfo_Value(it, "D_LENGTH"))
+  end
+  if e > s then return s, e end
+end
+
+-- Link Timeline and Edit Selection on? (found by its file, as the Select Tool does)
+local function link_on()
+  local path = reaper.GetResourcePath():gsub("\\", "/") .. "/Scripts/ReaTooled/Toggles/ReaTooled_Toggle Link Play Cursor to Edit Cursor.lua"
+  if not reaper.file_exists(path) then return false end
+  local cmd = reaper.AddRemoveReaScript(true, 0, path, true) or 0
+  return cmd ~= 0 and reaper.GetToggleCommandStateEx(0, cmd) == 1
+end
+
 local function nudge_items_native(unit, val)
+  -- (with Link Timeline and Edit Selection on, loop points over the selected items move with them)
+  local follow_loop = false
+  local s0, e0 = selected_span()
+  if s0 and link_on() then
+    local ls, le = reaper.GetSet_LoopTimeRange2(0, false, true, 0, 0, false)
+    follow_loop = le > ls and math.abs(ls - s0) < 1e-4 and math.abs(le - e0) < 1e-4
+  end
   save_and_restore_view(function()
     reaper.ApplyNudge(0, 0, 0, unit, val, DIRECTION < 0, 0)
+    if follow_loop then
+      local s1, e1 = selected_span()
+      if s1 then reaper.GetSet_LoopTimeRange2(0, true, true, s1, e1, false) end
+    end
     local first = reaper.GetSelectedMediaItem(0, 0)
     if first then
       local new_pos = reaper.GetMediaItemInfo_Value(first, "D_POSITION")

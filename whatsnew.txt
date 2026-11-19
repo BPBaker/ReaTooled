@@ -1,3 +1,17 @@
+v3.01 - November 19, 2026
+ + Script: ReaTooled_Empty track left click (deselect all and move edit cursor).lua, now the plain click on empty track space for the Smart, Move, Selector and Trim tools. It clears razor areas, the time selection and the selection of tracks, items and envelope points, and moves the edit cursor to the mouse. With Link Timeline and Edit Selection on, it clears the loop points too
+ + Link Timeline and Edit Selection: after dragging an item (moving, copying or trimming it), the loop points follow the selected items, as a click on one does (setting LOOP_FOLLOWS_ITEM_DRAG in "ReaTooled_Enable Link Edit Cursor and Play Cursor.lua", on by default)
+ + Link Timeline and Edit Selection: works the same with ReaTooled Shortcuts off. A click that selects an item sets the loop points to it
+ + Smart Nudge: with Link Timeline and Edit Selection on, loop points over the nudged items move with them
+ # Link Timeline and Edit Selection: a razor area on the master track sets the loop points too
+ # Link Timeline and Edit Selection: loop points adjusted by dragging in the ruler no longer jump back when you let go
+ # Left-edge ripple: what follows is now what REAPER's own right-edge ripple moves. Items after the trimmed item, butted or crossfaded into it, move; items inside it, and items that run across it, stay put
+ # Left-edge ripple: automation, markers and regions stick with item placement. They move where the items move and stay where the items stay
+ # Left-edge ripple: on grouped tracks, only an item starting where the grabbed one does is trimmed. In ripple all, other tracks' items are trimmed only when they're selected or grouped, as in REAPER
+ # Left-edge ripple: with auto-crossfade on, overlaps the drag makes get crossfades, shown live while dragging. Content behind is never trimmed, as with REAPER's own ripple
+ # Left-edge ripple: snapping snaps to what moves towards the edge (the items and markers that ripple), and the snap line shows at the edge
+ # Grid and Nudge: smoother while REAPER's window is resized with the box in the Transport
+
 v3.0 - November 16, 2026
 
 HIGHLIGHTS

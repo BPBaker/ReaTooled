@@ -1,6 +1,6 @@
 --[[
 -- @description ReaTooled - Update ReaTooled
--- @version 1.0.5
+-- @version 1.0.6
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -13,6 +13,8 @@
     Also run by ReaTooled's startup once a day (quietly): if a newer release is out, it
     asks whether to update now.
     CHANGELOG
+    v1.0.6 When an update is offered, Cancel opens what's new (whatsnew.txt on GitHub) in your
+           browser first, then asks again
     v1.0.5 No longer asks you to close ReaPack's window: the update carries on by itself
     v1.0.4 Checks the newest release on GitHub's Releases page as well as the repository
            (whichever is newer counts). Each check adds one to that release's download
@@ -223,22 +225,41 @@ end
 -- Deciding
 ------------------------------------------------------------
 
+-- The release notes, in the browser
+local WHATSNEW_URL = "https://github.com/BPBaker/ReaTooled/blob/main/whatsnew.txt"
+local function open_url(url)
+  if reaper.CF_ShellExecute then reaper.CF_ShellExecute(url) return end
+  if IS_WIN then os.execute('start "" "' .. url .. '"')
+  elseif reaper.GetOS():find("OSX") or reaper.GetOS():find("mac") then os.execute('open "' .. url .. '"')
+  else os.execute('xdg-open "' .. url .. '" >/dev/null 2>&1 &') end
+end
+
+-- Update now? Yes / No, with Cancel to read what's new first (then asked again, Yes / No)
+local function ask_update(text)
+  local a = msg(text .. "\n\nYes: update now.   No: not now.   Cancel: see what's new first (opens in your browser).", 3)
+  if a == 2 then
+    open_url(WHATSNEW_URL)
+    a = msg(text, 4)
+  end
+  return a == 6
+end
+
 local function decide(remote)
   local have, done = downloaded(), applied()
   local current = done or have or "?"
   if remote and newer(remote, have or "0") then
-    local a = msg("ReaTooled v" .. remote .. " is available (you have v" .. current .. ").\n\n" ..
+    local yes = ask_update("ReaTooled v" .. remote .. " is available (you have v" .. current .. ").\n\n" ..
       "Update now? It's downloaded, your settings are backed up, your own changes and window " ..
-      "layout are kept, and REAPER restarts at the end.", 4)   -- Yes / No
-    if a == 6 then download_then_apply(remote) end
+      "layout are kept, and REAPER restarts at the end.")
+    if yes then download_then_apply(remote) end
   elseif have and done and newer(have, done) then
     -- downloaded already (ReaPack synced) but not applied yet
     -- (at an ordinary start, a version the user said No to waits for the daily check)
     if LOCAL_ONLY and reaper.GetExtState("ReaTooled", "UpdateDeclined") == have then return end
-    local a = msg("ReaTooled v" .. have .. " has been downloaded but isn't applied yet (you have v" .. done .. ").\n\n" ..
+    local yes = ask_update("ReaTooled v" .. have .. " has been downloaded but isn't applied yet (you have v" .. done .. ").\n\n" ..
       "Update now? Your settings are backed up, your own changes and window layout are kept, " ..
-      "and REAPER restarts at the end.", 4)
-    if a == 6 then apply_when_reapack_done() else reaper.SetExtState("ReaTooled", "UpdateDeclined", have, true) end
+      "and REAPER restarts at the end.")
+    if yes then apply_when_reapack_done() else reaper.SetExtState("ReaTooled", "UpdateDeclined", have, true) end
   elseif not QUIET then
     if remote then
       msg("ReaTooled is up to date (v" .. current .. ").")

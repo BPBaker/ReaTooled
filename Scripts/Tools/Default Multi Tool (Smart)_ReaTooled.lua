@@ -1,11 +1,12 @@
 -- @description ReaTooled - Default Multi Tool (Smart)
--- @version 1.6.8
+-- @version 1.6.9
 -- @date 2026.10.30
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
 --   # This script loads ReaTooled's default set of mouse modifiers, which gives similar functionality to ProTools' "Smart Tool." 
 -- CHANGELOG
+-- # v1.6.9 A plain click on empty track space runs ReaTooled's "Empty track left click": it also clears razor areas, the time selection and track selection, and the loop points with Link Timeline and Edit Selection on
 -- # v1.6.7 Cmd+click or Option+click on the toolbar button shows a menu of the tool's options (Separation, Swap left and right drag) instead of choosing the tool
 -- # v1.6.6 Stopping the Trim Tool and the toolbar buttons are shared with the other tools (ReaTooled_Tools lib.lua), which also knows the new Pencil Tool
 -- # v1.6.5 Follows "Toggle swap left and right drag": with it on, right-drag selects razor areas and left-drag in empty track space is marquee
@@ -103,6 +104,19 @@ local mouseMods = {
     [14]='-1'
   }
 }
+
+-- A plain click on empty track space: ReaTooled's "Empty track left click" (deselect all, clear
+-- razor areas and the time selection, the loop points too with Link Timeline and Edit Selection
+-- on, and move the edit cursor), found by its file; REAPER's own if it's missing
+local function empty_track_click()
+  local path = reaper.GetResourcePath():gsub("\\", "/") .. "/Scripts/ReaTooled/Edit/ReaTooled_Empty track left click (deselect all and move edit cursor).lua"
+  if reaper.file_exists(path) then
+    local cmd = reaper.AddRemoveReaScript(true, 0, path, true) or 0
+    if cmd ~= 0 then return "_" .. reaper.ReverseNamedCommandLookup(cmd) end
+  end
+  return '1 m'
+end
+mouseMods.MM_CTX_TRACK_CLK[0] = empty_track_click()
 
 for context, mods in pairs(mouseMods) do
   setModifiers(context, mods)

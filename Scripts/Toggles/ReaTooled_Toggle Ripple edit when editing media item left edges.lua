@@ -1,7 +1,7 @@
 --[[
 -- @description ReaTooled - Ripple edit when editing media item left edges
--- @version 1.33.1
--- @date 2026.11.16
+-- @version 1.41
+-- @date 2026.11.19
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -22,16 +22,56 @@
       - Trim Tool: in a ripple mode it hands left-edge trims (and left-side body drags) to
         this script; the trim then ends as the Trim Tool's own (selection, cursor, outline).
     Which items are trimmed: the grabbed one; if it's selected, the overlapping selected item on
-    each other track; item groups; track groups (media editing); in ripple all, items starting
-    at the same time on every other track. Locked items are never trimmed or moved.
-    What follows: on tracks with a trimmed item, what comes after it; on grouped tracks (per
-    track) and every track (ripple all), what starts after the grabbed item's start; markers
+    each other track; item groups; on grouped tracks (media editing), an item starting at the same
+    time. In ripple all, as REAPER's own ripple, nothing more (select or group items to trim them
+    together). Locked items are never trimmed or moved.
+    What follows, as REAPER's own right-edge ripple: what reaches past the trimmed item's right
+    edge (items after it, butted or crossfaded into it), on its track, on grouped tracks (per
+    track) and every track (ripple all). Items inside it, and items that started earlier and
+    run across, stay put. With auto-crossfade on, overlaps the drag makes get crossfades, live
+    (content behind is never trimmed, as REAPER's own ripple); markers
     with "Ripple edit all affects regions/markers"; automation with "Move envelope points with
     media items". Take envelopes, stretch markers and snap offsets stay with the audio.
     Snaps as REAPER's own edge drag (a line shows what it snapped to). Esc cancels; one undo step ("Resize media items"). Remembered when REAPER restarts (Recall
     ReaTooled Button States; on its own, without the rest of ReaTooled, add it to REAPER's
     startup actions). Works on its own too: it needs only the js_ReaScriptAPI extension. The rules: "Left edge ripple - design rules.md".
 -- CHANGELOG
+-- v1.41 Lighter press with auto-crossfade on (ripple all in a big session): only the pairs of items
+--       whose overlap can change are tracked (not two that both move, or both stay), items the
+--       trim can never reach aren't read, and lanes and fades are read only for the pairs kept.
+--       The crossfades are the same
+-- v1.40 Markers and automation items before where the moving starts stay put (inside the grabbed
+--       item too). 1.39 sent the ones in the stretch that closes up to the join, so as the drag
+--       went on they piled up at the item's new right edge. Envelope points are as in 1.39 (one
+--       value at a time: those in the stretch that closes up still go)
+-- v1.39 Markers and regions (ripple all, with "Ripple edit all affects regions/markers") stick
+--       with placement too: from where the moving starts on the grabbed item's track they move,
+--       inside the grabbed item they stay, in the stretch that closes up they go to the join (a
+--       region's start and end each by that). Ripple all no longer trims other tracks' items that
+--       start where the grabbed one does, as REAPER's own ripple (select or group them for that).
+--       Auto-crossfade: the crossfades show live while dragging (worked out from the trim alone,
+--       a fade written only when it changes; nothing more when not dragging)
+-- v1.38 Snapping in a ripple: the targets are what moves towards the left edge (the starts, ends
+--       and snap offsets of the items that ripple, and the markers and regions that ripple),
+--       and a snap is one of them reaching the edge. What stays put never gets closer to the
+--       edge, so it's no longer a target (it snapped to where a marker had been). The grid, and
+--       ripple off during a drag, as before. Without the view following, the snap line is at the
+--       edge too
+-- v1.37 Automation sticks with item placement, on every track that ripples: it moves exactly where
+--       items move, and stays under every item that stays put (the trimmed item itself, items
+--       inside it, items that run across). 1.36 still moved it under the trimmed item (with its
+--       audio) and under items running across the grabbed item's right edge on other tracks
+-- v1.36 Automation on tracks without a trimmed item (grouped tracks, every track in ripple all)
+--       closes up where their items do, at the grabbed item's right edge, so it stays with them.
+--       In 1.35 it still closed up from the grabbed item's start: under the grabbed item it moved
+--       while the items there stayed put. Tracks with a trimmed item: as before
+-- v1.35 What follows is now what REAPER's own right-edge ripple moves: what reaches past the
+--       trimmed item's right edge (items after it, butted or crossfaded into it). Items inside it
+--       (layered, or on another lane) stay put; they used to move, and could end up before the
+--       trimmed item. Grouped tracks: only an item starting where the grabbed one does is
+--       trimmed (one that only overlapped it, starting elsewhere, was trimmed from its own start,
+--       out of sync). With auto-crossfade on, overlaps the drag makes get crossfades, as REAPER's
+--       own ripple (content behind is never trimmed, as REAPER doesn't for what a ripple moves)
 -- v1.33.1 The test log (1.33) is taken out
 -- v1.33 (testing) Each drag writes what the trim and the view were asked to do, and what REAPER
 --       did, to Data/ReaTooled/leftedge_view_log.txt (a new file each drag). To be taken out
@@ -423,7 +463,7 @@ local OWNER = "leftedge"
 local ARRANGE = reaper.JS_Window_FindChildByID(reaper.GetMainHwnd(), 1000)
 local EPS = 1e-9
 local TOL = 0.0005            -- seconds: edges this close count as the same time
-local ALL_START_TOL = 0.005   -- ripple all: items starting this close to the grabbed one are trimmed with it
+local ALL_START_TOL = 0.005   -- grouped tracks: an item starting this close to the grabbed one is trimmed with it
 local MIN_LEN = 0.001         -- seconds an item can be trimmed down to
 local EDGE_REACH_PX = 16      -- REAPER's left-edge zone reaches this far from the item's start
 
@@ -536,18 +576,13 @@ local function plan(grabbed)
   end
   -- track groups
   local grouped = grouped_tracks(gtr)
+  -- (an item starting where the grabbed one does, as REAPER's own group edits: one that only
+  -- overlaps it, starting elsewhere, isn't trimmed; it stays, like anything else running across)
   for tr in pairs(grouped) do
-    drivers[tr] = drivers[tr] or nearest_on(tr, s, e, function() return true end)
-  end
-  -- ripple all tracks: on every other track, an item starting at the same time (as the Trim Tool)
-  if ripple_all() then
-    for t = 0, reaper.CountTracks(0) - 1 do
-      local tr = reaper.GetTrack(0, t)
-      if not drivers[tr] then
-        for i = 0, reaper.CountTrackMediaItems(tr) - 1 do
-          local it = reaper.GetTrackMediaItem(tr, i)
-          if not is_locked(it) and math.abs(item_start(it) - s) <= ALL_START_TOL then drivers[tr] = it; break end
-        end
+    if not drivers[tr] then
+      for i = 0, reaper.CountTrackMediaItems(tr) - 1 do
+        local it = reaper.GetTrackMediaItem(tr, i)
+        if not is_locked(it) and math.abs(item_start(it) - s) <= ALL_START_TOL then drivers[tr] = it; break end
       end
     end
   end
@@ -558,6 +593,7 @@ end
 -- The ripple trim
 ------------------------------------------------------------
 local sh = nil                -- the ripple trim going on
+local mark_place, live_xfades  -- (defined with apply, below)
 local snap_targets            -- (defined with the snapping, below)
 
 local function mouse_time(mx)
@@ -624,30 +660,94 @@ local function value_at(all, t)
   return prev and prev.v or nil
 end
 
--- Rebuild the envelope from the trim point on for a trim of d
-local function apply_env(en, d)
-  local a = en.at
-  reaper.DeleteEnvelopePointRange(en.env, a - 1e-6, 1e12)
+-- Automation sticks with item placement (v1.37), on every track that ripples: it moves exactly
+-- where items move. On each track, m is where the moving starts (the trimmed item's right edge,
+-- or the grabbed item's on tracks without one, or the start of the earliest item that moves
+-- there if that's sooner, e.g. one crossfaded into it), and holds are the items there that stay
+-- put (not trimmed, not moved). For a trim of d:
+--   - points from m on move by -d, except under an item that stays put: those stay
+--   - a moved point that lands on an item that stays put goes (that item keeps its own)
+--   - points in the stretch that closes up [m - d, m) go, except under an item that stays put
+--   - points before that stay
+--   - where what moved shows from, the value on each side stays what it was (two points); a
+--     stretch that opens (d < 0) holds the value across it
+-- Everything from en.at (the furthest anything can reach) is rebuilt each frame from the press
+local function in_closed(spans, t)
+  for _, h in ipairs(spans) do if t >= h[1] - TOL and t <= h[2] + TOL then return h end end
+end
+local function in_open(spans, t)
+  for _, h in ipairs(spans) do if t > h[1] + TOL and t < h[2] - TOL then return h end end
+end
+local function apply_env_items(en, d)
+  local m, lo, holds = en.m, en.at, en.holds
+  local j = (d > 0) and (m - d) or m
+  -- (points are gathered, then put in in order: at a join, the value before it, then after it,
+  -- a microsecond apart, so the order never depends on how REAPER sorts points at one time)
+  local pend = {}
+  local function add(t, v, ord, shape, tens, sel)
+    pend[#pend + 1] = { t = t, v = v, ord = ord, n = #pend, shape = shape or 0, tens = tens or 0, sel = sel or false }
+  end
+  local function ins(t, v) add(t, v, 1) end
+  reaper.DeleteEnvelopePointRange(en.env, lo - 1e-6, 1e12)
   for _, p in ipairs(en.all) do
-    if p.t >= a - TOL then
-      local t
-      if p.t < a - EPS then t = p.t                       -- (before the stretch: stays)
-      elseif d > 0 and p.t < a + d - EPS then t = nil     -- (in the trimmed-off stretch: goes)
-      else t = p.t - d end                                -- (after it: moves with it)
-      if t then reaper.InsertEnvelopePoint(en.env, t, p.v, p.shape, p.tens, p.sel, true) end
+    if p.t >= lo - 1e-6 then
+      local t = p.t
+      if p.t >= m - TOL and not in_closed(holds, p.t) then
+        t = p.t - d                                         -- (moves with the items)
+        if in_closed(holds, t) then t = nil end             -- (lands on an item that stays put)
+      elseif d > 0 and p.t >= j - EPS and p.t < m - TOL and not in_closed(holds, p.t) then
+        t = nil                                             -- (in the stretch that closes up)
+      end
+      if t then add(t, p.v, 1, p.shape, p.tens, p.sel) end
     end
   end
   if math.abs(d) > EPS and #en.all > 0 then
-    -- (at the join, the value on each side stays what it was)
-    local left = value_at(en.all, a)
-    local right = value_at(en.all, d > 0 and (a + d) or a)
-    if left then reaper.InsertEnvelopePoint(en.env, a, left, 0, 0, false, true) end
-    if right and d > 0 then reaper.InsertEnvelopePoint(en.env, a, right, 0, 0, false, true) end
+    -- (the joins: where what moved meets what stays, the value on each side stays what it was)
+    local function hold_at(t) for _, h in ipairs(holds) do if t >= h[1] - TOL and t < h[2] - TOL then return h end end end
+    local function va(t) return value_at(en.all, t) end
+    local function two(t, l, r) if l then add(t, l, 0) end; if r then add(t, r, 2) end end
+    if d > 0 then
+      if not hold_at(j) then two(j, va(j), va(m)) end           -- (the stretch that closed up)
+      for _, h in ipairs(holds) do
+        if h[2] > j + TOL then
+          if h[1] >= m - TOL then
+            -- (an item after m that stays put: what moved before it ends d before it)
+            local v = va(h[1])
+            if v then
+              if not hold_at(h[1] - d) then ins(h[1] - d, v) end
+              ins(h[1], v)   -- (its own automation starts where it did)
+            end
+          elseif h[1] > j + TOL then
+            -- (one in the stretch that closes up: what moved meets it at its start)
+            two(h[1], va(h[1] + d), va(h[1]))
+          end
+          -- (what moved shows again from its end)
+          if h[2] + d >= m - TOL and not in_closed(holds, h[2] + d) then two(h[2], va(h[2]), va(h[2] + d)) end
+        end
+      end
+    else
+      if not hold_at(m) then local v = va(m); if v then ins(m, v); ins(m - d, v) end end   -- (the stretch that opens)
+      for _, h in ipairs(holds) do
+        if h[1] > m + TOL then two(h[1], va(h[1] + d), va(h[1])) end
+        if h[2] > m + TOL then local v2 = va(h[2]); if v2 then ins(h[2], v2); ins(h[2] - d, v2) end end
+      end
+    end
+  end
+  table.sort(pend, function(a, b)
+    if math.abs(a.t - b.t) > 1e-9 then return a.t < b.t end
+    if a.ord ~= b.ord then return a.ord < b.ord end
+    return a.n < b.n
+  end)
+  local last_t, k = nil, 0
+  for _, q in ipairs(pend) do
+    if last_t and math.abs(q.t - last_t) <= 1e-9 then k = k + 1 else last_t, k = q.t, 0 end
+    reaper.InsertEnvelopePoint(en.env, q.t + k * 1e-6, q.v, q.shape, q.tens, q.sel, true)
   end
   reaper.Envelope_SortPoints(en.env)
   for _, ai in ipairs(en.ais) do
     local p = ai.p
-    if p >= a + math.max(d, 0) - EPS then p = p - d elseif p >= a - EPS then p = a end
+    -- (an automation item is a block, as an item: from m on it moves, before that it stays put)
+    if p >= m - TOL and not in_closed(holds, p) then p = p - d end
     reaper.GetSetAutomationItemInfo(en.env, ai.i, "D_POSITION", p, true)
   end
 end
@@ -688,10 +788,20 @@ local function auto_scroll(mx)
   end
 end
 
+-- Auto-crossfade, as REAPER's own right-edge ripple: where the drag leaves two items on a lane
+-- partly overlapping (one ending inside the other, not one inside the other), that didn't
+-- overlap that way at the press, they get a crossfade over the overlap; one the drag took away
+-- goes. Content behind is never trimmed (REAPER doesn't, for what a ripple moves)
+local AUTO_XFADE = 40041   -- Options: Toggle auto-crossfade on/off
+-- (how far two items partly overlap: the first ends inside the second; nil otherwise)
+local function part_overlap(x, y)
+  if y.p < x.p then x, y = y, x end
+  if x.p < y.p - EPS and x.e > y.p + EPS and x.e < y.e - EPS then return x.e - y.p end
+end
 -- plain: ripple off (from a mode change during the drag): the left edge is trimmed as REAPER
 -- does without ripple (the item's start moves, nothing else does)
 local function trim_begin(grabbed, mx, plain)
-  local drivers, grouped, gs = plan(grabbed)
+  local drivers, grouped, gs, ge = plan(grabbed)
   local all = ripple_all()
   if plain then grouped, all = {}, false end
   local vs, ve = reaper.GetSet_ArrangeView2(0, false, 0, 0)
@@ -720,31 +830,124 @@ local function trim_begin(grabbed, mx, plain)
   end
 
   local env_follow = tg(ENV_FOLLOW)
+  local maxL = 0   -- (the most anything can be trimmed: how far back the join can reach)
+  for _, c in ipairs(s_.trims) do maxL = math.max(maxL, c.L) end
   for tr, own in pairs(scope) do
-    -- (own item: everything starting after its start; otherwise after the grabbed item's start)
+    -- What moves, as REAPER's own right-edge ripple: what reaches past the trimmed item's right
+    -- edge (items after it, butted or crossfaded into it). Items inside it stay put, on any lane,
+    -- and so does anything that started before it and runs across. On tracks without a trimmed
+    -- item, the same measured against the grabbed item
     local after = own and (item_start(own) + EPS) or (gs + TOL)
+    local past = own and (item_start(own) + item_len(own)) or ge
+    local m, here = past, {}   -- (m: where the moving starts on this track)
+    local is_grabbed_track = (tr == reaper.GetMediaItem_Track(grabbed))
     for i = 0, reaper.CountTrackMediaItems(tr) - 1 do
       local it = reaper.GetTrackMediaItem(tr, i)
       if not moving[it] and not is_locked(it) then
         local p = item_start(it)
-        if p > after then s_.movers[#s_.movers + 1] = { it = it, p = p } end
+        if p > after and p + item_len(it) > past + TOL then
+          s_.movers[#s_.movers + 1] = { it = it, p = p }
+          here[it] = true
+          m = math.min(m, p)
+        end
       end
     end
-    if env_follow then capture_env(tr, own and item_start(own) or gs, s_.envs) end
+    if is_grabbed_track then s_.mark_m = m end
+    if env_follow then
+      -- (automation sticks with item placement: it moves where the items move, and stays under
+      -- every item that stays put)
+      local lo = m - maxL - TOL
+      local holds = {}
+      for i = 0, reaper.CountTrackMediaItems(tr) - 1 do
+        local it = reaper.GetTrackMediaItem(tr, i)
+        if not moving[it] and not here[it] then
+          local p = item_start(it)
+          local e = p + item_len(it)
+          if e > lo then holds[#holds + 1] = { p, e } end
+        end
+      end
+      table.sort(holds, function(a, b) return a[1] < b[1] end)
+      local n = #s_.envs
+      capture_env(tr, lo, s_.envs)
+      for k = n + 1, #s_.envs do s_.envs[k].m, s_.envs[k].holds = m, holds end
+    end
   end
   for _, m in ipairs(s_.movers) do moving[m.it] = true end
+  -- (live crossfades: worked out once, at the press. Only pairs that can change are kept: two
+  -- items that both move keep their overlap, and two that both stay keep theirs, so only pairs
+  -- with the trimmed item, or with an item that stays put next to one that moves, are tracked.
+  -- Items ending before the furthest the trim can reach never meet anything and aren't read.
+  -- Lanes and fades are read only for the items in those pairs)
+  s_.autoxf = tg(AUTO_XFADE)
+  s_.xf = (sh and sh.xf) or {}
+  s_.xorig, s_.xcur, s_.xpairs = (sh and sh.xorig) or {}, (sh and sh.xcur) or {}, {}
+  if s_.autoxf then
+    local kind, from = {}, {}   -- item -> { "trim"/"move", start, length }; track -> earliest start
+    local function note(it, k, p0, l0)
+      kind[it] = { k, p0, l0 }
+      local tr = reaper.GetMediaItem_Track(it)
+      from[tr] = math.min(from[tr] or math.huge, p0)
+    end
+    for _, c in ipairs(s_.trims) do note(c.it, "trim", c.P, c.L) end
+    for _, mv in ipairs(s_.movers) do note(mv.it, "move", mv.p, item_len(mv.it)) end
+    for tr, first in pairs(from) do
+      local reach = first - maxL - TOL
+      local was = s_.xf[tr] or {}
+      s_.xf[tr] = was
+      local list = {}
+      for i = 0, reaper.CountTrackMediaItems(tr) - 1 do
+        local it = reaper.GetTrackMediaItem(tr, i)
+        local p0, l0 = item_start(it), item_len(it)
+        if p0 + l0 >= reach then
+          -- (where it was at the drag's first press: kept from an earlier part of the drag)
+          if not was[it] then was[it] = { p = p0, e = p0 + l0 } end
+          local k = kind[it]
+          local e = { it = it, was = was[it] }
+          if k then e.kind, e.p, e.len = k[1], k[2], k[3]
+          else e.kind, e.p, e.len = "stay", p0, l0 end
+          list[#list + 1] = e
+        end
+      end
+      table.sort(list, function(a, b) return a.p < b.p end)
+      local function lane(e)
+        if e.lane == nil then e.lane = reaper.GetMediaItemInfo_Value(e.it, "I_FIXEDLANE") end
+        return e.lane
+      end
+      local function orig(e)
+        if not s_.xorig[e.it] then
+          s_.xorig[e.it] = { fin = reaper.GetMediaItemInfo_Value(e.it, "D_FADEINLEN_AUTO"),
+                             fout = reaper.GetMediaItemInfo_Value(e.it, "D_FADEOUTLEN_AUTO") }
+        end
+      end
+      for a = 1, #list do
+        local x = list[a]
+        for b = a + 1, #list do
+          local y = list[b]
+          if y.p > x.p + x.len + maxL + TOL then break end   -- (too far to ever meet)
+          local same = (x.kind == y.kind) and (x.kind == "stay" or x.kind == "move")
+          if not same and lane(x) == lane(y) then
+            orig(x); orig(y)
+            s_.xpairs[#s_.xpairs + 1] = { x = x, y = y }
+          end
+        end
+      end
+    end
+  end
   if all and tg(MARKERS_FOLLOW) then
     local i = 0
     while true do
       local ok, isrgn, pos, rend, name, num, color = reaper.EnumProjectMarkers3(0, i)
       if ok == 0 then break end
-      if pos > gs + TOL then   -- (after the grabbed item's start: they follow its audio)
+      -- (markers stick with placement, as the items and the automation: from where the moving
+      -- starts on the grabbed item's track; a region's start and end each go by that)
+      local lo = (s_.mark_m or ge) - maxL - TOL
+      if pos >= lo or (isrgn and rend >= lo) then
         s_.markers[#s_.markers + 1] = { isrgn = isrgn, pos = pos, rend = rend, name = name, num = num, color = color }
       end
       i = i + 1
     end
   end
-  s_.snaps = snap_targets(grabbed, moving, s_.flags)
+  s_.snaps = snap_targets(grabbed, moving, s_.flags, (not plain) and s_ or nil)
   -- (the Trim Tool's yellow outline, on the trimmed items)
   if RTcore and reaper.GetExtState("ReaTooled", "CurrentTool") == "trim" then
     s_.outline = {}
@@ -793,6 +996,70 @@ local function clamp(d)
   return d
 end
 
+-- Where a marker (or a region's start or end) goes for a trim of d: as the items, from where the
+-- moving starts (M) on it moves by -d; before that it stays put, inside the grabbed item too
+-- (1.39 sent the ones in the stretch that closes up to the join, so they piled up there)
+mark_place = function(t, d)
+  if t >= sh.mark_m - TOL then return t - d end
+  return t
+end
+
+-- Live crossfades (auto-crossfade on): the pairs that can meet are worked out at the press
+-- (sh.xpairs); on each change of the trim their spans are worked out from the trim alone (no
+-- reading items), and a fade is written only when its value changes. Two items on a lane that
+-- partly overlap now, and didn't that way at the press, get a crossfade over the overlap; one
+-- the drag took away goes; everything else is back as it was at the press
+local function xspan(e, d)
+  if e.kind == "trim" then
+    if sh.plain then return e.p + d, e.p + e.len end
+    return e.p, e.p + e.len - d
+  elseif e.kind == "move" then return e.p - d, e.p - d + e.len end
+  return e.p, e.p + e.len
+end
+live_xfades = function(d)
+  if not (sh.autoxf and sh.xpairs and #sh.xpairs > 0) then return end
+  local want = {}
+  local function W(it) local w = want[it]; if not w then w = {}; want[it] = w end; return w end
+  for _, pr in ipairs(sh.xpairs) do
+    local xs, xe = xspan(pr.x, d)
+    local ys, ye = xspan(pr.y, d)
+    local first, second = pr.x, pr.y
+    if ys < xs then first, second = pr.y, pr.x end
+    local ov = part_overlap({ p = xs, e = xe }, { p = ys, e = ye })
+    local ov0 = pr.x.was and pr.y.was and part_overlap(pr.x.was, pr.y.was)
+    if ov and not (ov0 and math.abs(ov - ov0) < 1e-6) then
+      W(first.it).fout = ov; W(second.it).fin = ov
+    elseif not ov and ov0 then
+      local o1, o2 = sh.xorig[first.it], sh.xorig[second.it]
+      if o1 and math.abs(o1.fout - ov0) < 1e-6 then W(first.it).fout = -1 end
+      if o2 and math.abs(o2.fin - ov0) < 1e-6 then W(second.it).fin = -1 end
+    end
+  end
+  local function put(it, key, parm, v)
+    local cur = sh.xcur[it]
+    local now = cur and cur[key]
+    if now == nil then now = sh.xorig[it][key] end
+    if math.abs(now - v) > 1e-9 then
+      reaper.SetMediaItemInfo_Value(it, parm, v)
+      cur = cur or {}; cur[key] = v; sh.xcur[it] = cur
+    end
+  end
+  for it, w in pairs(want) do
+    if reaper.ValidatePtr2(0, it, "MediaItem*") then
+      if w.fout then put(it, "fout", "D_FADEOUTLEN_AUTO", w.fout) end
+      if w.fin then put(it, "fin", "D_FADEINLEN_AUTO", w.fin) end
+    end
+  end
+  -- (set before, not wanted now: back as at the press)
+  for it, cur in pairs(sh.xcur) do
+    if reaper.ValidatePtr2(0, it, "MediaItem*") then
+      local w = want[it] or {}
+      if cur.fout ~= nil and w.fout == nil then put(it, "fout", "D_FADEOUTLEN_AUTO", sh.xorig[it].fout) end
+      if cur.fin ~= nil and w.fin == nil then put(it, "fin", "D_FADEINLEN_AUTO", sh.xorig[it].fin) end
+    end
+  end
+end
+
 -- (no_redraw: the caller redraws, once, with the view's scroll: see trim_update)
 local function apply(d, no_redraw)
   if math.abs(d - sh.d) < EPS then return false end
@@ -813,10 +1080,13 @@ local function apply(d, no_redraw)
     if c.snapoff > EPS then reaper.SetMediaItemInfo_Value(c.it, "D_SNAPOFFSET", math.max(0, c.snapoff - d)) end
   end
   for _, m in ipairs(sh.movers) do reaper.SetMediaItemInfo_Value(m.it, "D_POSITION", m.p - d) end
-  for _, en in ipairs(sh.envs) do apply_env(en, d) end
+  for _, en in ipairs(sh.envs) do apply_env_items(en, d) end
   for _, m in ipairs(sh.markers) do
-    reaper.SetProjectMarker3(0, m.num, m.isrgn, m.pos - d, m.isrgn and (m.rend - d) or 0, m.name, m.color)
+    local a, b = mark_place(m.pos, d), m.isrgn and mark_place(m.rend, d) or 0
+    if m.isrgn and b < a then b = a end
+    reaper.SetProjectMarker3(0, m.num, m.isrgn, a, b, m.name, m.color)
   end
+  live_xfades(d)
   reaper.PreventUIRefresh(-1)
   if not no_redraw then reaper.UpdateArrange() end
   return true
@@ -829,10 +1099,41 @@ end
 -- 1024 grid at any distance, 32768 grid snap follows grid visibility; itemsnap = snap
 -- distance in pixels; relsnap = relative grid)
 ------------------------------------------------------------
--- What the trim point can snap to (fixed while dragging): markers, region edges, time
--- selection, edit cursor, other items' edges and snap offsets nearby
-function snap_targets(grabbed, moving, flags)
+-- What the trim point can snap to (fixed while dragging).
+-- In a ripple (rip: this part of the drag), the left edge stays put on the timeline and what
+-- ripples slides towards it, so the targets are what moves: the starts, ends and snap offsets
+-- of the items that ripple (on tracks within maxsnaptrack), and the markers and region edges
+-- that ripple (ripple all, with "Ripple edit all affects regions/markers"). A snap is the moment
+-- one of them reaches the edge (the trim = where it was at the press - the edge). What stays put
+-- (other items, markers that don't ripple, the edit cursor, the time selection) never gets any
+-- closer to the edge, so it isn't a target. Without ripple (plain: the edge moves, as REAPER's
+-- own drag): markers, region edges, time selection, edit cursor, other items' edges and snap
+-- offsets nearby, as REAPER's
+function snap_targets(grabbed, moving, flags, rip)
   local list = {}
+  if rip then
+    if flags & 16 ~= 0 then
+      local M = rip.mark_m or 0
+      for _, mk in ipairs(rip.markers) do
+        if mk.pos >= M - TOL then list[#list + 1] = mk.pos end
+        if mk.isrgn and mk.rend >= M - TOL then list[#list + 1] = mk.rend end
+      end
+    end
+    if flags & 128 ~= 0 then
+      local gi = reaper.GetMediaTrackInfo_Value(reaper.GetMediaItem_Track(grabbed), "IP_TRACKNUMBER") - 1
+      local reach = cfg_int("maxsnaptrack")
+      for _, mv in ipairs(rip.movers) do
+        local ti = reaper.GetMediaTrackInfo_Value(reaper.GetMediaItem_Track(mv.it), "IP_TRACKNUMBER") - 1
+        if math.abs(ti - gi) <= reach then
+          local p, l = mv.p, item_len(mv.it)
+          list[#list + 1] = p; list[#list + 1] = p + l
+          local so = reaper.GetMediaItemInfo_Value(mv.it, "D_SNAPOFFSET")
+          if so > 0 then list[#list + 1] = p + so end
+        end
+      end
+    end
+    return list
+  end
   if flags & 16 ~= 0 then
     local i = 0
     while true do
@@ -970,7 +1271,7 @@ local function trim_update(mx)
       guide(snapped and sh.gP or nil)   -- (the line at the edge, which the view keeps under the mouse)
     else
       apply(clamp(d))
-      guide(snapped and s_ or nil)
+      guide(snapped and (sh.plain and s_ or sh.gP) or nil)   -- (in a ripple: at the edge, where the target arrived)
     end
   end
   if sh.outline then RTcore.outline("leftedge", sh.outline) end   -- (drawn right as the edge moves)
