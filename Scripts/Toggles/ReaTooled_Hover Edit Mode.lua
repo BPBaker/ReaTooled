@@ -2,9 +2,10 @@
 -- @description ReaTooled - Hover Edit Mode
 -- @version 1.0
 -- @date 2024.01.18
--- @author Brendan Baker adapted from TJF/Tim Farrell (http://github.com/sonictim/TJF-Scripts/)
+-- @author Brendan Baker
 -- @link http://brendanpatrickbaker.com/reatooled/
 -- @about
+  Adapted from TJF's scripts by Tim Farrell (http://github.com/sonictim/TJF-Scripts/).
   # Will Turn "Hover mode" on or off
   Will create a toggle stage for this function, that my trim scripts will read.
 --]]

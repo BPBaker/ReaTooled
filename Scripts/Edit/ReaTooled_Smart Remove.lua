@@ -1,9 +1,10 @@
 -- @description ReaTooled - Smart Remove
 -- @version 1.10
 -- @date 2026.10.30
--- @author Brendan Baker - but really modified from Smart remove by Rodrigo Diaz (aka Rodilab)
+-- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
+--   Adapted from Smart remove by Rodrigo Diaz (Rodilab).
 --   Context-aware remove, Pro Tools style.
 --   - Razor edits present and focus on items: remove razor areas, move edit cursor to the earliest razor start, clear time selection.
 --   - Time selection and focus on items: remove the selected area (gaps included, so ripple closes the whole range). With no items selected, removes across all tracks. Moves edit cursor to selection start and clears the time selection.

@@ -1,3 +1,19 @@
+v3.02 - November 20, 2026
+ + New ReaTooled versions of the six TJF scripts ReaTooled used, on the same shortcuts. Updating moves your shortcuts, buttons and menus to them (TJF's own script files aren't deleted)
+ + Toggle mute (Cmd+M): with razor areas, only the part inside them is muted, the items are split at the area edges. Otherwise selected items, or selected tracks
+ + Toggle item lock (Cmd+L): a mix of locked and unlocked items is locked, so pressing it again unlocks them all. It has its own undo point
+ + Reverse (Shift+R): works on razor areas first, then selected items, and ignores the time selection. Each razor area is flipped end to end within its own edges (set MIRROR_SELECTION to false to reverse each part where it is instead), and the razor areas stay, so pressing it again puts everything back. Selected items are each reversed where they are, without moving. Take envelopes and snap offsets flip with the items (REVERSE_TAKE_ENVELOPES, on by default); track automation stays put
+ + Write current value to all envelopes in selection (Cmd+Opt+/): only visible envelopes, the master track included, and never the tempo map. Take envelopes follow the take's playrate, and the time selection is left alone
+ + Increase / Decrease selected track heights (Ctrl+Up/Down): steps by the track's own height, not counting envelope lanes, and work without a track selection (the tracks with razor areas, the selected items' tracks, or the track under the mouse)
+ + New ReaTooled versions of X-Raym's "Add envelope points at time selection edges" (Shift+Ctrl+Q) and Rodilab's "Loop section of item source" (Opt+Shift+L), on the same shortcuts. Both work on razor areas first
+ + Add envelope points at selection edges (Shift+Ctrl+Q): sets the envelopes inside the razor areas (or the time selection) to their center value, with a step at each edge, keeping the values outside
+ + Loop item source section (Opt+Shift+L): with razor areas, the items are split at the area edges and only the parts inside become loops; the rest stays. Otherwise the selected items, within the time selection if it touches them
+ - Removed X-Raym's "Set selected tracks razor edit area to time selection" from what ReaTooled installs (nothing used it)
+ # Track heights: folder tracks get their own smallest height again
+ # Glide envelope points (Opt+/): glides from the value at the start of the selection to the value at the end, as in Pro Tools. It was gliding to the value at the edit cursor, which usually sits at the selection start, so the line came out flat. It also works on razor areas before the time selection now, and keeps the points just after the selection
+ # Left-edge ripple: the view keeps following the drag past the project start (0:00), with "Limit horizontal zoom/scroll to project start" on too
+ # Left-edge ripple: dragging past the right side of the window, the view keeps scrolling, and the edge glides back into view to follow the mouse when you change direction
+
 v3.01 - November 19, 2026
  + Script: ReaTooled_Empty track left click (deselect all and move edit cursor).lua, now the plain click on empty track space for the Smart, Move, Selector and Trim tools. It clears razor areas, the time selection and the selection of tracks, items and envelope points, and moves the edit cursor to the mouse. With Link Timeline and Edit Selection on, it clears the loop points too
  + Link Timeline and Edit Selection: after dragging an item (moving, copying or trimming it), the loop points follow the selected items, as a click on one does (setting LOOP_FOLLOWS_ITEM_DRAG in "ReaTooled_Enable Link Edit Cursor and Play Cursor.lua", on by default)

@@ -11,12 +11,12 @@
 --]]
 return {
   ["Floating MIDI toolbar 16"] = { "4925066a" },
-  ["Floating toolbar 1"] = { "34e3f381", "4311705a", "46b5b4ff", "770a34f3", "8692d399", "91ddd787", "9b06062b", "bfb07c0e", "e3786aea", "f6afd51d" },
+  ["Floating toolbar 1"] = { "19d1db6f", "34e3f381", "4311705a", "46b5b4ff", "770a34f3", "8692d399", "91ddd787", "9b06062b", "bfb07c0e", "e3786aea", "f6afd51d" },
   ["Floating toolbar 2"] = { "359f97d3" },
   ["Floating toolbar 3"] = { "e4a877dd" },
   ["Floating toolbar 32"] = { "bdfe62e5" },
   ["Floating toolbar 4"] = { "c5c13a54", "e73bc536" },
-  ["Main edit"] = { "2e7180a5" },
+  ["Main edit"] = { "2e7180a5", "cdd00a1a" },
   ["Main file"] = { "00e8cb22" },
   ["Main insert"] = { "04e71541" },
   ["Main options"] = { "070c1aa5", "b41b4b09", "c9a5025b" },

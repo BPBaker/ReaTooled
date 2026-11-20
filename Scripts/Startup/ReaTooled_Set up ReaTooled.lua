@@ -1,6 +1,6 @@
 --[[
 -- @description ReaTooled - Set up ReaTooled
--- @version 2.4.6
+-- @version 2.4.7
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -20,6 +20,8 @@
     When you click OK at the end, REAPER quits, the helper writes those files,
     and the same copy of REAPER opens again by itself.
 -- CHANGELOG
+-- v2.4.7 Shortcuts, buttons, menus and mouse modifiers that used TJF's scripts move to
+--        ReaTooled's own versions (listed in Startup/ReaTooled_Renamed scripts.lua)
 -- v2.4.6 Window titles in sentence case ("ReaTooled is installed"); no message asks you to
 --        close ReaPack's windows (the restart at the end closes them)
 -- v2.4.5 Short messages about the tools by other developers: no long lists of names (the window
@@ -1163,8 +1165,11 @@ do
       local f = kb_fields(line)
       local drop = false
       if f[1] == "SCR" then
-        local rel = script_path(f):match("^ReaTooled/(.+)$")
-        local to = rel and RENAMES[rel]
+        local full = script_path(f)
+        local rel = full:match("^ReaTooled/(.+)$")
+        local to
+        if rel then to = RENAMES[rel]
+        else to = RENAMES["/" .. full]; if to == false then to = nil end end   -- (another developer's script, replaced by ours)
         local old = (f[4] or ""):gsub("^_", "")
         if to == false then
           ID_GONE[old] = true; drop = true

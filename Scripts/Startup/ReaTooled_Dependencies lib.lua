@@ -1,8 +1,12 @@
 --[[
 -- @description ReaTooled - Dependencies library
--- @version 1.3
+-- @version 1.5
 -- @author Brendan Baker
 -- @noindex
+-- @changelog
+--   v1.5 No longer installs X-Raym's razor-area and envelope-points scripts or Rodilab's
+--        loop-section script (unused, or replaced by ReaTooled's own)
+--   v1.4 TJF's scripts are no longer installed: ReaTooled has its own versions of them
 -- @about
 --   Installs the other developers' extensions and scripts ReaTooled uses (SWS, js_ReaScriptAPI,
 --   ReaImGui, reAAF and a few scripts), through ReaPack, so ReaPack records them and keeps them
@@ -48,25 +52,16 @@ M.LIST = {
   { url = "https://github.com/ReaTeam/ReaScripts/raw/master/index.xml#p=Items%20Editing/az_Fade%20tool%20(work%20on%20context%20of%20mouse,%20razor%20or%20time%20selection).lua" },
   { url = "https://github.com/ReaTeam/ReaScripts/raw/master/index.xml#p=Items%20Editing/az_Open%20item%20copy%20in%20primary%20external%20editor%20with%20handles.lua" },
   { url = "https://github.com/ReaTeam/ReaScripts/raw/master/index.xml#p=Items%20Editing/rodilab_Duplicate%20items%20or%20tracks%20(depending%20on%20focus%20and%20time%20selection).lua" },
-  { url = "https://github.com/ReaTeam/ReaScripts/raw/master/index.xml#p=Items%20Properties/rodilab_Loop%20section%20of%20audiomidi%20item%20source%20within%20time%20selection,%20if%20any.lua" },
   { url = "https://github.com/ReaTeam/ReaScripts/raw/master/index.xml#p=Various/rodilab_Color%20palette.lua" },
   { url = "https://github.com/ReaTeam/ReaScripts/raw/master/index.xml#p=Items%20Editing/80icio_Perfect%20Timing!%20-%20Audio%20Quantizer.lua" },
-  { url = "https://github.com/X-Raym/REAPER-ReaScripts/raw/master/index.xml#p=Envelopes/On%20Tracks/X-Raym_Add%20envelope%20points%20at%20time%20selection%20edges%20from%20center%20to%20center%20preserving%20edges.lua" },
   { url = "https://github.com/X-Raym/REAPER-ReaScripts/raw/master/index.xml#p=FX/X-Raym_Set%20selected%20tracks%20FX%20parameter%20value%20from%20last%20focused%20FX%20last%20touch%20parameter.lua" },
   { url = "https://github.com/X-Raym/REAPER-ReaScripts/raw/master/index.xml#p=Items%20Editing/X-Raym_Move%20selected%20items%20to%20end%20of%20previous%20items%20on%20all%20visible%20tracks.lua" },
   { url = "https://github.com/X-Raym/REAPER-ReaScripts/raw/master/index.xml#p=Items%20Editing/X-Raym_Move%20selected%20items%20to%20next%20item%20on%20all%20visible%20tracks.lua" },
-  { url = "https://github.com/X-Raym/REAPER-ReaScripts/raw/master/index.xml#p=Razor%20Edit/X-Raym_Set%20selected%20tracks%20razor%20edit%20area%20to%20time%20selection.lua" },
   { url = "https://github.com/MichaelPilyavskiy/ReaScripts/raw/master/index.xml#p=FX/mpl_Adjust%20normalized%20last%20touched%20parameter.lua",
     quick_script = "mpl_Add 0.01 to normalized last touched parameter.lua" },   -- (its scripts have other names)
   { url = "https://github.com/MichaelPilyavskiy/ReaScripts/raw/master/index.xml#p=Various/mpl_ImportSessionData.lua" },
   { url = "https://github.com/Odedd/ReaScripts/raw/main/index.xml#p=Various/Project%20Archiver/Odedd_Project%20Archiver.lua" },
   { url = "https://github.com/smandrap/ReaScripts/raw/master/index.xml#p=Tracks/smandrap_Duplicate%20Tracks.lua" },
-  { url = "https://github.com/sonictim/TJF-Scripts/raw/master/index.xml#p=Editing/Reverse/TJF%20Non%20Destructive%20Reverse%20Time%20selection.lua" },
-  { url = "https://github.com/sonictim/TJF-Scripts/raw/master/index.xml#p=Editing/Takes/TJF%20Toggle%20Mute%20(Match%20First%20Selected).lua" },
-  { url = "https://github.com/sonictim/TJF-Scripts/raw/master/index.xml#p=Editing/TJF%20Toggle%20Item%20Lock%20(matches%20first%20item).lua" },
-  { url = "https://github.com/sonictim/TJF-Scripts/raw/master/index.xml#p=Envelopes%20or%20Automation/TJF%20Write%20Punch%20ALL%20envelopes%20to%20Time,%20RazorEdit,%20or%20Item%20Selection.lua" },
-  { url = "https://github.com/sonictim/TJF-Scripts/raw/master/index.xml#p=Session%20Navigation/TJF%20Decrease%20Selected%20Track%20Heights.lua" },
-  { url = "https://github.com/sonictim/TJF-Scripts/raw/master/index.xml#p=Session%20Navigation/TJF%20Increase%20Selected%20Track%20Heights.lua" },
 }
 
 local SEC = "ReaTooled"

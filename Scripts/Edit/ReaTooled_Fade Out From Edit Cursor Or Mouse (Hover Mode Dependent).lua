@@ -2,9 +2,10 @@
 -- @description ReaTooled - Fade Out From Edit Cursor or Mouse (Hover Mode Dependant)
 -- @version 1.2
 -- @date 2024.11.20
--- @author Brendan Baker copied from TJF/Tim Farrell (http://github.com/sonictim/TJF-Scripts/)
+-- @author Brendan Baker
 -- @link http://brendanpatrickbaker.com/reatooled/
 -- @about
+  Adapted from TJF's scripts by Tim Farrell (http://github.com/sonictim/TJF-Scripts/).
   # Adjusted to work with the modified ReaTooled Hover Edit Mode script ("_RS7cb08a92f7a211ce66734644b4fbe99a91bd42f5") 
   # TJF Fade Out from Edit Cursor or Mouse (Hover Mode Dependant)
     Depending on Status of Hover mode will either fade out from edit cursor or mouse cursor

@@ -2,9 +2,10 @@
 -- @description ReaTooled - Trim right side of items (Hover Mode Dependant)
 -- @version 1.0
 -- @date 2024.01.18
--- @author Brendan Baker adapted from TJF/Tim Farrell (http://github.com/sonictim/TJF-Scripts/)
+-- @author Brendan Baker
 -- @link http://brendanpatrickbaker.com/reatooled/
 -- @about
+  Adapted from TJF's scripts by Tim Farrell (http://github.com/sonictim/TJF-Scripts/).
   # Trim right Side of Item to Mouse Cursor
   Modified from TJF's scripts to work better when in Ripple mode, and to move cursor to the trim/edit edge 
   Depending on Hover mode will Trim Right Edge of items to mouse cursor or edit cursor

@@ -2,9 +2,10 @@
 -- @description ReaTooled - Toggle Tab to Transient
 -- @version 1.0
 @date 2024 03 12
--- @author Brendan Baker (modified from TJF/Tim Farrell)
+-- @author Brendan Baker
 -- @link http://brendanpatrickbaker.com/reatooled/
 @about
+  Adapted from TJF's scripts by Tim Farrell (http://github.com/sonictim/TJF-Scripts/).
   # Mimics Protools tab function toggle 
   Will create a toggle stage for this function, that will alter the behavior of the tab function script.
   + Adds ReaTooled ExtState for later recall

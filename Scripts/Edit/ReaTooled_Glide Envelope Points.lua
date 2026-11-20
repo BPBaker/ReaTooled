@@ -1,7 +1,8 @@
---@description GLIDE envelopes to selection/items (ReaTooled, inspired by TJF)
---@version 3.0
---@author ReaTooled
+--@description ReaTooled - Glide envelopes to selection or items
+--@version 3.1
+--@author Brendan Baker
 --@about
+--  Inspired by TJF's Glide script by Tim Farrell.
 --  Reatooled version that preserves the original behavior (Time Selection, Razor Edit,
 --  Item Selection, Take/Track envelopes, Automation Items, optional Edit Cursor pickup),
 --  with safer logic and performance improvements:
@@ -11,13 +12,24 @@
 --    - Sort once per AI batch, not per-point
 --    - Safer clamping for item-relative cursor
 --    - Cleaner structure and locals
+--  Glides each envelope in a straight line from its value at the start of the
+--  selection to its value at the end, replacing the points in between (like Pro
+--  Tools' Glide). With CheckEditCursor on and the edit cursor inside the selection,
+--  it glides to the value at the edit cursor instead.
+--  Works on razor areas first, then the time selection, then selected items.
 --  NOTE: This script uses only native ReaScript API (no SWS BR_ calls).
+--@changelog
+--  v3.1 Glides to the value at the end of the selection (it was gliding to the value at
+--       the edit cursor, which usually sits at the selection start, so the line came out
+--       flat). CheckEditCursor is off by default, and only counts with the cursor inside
+--       the selection. Razor areas come before the time selection. Points just after the
+--       selection are kept.
 
 --[[------------------------------[[--
               SETTINGS
 --]]------------------------------]]--
 
-local CheckEditCursor = true   -- If true, and edit cursor falls in selection, write using value at cursor
+local CheckEditCursor = false  -- If true and the edit cursor is inside the selection, glide to the value at the cursor
 local CheckArmed      = false  -- If true, only process ARMED envelopes
 local RequireVisible  = true   -- If true, only process VISIBLE envelopes
 local Smoothing       = 0.01   -- Seconds used to smooth back to post-region values
@@ -158,7 +170,7 @@ local function ProcessEnvelope(env, pointstart, pointend, curpos, forcedValue)
 
   local value = forcedValue
   if value == nil then
-    if CheckEditCursor then
+    if CheckEditCursor and curpos > pointstart + 1e-9 and curpos < pointend - 1e-9 then
       _, value = reaper.Envelope_Evaluate(env, curpos, 48000, 0)
     else
       value = baseEnd
@@ -184,11 +196,12 @@ local function ProcessEnvelope(env, pointstart, pointend, curpos, forcedValue)
     end
 
     -- Write
-    reaper.DeleteEnvelopePointRangeEx(env, ai, ai_ps, ai_pe + Smoothing)
-    reaper.InsertEnvelopePointEx(env, ai, ai_ps, sv,    0, 1, 0, true)  -- hold entering value
-    reaper.InsertEnvelopePointEx(env, ai, ai_pe, value, 0, 1, 0, true)  -- target at region end
-    if value ~= ev or #AIs > 1 then
-      reaper.InsertEnvelopePointEx(env, ai, ai_pe + Smoothing, sr, 0, 1, 0, true) -- smooth back
+    local back = math.abs(value - ev) > 1e-9 or #AIs > 1   -- (a step back to what follows is needed)
+    reaper.DeleteEnvelopePointRangeEx(env, ai, ai_ps, ai_pe + (back and Smoothing or 0) + 1e-7)
+    reaper.InsertEnvelopePointEx(env, ai, ai_ps, sv,    0, 0, false, true)  -- the value entering the selection
+    reaper.InsertEnvelopePointEx(env, ai, ai_pe, value, 0, 0, false, true)  -- glide to the target at the end
+    if back then
+      reaper.InsertEnvelopePointEx(env, ai, ai_pe + Smoothing, sr, 0, 0, false, true) -- step back to what follows
     end
     reaper.Envelope_SortPointsEx(env, ai)
   end
@@ -244,7 +257,23 @@ local function Main()
 
   local curpos = reaper.GetCursorPosition()
 
-  -- 1) TIME SELECTION path
+  -- 1) RAZOR EDITS path
+  if RazorEditSelectionExists() then
+    local selections = GetRazorEdits()
+    local now = reaper.GetCursorPosition()
+    for i = 1, #selections do
+      local a = selections[i]
+      if a.isEnvelope and a.envelope then
+        ProcessEnvelope(a.envelope, a.areaStart, a.areaEnd, now, nil)
+      end
+      if #a.items > 0 then
+        ProcessItemEnvelopes(a.items, a.areaStart, a.areaEnd, now, nil)
+      end
+    end
+    return
+  end
+
+  -- 2) TIME SELECTION path
   local starttime, endtime = reaper.GetSet_LoopTimeRange2(0, false, false, 0, 0, false)
   if starttime ~= endtime then
     local tracks = {}
@@ -285,22 +314,6 @@ local function Main()
       ProcessItemEnvelopes(selitems, starttime, endtime, curpos, nil)
     elseif #items > 0 then
       ProcessItemEnvelopes(items, starttime, endtime, curpos, nil)
-    end
-    return
-  end
-
-  -- 2) RAZOR EDITS path
-  if RazorEditSelectionExists() then
-    local selections = GetRazorEdits()
-    local now = reaper.GetCursorPosition()
-    for i = 1, #selections do
-      local a = selections[i]
-      if a.isEnvelope and a.envelope then
-        ProcessEnvelope(a.envelope, a.areaStart, a.areaEnd, now, nil)
-      end
-      if #a.items > 0 then
-        ProcessItemEnvelopes(a.items, a.areaStart, a.areaEnd, now, nil)
-      end
     end
     return
   end

@@ -2,9 +2,10 @@
 -- @description ReaTooled - Add Stretch Marker (Hover Mode Dependant)
 -- @version 1.1
 -- @date 2024.08.22
--- @author Brendan Baker copied from TJF/Tim Farrell (http://github.com/sonictim/TJF-Scripts/)
+-- @author Brendan Baker
 -- @link http://brendanpatrickbaker.com/reatooled/
 -- @about
+  Adapted from TJF's scripts by Tim Farrell (http://github.com/sonictim/TJF-Scripts/).
   # Adjusted to work with the modified ReaTooled Hover Edit Mode script ("_RS7cb08a92f7a211ce66734644b4fbe99a91bd42f5")   
   # TJF Add Strech Marker (Hover Mode Dependant)
   Will add Stretch Markers at Mouse Cursor or Edit Curser depending on Hover Mode Status
