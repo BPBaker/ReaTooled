@@ -11,9 +11,8 @@
   already locked, all of them are unlocked. So a mixed selection always ends up
   the same way, and pressing the key again undoes it.
 @changelog
-  v1.0 ReaTooled's own version, replacing TJF Toggle Item Lock (matches first item):
-       a mixed selection is locked (not matched to the first item), and the
-       change has its own undo point.
+  v1.0 First version: a mix of locked and unlocked items is locked, and the change
+       has its own undo point.
 --]]
 
 local n = reaper.CountSelectedMediaItems(0)

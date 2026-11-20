@@ -4,9 +4,8 @@
 -- @author Brendan Baker
 -- @noindex
 -- @changelog
---   v1.5 No longer installs X-Raym's razor-area and envelope-points scripts or Rodilab's
---        loop-section script (unused, or replaced by ReaTooled's own)
---   v1.4 TJF's scripts are no longer installed: ReaTooled has its own versions of them
+--   v1.5 Installs fewer scripts by other developers: ReaTooled has its own scripts for these now
+--   v1.4 Installs fewer scripts by other developers: ReaTooled has its own scripts for these now
 -- @about
 --   Installs the other developers' extensions and scripts ReaTooled uses (SWS, js_ReaScriptAPI,
 --   ReaImGui, reAAF and a few scripts), through ReaPack, so ReaPack records them and keeps them

@@ -13,7 +13,7 @@
   else the tracks of the selected items; else the track under the mouse.
   Tracks whose height is locked are left alone. No undo point (it's a view change).
 @changelog
-  v1.0 ReaTooled's own version, replacing TJF Decrease Selected Track Heights:
+  v1.0 First version:
        uses the track's own height (not counting envelope lanes), gives folder
        tracks their own minimum correctly, and works
        without a track selection.

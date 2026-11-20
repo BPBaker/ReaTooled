@@ -225,7 +225,7 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
       <version name="1.1" author="Brendan Baker" time="2026-11-20T18:36:37Z">
-        <changelog><![CDATA[ReaTooled's own version, replacing X-Raym's script: razor areas first, the master track included.]]></changelog>
+        <changelog><![CDATA[First version: razor areas first, the master track included.]]></changelog>
         <source file="ReaTooled_Add envelope points at selection edges (center value inside).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Add%20envelope%20points%20at%20selection%20edges%20%28center%20value%20inside%29.lua</source>
       </version>
     </reapack>
@@ -300,7 +300,7 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
       <version name="1.0" author="Brendan Baker">
-        <changelog><![CDATA[Initial version (replaces TJF Coalesce Take Volume to Track Volume)]]></changelog>
+        <changelog><![CDATA[Initial version]]></changelog>
         <source file="ReaTooled_Coalesce Clip Gain to Track Volume.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Coalesce%20Clip%20Gain%20to%20Track%20Volume.lua</source>
       </version>
     </reapack>
@@ -315,7 +315,7 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
       <version name="1.0" author="Brendan Baker">
-        <changelog><![CDATA[Initial version (replaces TJF Coalesce Track Volume to Take Volume)]]></changelog>
+        <changelog><![CDATA[Initial version]]></changelog>
         <source file="ReaTooled_Coalesce Track Volume to Clip Gain.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Coalesce%20Track%20Volume%20to%20Clip%20Gain.lua</source>
       </version>
     </reapack>
@@ -642,7 +642,7 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
       <version name="1.1" author="Brendan Baker" time="2026-11-20T18:36:37Z">
-        <changelog><![CDATA[ReaTooled's own version, replacing Rodilab's script: razor areas first, and the parts of an item outside the selection are kept instead of deleted.]]></changelog>
+        <changelog><![CDATA[First version: razor areas first, and the parts of an item outside the selection are kept.]]></changelog>
         <source file="ReaTooled_Loop item source section (razor area or time selection).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Loop%20item%20source%20section%20%28razor%20area%20or%20time%20selection%29.lua</source>
       </version>
     </reapack>
@@ -1046,7 +1046,7 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
       <version name="1.1" author="Brendan Baker" time="2026-11-20T18:36:37Z">
-        <changelog><![CDATA[ReaTooled's own version, replacing TJF Toggle Item Lock (matches first item): a mixed selection is locked (not matched to the first item), and the change has its own undo point.]]></changelog>
+        <changelog><![CDATA[First version: a mix of locked and unlocked items is locked, and the change has its own undo point.]]></changelog>
         <source file="ReaTooled_Toggle item lock.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Toggle%20item%20lock.lua</source>
       </version>
     </reapack>
@@ -1082,7 +1082,7 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
       <version name="1.1" author="Brendan Baker" time="2026-11-20T18:36:37Z">
-        <changelog><![CDATA[ReaTooled's own version, replacing TJF Toggle Mute (Match First Selected): razor areas mute just the part inside them.]]></changelog>
+        <changelog><![CDATA[First version: razor areas mute just the part inside them.]]></changelog>
         <source file="ReaTooled_Toggle mute.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Toggle%20mute.lua</source>
       </version>
     </reapack>
@@ -1222,7 +1222,7 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
       <version name="1.1" author="Brendan Baker" time="2026-11-20T18:36:37Z">
-        <changelog><![CDATA[ReaTooled's own version, replacing TJF Write Punch ALL envelopes to Time, RazorEdit, or Item Selection: only visible envelopes, the master track included, take envelopes follow the take's playrate, no clearing of the ReaScript console, and no temporary changes to the time selection.]]></changelog>
+        <changelog><![CDATA[First version: only visible envelopes, the master track included, take envelopes follow the take's playrate, and the time selection is left alone.]]></changelog>
         <source file="ReaTooled_Write current value to all envelopes in selection.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Write%20current%20value%20to%20all%20envelopes%20in%20selection.lua</source>
       </version>
     </reapack>
@@ -1341,8 +1341,8 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
       <version name="2.4.36" author="Brendan Baker" time="2026-11-20T18:20:39Z">
-        <changelog><![CDATA[ReaTooled_Dependencies lib: No longer installs X-Raym's razor-area and envelope-points scripts or Rodilab's loop-section script (unused, or replaced by ReaTooled's own)
-ReaTooled_Set up ReaTooled: Shortcuts, buttons, menus and mouse modifiers that used TJF's scripts move to ReaTooled's own versions (listed in Startup/ReaTooled_Renamed scripts.lua)]]></changelog>
+        <changelog><![CDATA[ReaTooled_Dependencies lib: Installs fewer scripts by other developers: ReaTooled has its own scripts for these now
+ReaTooled_Set up ReaTooled: Shortcuts, buttons, menus and mouse modifiers follow scripts that were replaced by new ReaTooled scripts (listed in Startup/ReaTooled_Renamed scripts.lua)]]></changelog>
         <source file="ReaTooled_Dependencies lib.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Dependencies%20lib.lua</source>
         <source file="ReaTooled_Earlier shortcuts.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Earlier%20shortcuts.lua</source>
         <source file="ReaTooled_Earlier toolbars.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Earlier%20toolbars.lua</source>
@@ -1724,7 +1724,7 @@ Trim Tool_ReaTooled: A plain click on empty track space runs ReaTooled's "Empty 
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
       <version name="1.1" author="Brendan Baker" time="2026-11-20T18:36:37Z">
-        <changelog><![CDATA[ReaTooled's own version, replacing TJF Decrease Selected Track Heights: uses the track's own height (not counting envelope lanes), gives folder tracks their own minimum correctly, and works without a track selection.]]></changelog>
+        <changelog><![CDATA[First version: uses the track's own height (not counting envelope lanes), gives folder tracks their own minimum correctly, and works without a track selection.]]></changelog>
         <source file="ReaTooled_Decrease selected track heights.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tracks/ReaTooled_Decrease%20selected%20track%20heights.lua</source>
       </version>
     </reapack>
@@ -1740,7 +1740,7 @@ Trim Tool_ReaTooled: A plain click on empty track space runs ReaTooled's "Empty 
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
       <version name="1.1" author="Brendan Baker" time="2026-11-20T18:36:37Z">
-        <changelog><![CDATA[ReaTooled's own version, replacing TJF Increase Selected Track Heights: uses the track's own height (not counting envelope lanes), and works without a track selection.]]></changelog>
+        <changelog><![CDATA[First version: uses the track's own height (not counting envelope lanes), and works without a track selection.]]></changelog>
         <source file="ReaTooled_Increase selected track heights.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tracks/ReaTooled_Increase%20selected%20track%20heights.lua</source>
       </version>
     </reapack>

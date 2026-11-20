@@ -18,8 +18,8 @@
   The processed items end up selected. Razor areas and the time selection are kept.
   Locked items are left alone.
 @changelog
-  v1.0 ReaTooled's own version, replacing Rodilab's script: razor areas first, and
-       the parts of an item outside the selection are kept instead of deleted.
+  v1.0 First version: razor areas first, and the parts of an item outside the
+       selection are kept.
 --]]
 
 local EPS = 1e-9

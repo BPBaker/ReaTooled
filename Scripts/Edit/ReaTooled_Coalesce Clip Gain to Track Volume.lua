@@ -13,7 +13,7 @@
     Known limit: two selected items overlapping on the same track can give
     unexpected results. Envelopes with automation items are skipped.
 -- CHANGELOG
--- v1.0 Initial version (replaces TJF Coalesce Take Volume to Track Volume)
+-- v1.0 Initial version
 --]]
 
 ------------------------------------------------------------

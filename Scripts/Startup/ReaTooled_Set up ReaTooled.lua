@@ -20,8 +20,8 @@
     When you click OK at the end, REAPER quits, the helper writes those files,
     and the same copy of REAPER opens again by itself.
 -- CHANGELOG
--- v2.4.7 Shortcuts, buttons, menus and mouse modifiers that used TJF's scripts move to
---        ReaTooled's own versions (listed in Startup/ReaTooled_Renamed scripts.lua)
+-- v2.4.7 Shortcuts, buttons, menus and mouse modifiers follow scripts that were replaced by
+--        new ReaTooled scripts (listed in Startup/ReaTooled_Renamed scripts.lua)
 -- v2.4.6 Window titles in sentence case ("ReaTooled is installed"); no message asks you to
 --        close ReaPack's windows (the restart at the end closes them)
 -- v2.4.5 Short messages about the tools by other developers: no long lists of names (the window

@@ -15,8 +15,7 @@
   muted, everything is unmuted.
   Item mutes are written to each item, so item grouping doesn't spread them.
 @changelog
-  v1.0 ReaTooled's own version, replacing TJF Toggle Mute (Match First Selected):
-       razor areas mute just the part inside them.
+  v1.0 First version: razor areas mute just the part inside them.
 --]]
 
 local EPS = 1e-9

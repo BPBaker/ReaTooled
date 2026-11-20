@@ -26,8 +26,7 @@
        were, and the items it just reversed flip back within the same edges.
   v1.1 Razor areas first, then selected items; the time selection is ignored (with Link
        Timeline and Edit Selection on, razor areas make one). New MIRROR_SELECTION setting.
-  v1.0 ReaTooled's own version, replacing TJF Non Destructive Reverse Time selection:
-       each razor area is reversed within its own edges; with a time selection only the
+  v1.0 First version: each razor area is reversed within its own edges; with a time selection only the
        parts inside it are reversed; take envelopes and snap offsets flip too.
 --]]
 

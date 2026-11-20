@@ -23,10 +23,8 @@
   tempo map never is. Automation items in the selection are written too.
   The time selection is never changed.
 @changelog
-  v1.0 ReaTooled's own version, replacing TJF Write Punch ALL envelopes to Time,
-       RazorEdit, or Item Selection: only visible envelopes, the master track included,
-       take envelopes follow the take's playrate, no clearing of the ReaScript console,
-       and no temporary changes to the time selection.
+  v1.0 First version: only visible envelopes, the master track included,
+       take envelopes follow the take's playrate, and the time selection is left alone.
 --]]
 
 ------------------------------------------------------------

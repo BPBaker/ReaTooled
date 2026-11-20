@@ -17,8 +17,7 @@
        tracks (the master too).
   Only visible, armed envelopes are changed (ONLY_VISIBLE_ARMED below). Needs SWS.
 @changelog
-  v1.0 ReaTooled's own version, replacing X-Raym's script: razor areas first, the
-       master track included.
+  v1.0 First version: razor areas first, the master track included.
 --]]
 
 ------------------------------------------------------------
