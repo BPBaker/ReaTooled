@@ -125,7 +125,6 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
         <source file="toolbar_icons/150/spectral peaks.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/150/spectral%20peaks.png</source>
         <source file="toolbar_icons/150/spectrogram &amp; peaks.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/150/spectrogram%20%26%20peaks.png</source>
         <source file="toolbar_icons/150/spectrogram.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/150/spectrogram.png</source>
-        <source file="toolbar_icons/150/toolbar_playtime.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/150/toolbar_playtime.png</source>
         <source file="toolbar_icons/150/toolbar_plus.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/150/toolbar_plus.png</source>
         <source file="toolbar_icons/200/ReaTooled_Tab_to_transients.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/200/ReaTooled_Tab_to_transients.png</source>
         <source file="toolbar_icons/200/ReaTooled_toolbar_Ripple or Lock Markers.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/200/ReaTooled_toolbar_Ripple%20or%20Lock%20Markers.png</source>
@@ -153,7 +152,6 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
         <source file="toolbar_icons/200/spectral peaks.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/200/spectral%20peaks.png</source>
         <source file="toolbar_icons/200/spectrogram &amp; peaks.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/200/spectrogram%20%26%20peaks.png</source>
         <source file="toolbar_icons/200/spectrogram.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/200/spectrogram.png</source>
-        <source file="toolbar_icons/200/toolbar_playtime.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/200/toolbar_playtime.png</source>
         <source file="toolbar_icons/200/toolbar_plus.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/200/toolbar_plus.png</source>
         <source file="toolbar_icons/ReaTooled_Tab_to_transients.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/ReaTooled_Tab_to_transients.png</source>
         <source file="toolbar_icons/ReaTooled_toolbar_Ripple or Lock Markers.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/ReaTooled_toolbar_Ripple%20or%20Lock%20Markers.png</source>
@@ -183,7 +181,6 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
         <source file="toolbar_icons/spectrogram.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/spectrogram.png</source>
         <source file="toolbar_icons/toolbar_one_small_step.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/toolbar_one_small_step.png</source>
         <source file="toolbar_icons/toolbar_one_small_step_cleanup.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/toolbar_one_small_step_cleanup.png</source>
-        <source file="toolbar_icons/toolbar_playtime.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/toolbar_playtime.png</source>
         <source file="toolbar_icons/toolbar_plus.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/toolbar_plus.png</source>
       </version>
     </reapack>
