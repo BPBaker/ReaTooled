@@ -32,8 +32,17 @@
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="3.2026.1120.2326" author="Brendan Baker" time="2026-11-21T04:26:29Z">
-        <changelog><![CDATA[Configuration updated (no new entries in the release notes).
+      <version name="3.2026.1123.2204" author="Brendan Baker" time="2026-11-24T03:08:03Z">
+        <changelog><![CDATA[v3.03 - November 23, 2026
++ Shuffle mode: a yellow frame shows everything being shuffled. With ripple all tracks it runs across all tracks; with ripple per track it goes around the tracks that have items moving (one frame for each group of neighbouring tracks). Items moving along on other tracks (grouped tracks, selected items) get the yellow outline too
++ Installation: updated installer
+# Link Track and Item and Razor Selection: dragging selected items or razor areas on several tracks keeps all those tracks selected (only the dragged one stayed selected)
+# Link Track and Item and Razor Selection: clicking empty track space keeps that track selected (it was unselected again right away)
+# Editing: "Trim content behind media items when editing" is on again, as in ReaTooled v2, so dragging an item over another trims what's underneath, as in Pro Tools. The Layered Editing button turns it off
+# Layered Editing: the button keeps its setting after a restart (it could take two clicks to match again)
+# Dynamic Split (Cmd+U): back to ReaTooled v2's settings (silence removed, -24 dB threshold). If you changed them yourself, yours are kept
+# Installation and updates no longer overwrite your own REAPER settings that aren't ReaTooled's: recent FX, render formats, SWS settings, MIDI editor and Media Explorer settings, and list column layouts stay yours. Only ReaTooled's window layout and settings are applied
+# Installation: messages point to the ReaTooled installer and say when nothing has been changed. If setup stops with an error, it says where your backup is and how to restore it
 
 To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or run "Update ReaTooled").]]></changelog>
         <source file="ReaTooled/Config/keymap.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/keymap.ini</source>
@@ -44,8 +53,9 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
         <source file="ReaTooled/Config/themeconfig.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/themeconfig.ini</source>
         <source file="ReaTooled/Config/theme.txt">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/theme.txt</source>
         <source file="ReaTooled/Config/extstate.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/extstate.ini</source>
-        <source file="ReaTooled/Config/version.txt">https://github.com/BPBaker/ReaTooled/releases/download/v3.2026.1120.2326/installs.txt</source>
+        <source file="ReaTooled/Config/version.txt">https://github.com/BPBaker/ReaTooled/releases/download/v3.2026.1123.2204/installs.txt</source>
         <source file="ReaTooled/Config/reaper_sections.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/reaper_sections.ini</source>
+        <source file="ReaTooled/Config/reaper_sections_rules.txt">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/reaper_sections_rules.txt</source>
         <source file="ReaTooled/Config/update_rules.txt">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/update_rules.txt</source>
         <source file="ReaTooled/Config/screensets.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/screensets.ini</source>
         <source file="ReaTooled/Config/sws/S&amp;M.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/sws/S%26M.ini</source>
@@ -185,7 +195,7 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
 {\pard \ql \f0 \sa180 \li0 \fi0 ReaTooled's themes, installed into REAPER's ColorThemes folder. "Default_7.0 ReaTooled v3 Dark" is the default.\par}
 }]]></description>
       </metadata>
-      <version name="3.2026.1120.2326" author="Brendan Baker" time="2026-11-21T04:26:29Z">
+      <version name="3.2026.1123.2204" author="Brendan Baker" time="2026-11-24T03:08:03Z">
         <source file="Assembled_ReaTooled v1.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Assembled_ReaTooled%20v1.ReaperThemeZip</source>
         <source file="Default_7.0 ReaTooled v2 Light.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Default_7.0%20ReaTooled%20v2%20Light.ReaperThemeZip</source>
         <source file="Default_7.0 ReaTooled v3 Dark.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Default_7.0%20ReaTooled%20v3%20Dark.ReaperThemeZip</source>
@@ -425,12 +435,12 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
 {\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
 \widowctrl\hyphauto
 {\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 A plain left click on empty track space, for ReaTooled's tools\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 Clears all razor areas, unselects all tracks, items and envelope points, removes the time selection, and moves the edit cursor to the mouse (snapping as REAPER's own click does). With Link Timeline and Edit Selection on, the loop points are cleared too, since they're the edit selection; off, they're left alone. Set as the plain empty-track click by the Smart, Move, Selector and Trim tools (it replaces REAPER's "Deselect all items and move edit cursor", which left razor areas, the time selection and the loop points behind).\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 Clears all razor areas, unselects all tracks, items and envelope points, removes the time selection, and moves the edit cursor to the mouse (snapping as REAPER's own click does). With Link Timeline and Edit Selection on, the loop points are cleared too, since they're the edit selection; off, they're left alone. With Link Track and Item and Razor Selection on, the track you clicked is then selected (as clicking a track does in Pro Tools); off, no track stays selected. Set as the plain empty-track click by the Smart, Move, Selector and Trim tools (it replaces REAPER's "Deselect all items and move edit cursor", which left razor areas, the time selection and the loop points behind).\par}
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="1.0" author="Brendan Baker" time="2026-11-19T20:20:41Z">
-        <changelog><![CDATA[First version]]></changelog>
+      <version name="1.1" author="Brendan Baker" time="2026-11-24T03:08:03Z">
+        <changelog><![CDATA[With Link Track and Item and Razor Selection on, the clicked track stays selected (it was selected for a moment, then unselected with everything else)]]></changelog>
         <source file="ReaTooled_Empty track left click (deselect all and move edit cursor).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Edit/ReaTooled_Empty%20track%20left%20click%20%28deselect%20all%20and%20move%20edit%20cursor%29.lua</source>
       </version>
     </reapack>
@@ -1340,10 +1350,10 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="2.4.36" author="Brendan Baker" time="2026-11-20T18:20:39Z">
-        <changelog><![CDATA[ReaTooled_Dependencies lib: Installs fewer scripts by other developers: ReaTooled has its own scripts for these now
-ReaTooled_Set up ReaTooled: Shortcuts, buttons, menus and mouse modifiers follow scripts that were replaced by new ReaTooled scripts (listed in Startup/ReaTooled_Renamed scripts.lua)]]></changelog>
+      <version name="2.4.37" author="Brendan Baker" time="2026-11-24T03:08:03Z">
+        <changelog><![CDATA[ReaTooled_Set up ReaTooled: Clearer messages: the first "Set up ReaTooled now?" says what ReaTooled changes and how to undo it; the "not installed yet" messages point to the ReaTooled installer (ReaTooled.ReaperPkg) and say nothing was changed; if setup stops with an error after the backup, it says where the backup is and how to restore it. The first "Set up ReaTooled now?" has three answers: Yes (set up now), No (don't set up ReaTooled: the ReaTooled Starter stops asking, Data/ReaTooled/starter_off.txt) and Cancel (not now: asked again the next time REAPER opens; closing the window counts as this) Fixed: a setting ReaTooled no longer sets in the mouse modifiers or theme settings is now removed, instead of an "!delete" line being written into reaper-mouse.ini or reaper-themeconfig.ini (lines left there by earlier updates are cleaned out) reaper.ini sections (Data/ReaTooled/Config/reaper_sections_rules.txt says how each setting is treated): window layout is set at a first setup and left alone by updates; ReaTooled's settings (Dynamic Split, Big Clock) are set unless you have your own (one that isn't what this or an earlier ReaTooled installed, see Startup/ReaTooled_Earlier settings.lua), in updates too; list layouts only where you have none. Without the rules file, as before]]></changelog>
         <source file="ReaTooled_Dependencies lib.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Dependencies%20lib.lua</source>
+        <source file="ReaTooled_Earlier settings.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Earlier%20settings.lua</source>
         <source file="ReaTooled_Earlier shortcuts.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Earlier%20shortcuts.lua</source>
         <source file="ReaTooled_Earlier toolbars.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Earlier%20toolbars.lua</source>
         <source file="ReaTooled_Enable Link Edit Cursor and Play Cursor.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Enable%20Link%20Edit%20Cursor%20and%20Play%20Cursor.lua</source>
@@ -1430,8 +1440,8 @@ ReaTooled_Set up ReaTooled: Shortcuts, buttons, menus and mouse modifiers follow
 {\pard \ql \f0 \sa180 \li0 \fi0 Models and builds upon "Link track and clip selection" from PT.\par}
 }]]></description>
       </metadata>
-      <version name="2.24" author="Brendan Baker" time="2026-11-05T20:03:31Z">
-        <changelog><![CDATA[- Less flicker in other windows (Track Manager, mixer, Project Bay): only the tracks whose selection actually changes are touched (it used to deselect every track and select again), and the track lists are refreshed and the mixer scrolled only when the selection really changed]]></changelog>
+      <version name="2.25" author="Brendan Baker" time="2026-11-24T03:08:03Z">
+        <changelog><![CDATA[- Pressing an item that's already selected, or inside a razor area, no longer selects just that track: the track selection is left as it is while you drag (so dragging selected items or razor areas on several tracks keeps all those tracks selected), and follows the selected items or razor areas again once you let go. Pressing an unselected item, or empty track space, selects the track as before]]></changelog>
         <source file="ReaTooled_Link Track and Item and Razor Selection.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Toggles/ReaTooled_Link%20Track%20and%20Item%20and%20Razor%20Selection.lua</source>
       </version>
     </reapack>
@@ -1449,8 +1459,8 @@ ReaTooled_Set up ReaTooled: Shortcuts, buttons, menus and mouse modifiers follow
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="1.9" author="Brendan Baker" time="2026-11-09T20:24:20Z">
-        <changelog><![CDATA[Recalls "Ripple edit when editing media item left edges" (starts it if it was on)]]></changelog>
+      <version name="1.10" author="Brendan Baker" time="2026-11-24T03:08:03Z">
+        <changelog><![CDATA[Layered Editing: REAPER keeps the option itself ("Trim content behind media items when editing"), so the recall no longer changes it; it only starts the button's sync. (It used to toggle the option when a check of its own disagreed, so after a restart the button could take two clicks to match)]]></changelog>
         <source file="ReaTooled_Recall ReaTooled Button States.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Toggles/ReaTooled_Recall%20ReaTooled%20Button%20States.lua</source>
       </version>
     </reapack>
@@ -1534,9 +1544,11 @@ ReaTooled_Set up ReaTooled: Shortcuts, buttons, menus and mouse modifiers follow
 {\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Button OFF when 41117 is ON\par}
 {\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Button state stays in sync even if 41117 is changed elsewhere.\par}
 {\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab Uses the same was_set / set_action_options pattern as the mouse-modifier script.\par}
+{\pard \ql \f0 \sa60 \li360 \fi-360 \bullet \tx360\tab REAPER saves 41117 itself, so nothing else is stored. "Recall ReaTooled Button States" starts this at startup without toggling (ExtState ReaTooled/LayeredEditingSyncOnly), just so the button follows 41117.\par}
 }]]></description>
       </metadata>
-      <version name="1.1" author="Brendan Baker">
+      <version name="1.2" author="Brendan Baker" time="2026-11-24T03:08:03Z">
+        <changelog><![CDATA[Started by the startup recall, it only syncs the button and leaves the option alone (the recall used to toggle the option at startup when its own check disagreed, so it could take two clicks to get back to what you had)]]></changelog>
         <source file="ReaTooled_Toggle Layered Editing.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Toggles/ReaTooled_Toggle%20Layered%20Editing.lua</source>
       </version>
     </reapack>
@@ -1618,7 +1630,7 @@ ReaTooled_Set up ReaTooled: Shortcuts, buttons, menus and mouse modifiers follow
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="1.46" author="Brendan Baker" time="2026-11-20T18:20:39Z">
+      <version name="1.47" author="Brendan Baker" time="2026-11-24T03:08:03Z">
         <changelog><![CDATA[Coming back in from past the right side, the edge follows the mouse from where it's parked (a little slower moving left, so the mouse catches up; PARK_RETURN) instead of the view jumping back to put it under the mouse]]></changelog>
         <source file="ReaTooled_Toggle Ripple edit when editing media item left edges.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Toggles/ReaTooled_Toggle%20Ripple%20edit%20when%20editing%20media%20item%20left%20edges.lua</source>
       </version>
@@ -1652,9 +1664,8 @@ ReaTooled_Set up ReaTooled: Shortcuts, buttons, menus and mouse modifiers follow
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="1.8" author="Brendan Baker" time="2026-11-11T19:58:56Z">
-        <changelog><![CDATA[ReaTooled_Toggle Shuffle mode: Works without the Tools library: it then sets its own item drags for Shuffle (kept in the same record, ModeOverrides) and starts Shuffle move as the Move Tool would, and puts REAPER's drags back when it goes off or REAPER quits. With the rest of ReaTooled installed it works exactly as before
-ReaTooled_Shuffle move (background): Works without the Tools library (Shuffle on its own, with only its toggle and the Mouse library): it carries ReaTooled's shared core (the record of mouse modifiers switched for a moment, the yellow outline, Cmd = all tracks, crash repair). With the rest of ReaTooled installed it works exactly as before]]></changelog>
+      <version name="1.9" author="Brendan Baker" time="2026-11-24T03:08:03Z">
+        <changelog><![CDATA[ReaTooled_Shuffle move (background): Ripple per track: the frame goes only around the tracks that have items moving (one frame for each run of neighbouring ones), not across the tracks between them]]></changelog>
         <source file="ReaTooled_Toggle Shuffle mode.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/ReaTooled_Toggle%20Shuffle%20mode.lua</source>
         <source file="ReaTooled_Shuffle move (background).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/ReaTooled_Shuffle%20move%20%28background%29.lua</source>
         <source file="ReaTooled_Mouse lib.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/ReaTooled_Mouse%20lib.lua</source>
@@ -1685,11 +1696,8 @@ ReaTooled_Shuffle move (background): Works without the Tools library (Shuffle on
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="7.16.5" author="Brendan Baker" time="2026-11-19T20:20:41Z">
-        <changelog><![CDATA[Default Multi Tool (Smart)_ReaTooled: A plain click on empty track space runs ReaTooled's "Empty track left click": it also clears razor areas, the time selection and track selection, and the loop points with Link Timeline and Edit Selection on
-Move Tool (Grabber)_ReaTooled: A plain click on empty track space runs ReaTooled's "Empty track left click": it also clears razor areas, the time selection and track selection, and the loop points with Link Timeline and Edit Selection on
-Razor Select Tool (Selector)_ReaTooled: A plain click on empty track space runs ReaTooled's "Empty track left click": it also clears razor areas, the time selection and track selection, and the loop points with Link Timeline and Edit Selection on
-Trim Tool_ReaTooled: A plain click on empty track space runs ReaTooled's "Empty track left click": it also clears razor areas, the time selection and track selection, and the loop points with Link Timeline and Edit Selection on]]></changelog>
+      <version name="7.16.6" author="Brendan Baker" time="2026-11-24T03:08:03Z">
+        <changelog><![CDATA[ReaTooled_Tools lib: mouse_setup_off() / mouse_setup_on(), for "Toggle ReaTooled Shortcuts": with shortcuts off, the user's own mouse modifiers and no tool; back on, everything as it was when they went off, same tool. The two setups never change each other. Shuffle mode keeps working with shortcuts off (as with the Move Tool)]]></changelog>
         <source file="Default Multi Tool (Smart)_ReaTooled.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/Default%20Multi%20Tool%20%28Smart%29_ReaTooled.lua</source>
         <source file="Move Tool (Grabber)_ReaTooled.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/Move%20Tool%20%28Grabber%29_ReaTooled.lua</source>
         <source file="Pencil Tool_ReaTooled.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/Pencil%20Tool_ReaTooled.lua</source>

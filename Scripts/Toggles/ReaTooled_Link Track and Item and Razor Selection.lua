@@ -1,12 +1,18 @@
 --[[
 @description ReaTooled - Link Track and Item and Razor Selection (Main Function)
-@version 2.24
-@date 2026-11-05
+@version 2.25
+@date 2026-11-23
 @author Brendan Baker
 @about
  Models and builds upon "Link track and clip selection" from PT.
 
 CHANGELOG
+v2.25
+  - Pressing an item that's already selected, or inside a razor area, no longer selects
+    just that track: the track selection is left as it is while you drag (so dragging
+    selected items or razor areas on several tracks keeps all those tracks selected), and
+    follows the selected items or razor areas again once you let go. Pressing an
+    unselected item, or empty track space, selects the track as before
 v2.24
   - Less flicker in other windows (Track Manager, mixer, Project Bay): only the tracks whose
     selection actually changes are touched (it used to deselect every track and select
@@ -49,6 +55,7 @@ end
 local sel_items, sel_tracks, sel_razor = {}, {}, {}
 local firstselitemtrack = reaper.GetSelectedTrack(0, 0)
 local prev_mouse_state = 0
+local hold_sync = false   -- pressed on part of the selection: tracks left alone until release
 
 reaper.SetExtState("ReaTooled", "LinkTrackItemState", "1", false)
 
@@ -167,6 +174,28 @@ local function HandleTrackClick()
     return
   end
 
+  -- Pressed on part of the selection (a selected item, or inside a razor area): grabbing
+  -- the selection keeps it, so the tracks are left alone until the button is let go
+  local item = reaper.GetItemFromPoint(x, y, true)
+  local on_selection = item ~= nil and reaper.IsMediaItemSelected(item)
+  if not on_selection and not item and reaper.BR_GetMouseCursorContext_Position then
+    local t = reaper.BR_GetMouseCursorContext_Position()
+    local _, area = reaper.GetSetMediaTrackInfo_String(track, "P_RAZOREDITS", "", false)
+    if t and t >= 0 and area ~= "" then
+      local w = {}
+      for v in area:gmatch("%S+") do w[#w + 1] = v end
+      for j = 1, #w - 2, 3 do
+        local a, b = tonumber(w[j]), tonumber(w[j + 1])
+        if a and b and t >= a and t <= b then on_selection = true; break end
+      end
+    end
+  end
+  if on_selection then
+    hold_sync = true
+    prev_mouse_state = state
+    return
+  end
+
   -- Modifier keys
   local is_osx = reaper.GetOS():match("OSX")
   local shift = state & 8 == 8
@@ -235,6 +264,14 @@ end
 
 local function Main()
   HandleTrackClick()
+  if hold_sync then
+    if reaper.JS_Mouse_GetState(1) ~= 0 then reaper.defer(Main) return end   -- (still dragging)
+    -- let go: the tracks follow whatever is selected now (razor areas, else items)
+    hold_sync = false
+    sel_items, sel_razor, firstselitemtrack, quiet_sig = {}, {}, nil, nil
+    sel_tracks = {}
+    for i = 0, reaper.CountSelectedTracks(0) - 1 do sel_tracks[#sel_tracks + 1] = reaper.GetSelectedTrack(0, i) end
+  end
   if nothing_changed() then reaper.defer(Main) return end
 
   local cur_tracks = {}

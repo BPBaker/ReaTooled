@@ -1,6 +1,6 @@
 -- @description ReaTooled - Shuffle move (background, started in Shuffle mode)
--- @version 1.3
--- @date 2026.11.11
+-- @version 1.4.3
+-- @date 2026.11.22
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -52,6 +52,15 @@
 --   Move Tool: any plain drag on an item. Multi tool: plain drags on an item's lower
 --   half; its upper half, edges, fades and handles stay REAPER's.
 -- @changelog
+--   v1.4.3 Ripple per track: the frame goes only around the tracks that have items moving
+--          (one frame for each run of neighbouring ones), not across the tracks between them
+--   v1.4.2 The items moving along on other tracks (grouped tracks, selected items, and with
+--          ripple all tracks the stretch on every track) get the yellow outline too; only
+--          the dragged track's items had it
+--   v1.4.1 Ripple per track: with more than one item moving (a block, grouped tracks or
+--          selected items on other tracks), a yellow frame goes around all of them too
+--   v1.4 With ripple editing all tracks, a yellow frame also goes around the whole stretch
+--        being shuffled, across all tracks, as well as around each item
 --   v1.3 Works without the Tools library (Shuffle on its own, with only its toggle and the
 --        Mouse library): it carries ReaTooled's shared core (the record of mouse modifiers
 --        switched for a moment, the yellow outline, Cmd = all tracks, crash repair). With the
@@ -119,7 +128,9 @@ local function shuffle_on() return reaper.GetExtState(NS, "ShuffleMode") == "1" 
 -- same ExtStates. Keep the record formats as they are: older copies must read newer ones.
 --   C.temp_take / temp_give / temp_give_all / temp_forget / temp_repair / temp_still_ours:
 --     the shared record of mouse modifiers switched for a moment (ExtState ReaTooled/TempMods)
---   C.outline(owner, items, redrawn, ends): the yellow outline around items being edited
+--   C.outline(owner, items, redrawn, ends, box): the yellow outline around items being edited
+--     (box = { start, end }: also a frame around that stretch of time, across all tracks;
+--     box.fit: one frame for each run of neighbouring tracks with items outlined)
 --   C.repair_hover(): crash repair for what Shuffle move switched (and the record)
 --   C.cmdall_set(state, who, want): Cmd = ripple all tracks, shared
 local RTcore = (function()
@@ -255,7 +266,7 @@ local function arrange_hwnd()
   if not C._arrange then C._arrange = reaper.JS_Window_FindChildByID(reaper.GetMainHwnd(), 1000) end
   return C._arrange
 end
-function C.outline(owner, items, redrawn, ends)
+function C.outline(owner, items, redrawn, ends, box)
   if not (reaper.JS_Composite and reaper.JS_LICE_CreateBitmap) then return end
   if items and reaper.GetExtState(NS, "OutlineOff") == "1" then items = {} end
   local hwnd = arrange_hwnd()
@@ -267,8 +278,83 @@ function C.outline(owner, items, redrawn, ends)
   local zoom = reaper.GetHZoomLevel()
   -- the frames: 4 lines an item, as rects { x, y, w, h }
   local want, n = {}, 0
+  -- frames around what moves (first, so they're always drawn): with box.fit, one around
+  -- each run of neighbouring tracks that have items moving (tracks in between that have
+  -- none aren't framed); otherwise one around box's stretch of time across all tracks
+  local function frame(t1, t2, top, bottom)
+    local x1 = math.floor((t1 - view) * zoom + 0.5)
+    local x2 = math.floor((t2 - view) * zoom + 0.5)
+    local y1, y2 = math.floor(top), math.floor(bottom)
+    if x2 > 0 and x1 < w and y2 > 0 and y1 < h and x2 - x1 >= 1 then
+      local cx1, cx2 = math.max(x1, -OUTLINE_PX), math.min(x2, w + OUTLINE_PX)
+      local cy1, cy2 = math.max(y1, -OUTLINE_PX), math.min(y2, h + OUTLINE_PX)
+      local function add(x, y, ww, hh)
+        if ww > 0 and hh > 0 then n = n + 1; want[n] = { x, y, ww, hh } end
+      end
+      if y1 >= -OUTLINE_PX then add(cx1, y1, cx2 - cx1, OUTLINE_PX) end                 -- top
+      if y2 <= h + OUTLINE_PX then add(cx1, y2 - OUTLINE_PX, cx2 - cx1, OUTLINE_PX) end -- bottom
+      if x1 >= -OUTLINE_PX then add(x1, cy1, OUTLINE_PX, cy2 - cy1) end                 -- left
+      if x2 <= w + OUTLINE_PX then add(x2 - OUTLINE_PX, cy1, OUTLINE_PX, cy2 - cy1) end -- right
+    end
+  end
+  if box and items and #items > 0 then
+    if box.fit then
+      -- per track: the moving items' span in time and height
+      local per = {}
+      for _, it in ipairs(items) do
+        if reaper.ValidatePtr2(0, it, "MediaItem*") then
+          local tr = reaper.GetMediaItem_Track(it)
+          local ty = reaper.GetMediaTrackInfo_Value(tr, "I_TCPY")
+          local iy = reaper.GetMediaItemInfo_Value(it, "I_LASTY")
+          local ih = reaper.GetMediaItemInfo_Value(it, "I_LASTH")
+          if reaper.GetMediaTrackInfo_Value(tr, "I_TCPH") > 0 and ih > 0 then
+            local p = reaper.GetMediaItemInfo_Value(it, "D_POSITION")
+            local e = p + reaper.GetMediaItemInfo_Value(it, "D_LENGTH")
+            local r = per[tr]
+            if not r then r = { a = p, b = e, top = ty + iy, bottom = ty + iy + ih }; per[tr] = r end
+            r.a, r.b = math.min(r.a, p), math.max(r.b, e)
+            r.top, r.bottom = math.min(r.top, ty + iy), math.max(r.bottom, ty + iy + ih)
+          end
+        end
+      end
+      -- runs of neighbouring tracks (in track order, counting only tracks shown)
+      local run
+      for i = 0, reaper.CountTracks(0) - 1 do
+        local tr = reaper.GetTrack(0, i)
+        if reaper.IsTrackVisible(tr, false) and reaper.GetMediaTrackInfo_Value(tr, "I_WNDH") > 0 then
+          local r = per[tr]
+          if r then
+            if run then
+              run.a, run.b = math.min(run.a, r.a), math.max(run.b, r.b)
+              run.bottom = math.max(run.bottom, r.bottom)
+            else
+              run = { a = r.a, b = r.b, top = r.top, bottom = r.bottom }
+            end
+          elseif run then
+            frame(run.a, run.b, run.top, run.bottom); run = nil
+          end
+        end
+      end
+      if run then frame(run.a, run.b, run.top, run.bottom) end
+    else
+      local top, bottom
+      for i = 0, reaper.CountTracks(0) - 1 do
+        local tr = reaper.GetTrack(0, i)
+        if reaper.IsTrackVisible(tr, false) then
+          local ty = reaper.GetMediaTrackInfo_Value(tr, "I_TCPY")
+          local wh = reaper.GetMediaTrackInfo_Value(tr, "I_WNDH")
+          if wh > 0 then
+            if not top or ty < top then top = ty end
+            if not bottom or ty + wh > bottom then bottom = ty + wh end
+          end
+        end
+      end
+      if top then frame(box[1], box[2], top, bottom) end
+    end
+  end
+  local boxes = n
   for _, it in ipairs(items or {}) do
-    if n >= OUTLINE_MAX * 4 then break end
+    if n >= OUTLINE_MAX * 4 + boxes then break end
     if reaper.ValidatePtr2(0, it, "MediaItem*") then
       local tr = reaper.GetMediaItem_Track(it)
       local ty = reaper.GetMediaTrackInfo_Value(tr, "I_TCPY")
@@ -3212,11 +3298,35 @@ local function loop()
     if G and G.active and not home then
       local list = {}
       for _, m in ipairs(G.Dslot and G.Dslot.members or {}) do list[#list + 1] = m.item end
-      for _, F in ipairs(G.followers or {}) do
-        for _, m in ipairs(F.blk and F.blk.members or {}) do list[#list + 1] = m.item end
+      for _, F in ipairs(G.followers or {}) do   -- (each follower's block: a list of segments)
+        for _, sg in ipairs(F.blk or {}) do
+          if sg.item then list[#list + 1] = sg.item end
+          for _, m in ipairs(sg.members or {}) do list[#list + 1] = m.item end
+        end
       end
+      for _, it in ipairs(G.allMoving or {}) do list[#list + 1] = it end   -- (ripple all tracks)
       for _, c in ipairs(G.allCopies or {}) do list[#list + 1] = c.it end
-      RTcore.outline("shuffle", list); outlined = true
+      if G.wrap and G.wrap.tempSet then   -- (Separation's placeholders for empty space: not outlined)
+        local keep = {}
+        for _, it in ipairs(list) do if not G.wrap.tempSet[it] then keep[#keep + 1] = it end end
+        list = keep
+      end
+      -- a frame around everything that moves: across all tracks with ripple all tracks;
+      -- otherwise around the items, when there's more than one
+      local box
+      if G.all or #list > 1 then
+        local a, b
+        for _, it in ipairs(list) do   -- (what's outlined all spans the same stretch of time)
+          if reaper.ValidatePtr2(0, it, "MediaItem*") then
+            local p = reaper.GetMediaItemInfo_Value(it, "D_POSITION")
+            local e = p + reaper.GetMediaItemInfo_Value(it, "D_LENGTH")
+            if not a or p < a then a = p end
+            if not b or e > b then b = e end
+          end
+        end
+        if a then box = { a, b, fit = not G.all } end   -- (fit: the frames work out their own spans)
+      end
+      RTcore.outline("shuffle", list, nil, nil, box); outlined = true
     end
   else
     if G.pendingRazor then G = nil else release() end

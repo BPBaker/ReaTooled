@@ -1,6 +1,6 @@
 -- @description ReaTooled - Empty track left click (deselect all and move edit cursor)
--- @version 1.0
--- @date 2026.11.19
+-- @version 1.1
+-- @date 2026.11.23
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -9,10 +9,14 @@
 --   selection, and moves the edit cursor to the mouse (snapping as REAPER's own click does).
 --   With Link Timeline and Edit Selection on, the loop points are cleared too, since they're
 --   the edit selection; off, they're left alone.
+--   With Link Track and Item and Razor Selection on, the track you clicked is then selected
+--   (as clicking a track does in Pro Tools); off, no track stays selected.
 --   Set as the plain empty-track click by the Smart, Move, Selector and Trim tools (it replaces
 --   REAPER's "Deselect all items and move edit cursor", which left razor areas, the time
 --   selection and the loop points behind).
 -- @changelog
+--   v1.1 (2026.11.23) With Link Track and Item and Razor Selection on, the clicked track stays
+--        selected (it was selected for a moment, then unselected with everything else)
 --   v1.0 (2026.11.19) First version
 
 local reaper = reaper
@@ -45,6 +49,12 @@ reaper.Undo_BeginBlock()
 reaper.PreventUIRefresh(1)
 reaper.Main_OnCommand(CMD_RAZOR_CLEAR, 0)
 reaper.Main_OnCommand(CMD_UNSELECT_ALL, 0)
+-- Link Track and Item and Razor Selection: the clicked track is the selected one
+if reaper.GetExtState("ReaTooled", "LinkTrackItemState") == "1" then
+  local x, y = reaper.GetMousePosition()
+  local tr = reaper.GetTrackFromPoint(x, y)
+  if tr and reaper.GetMediaTrackInfo_Value(tr, "I_TCPH") > 0 then reaper.SetTrackSelected(tr, true) end
+end
 reaper.GetSet_LoopTimeRange2(0, true, false, 0, 0, false)                 -- (time selection: removed)
 if linked then reaper.GetSet_LoopTimeRange2(0, true, true, 0, 0, false) end -- (loop points: only when linked)
 reaper.Main_OnCommand(CMD_CURSOR_TO_MOUSE, 0)

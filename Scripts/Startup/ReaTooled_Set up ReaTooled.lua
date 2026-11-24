@@ -1,10 +1,10 @@
 --[[
 -- @description ReaTooled - Set up ReaTooled
--- @version 2.4.7
+-- @version 2.4.8
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
-    # Sets up ReaTooled after ReaBoot (or ReaPack) has installed it
+    # Sets up ReaTooled after its installer (or ReaPack) has installed it
     Run it once. Everything is backed up first, to Data/ReaTooled/Backups.
     While REAPER is open it:
       - checks the extensions and scripts ReaTooled needs, and offers to install any
@@ -20,6 +20,22 @@
     When you click OK at the end, REAPER quits, the helper writes those files,
     and the same copy of REAPER opens again by itself.
 -- CHANGELOG
+-- v2.4.8 Clearer messages: the first "Set up ReaTooled now?" says what ReaTooled changes and
+--        how to undo it; the "not installed yet" messages point to the ReaTooled installer
+--        (ReaTooled.ReaperPkg) and say nothing was changed; if setup stops with an error after
+--        the backup, it says where the backup is and how to restore it. The first "Set up
+--        ReaTooled now?" has three answers: Yes (set up now), No (don't set up ReaTooled: the
+--        ReaTooled Starter stops asking, Data/ReaTooled/starter_off.txt) and Cancel (not now:
+--        asked again the next time REAPER opens; closing the window counts as this)
+--        Fixed: a setting ReaTooled no longer sets in the mouse modifiers or theme settings is
+--        now removed, instead of an "!delete" line being written into reaper-mouse.ini or
+--        reaper-themeconfig.ini (lines left there by earlier updates are cleaned out)
+--        reaper.ini sections (Data/ReaTooled/Config/reaper_sections_rules.txt says how each
+--        setting is treated): window layout is set at a first setup and left alone by
+--        updates; ReaTooled's settings (Dynamic Split, Big Clock) are set unless you have
+--        your own (one that isn't what this or an earlier ReaTooled installed, see
+--        Startup/ReaTooled_Earlier settings.lua), in updates too; list layouts only where
+--        you have none. Without the rules file, as before
 -- v2.4.7 Shortcuts, buttons, menus and mouse modifiers follow scripts that were replaced by
 --        new ReaTooled scripts (listed in Startup/ReaTooled_Renamed scripts.lua)
 -- v2.4.6 Window titles in sentence case ("ReaTooled is installed"); no message asks you to
@@ -330,28 +346,66 @@ local function ini_text(ini)
 end
 
 -- Replace whole sections of 'target' with the ones in 'patch'
--- (sections listed in key_merge are merged key by key instead)
+-- (sections listed in key_merge are merged key by key instead; a patch line "!delete key"
+-- removes that key, and a section left empty goes). Stray "!delete" lines an earlier
+-- version wrote into the file are cleaned out.
 local function ini_merge(target_text, patch_text, key_merge)
   local t, p = ini_parse(target_text or ""), ini_parse(patch_text or "")
   key_merge = key_merge or {}
+  local emptied = {}
   for _, name in ipairs(p.order) do
     if not t.sec[name] then
       t.sec[name] = {}
       t.order[#t.order + 1] = name
     end
     if key_merge[name] then
+      local dels = {}
+      for _, l in ipairs(p.sec[name]) do
+        local d = l:match("^!delete (.+)$")
+        if d then dels[d] = true end
+      end
+      local kept = {}
+      for _, l in ipairs(t.sec[name]) do
+        local k = l:match("^([^=]+)=")
+        if not (k and dels[k]) then kept[#kept + 1] = l end
+      end
+      t.sec[name] = kept
       local idx = {}
       for i, l in ipairs(t.sec[name]) do
         local k = l:match("^([^=]+)=")
         if k then idx[k] = i end
       end
       for _, l in ipairs(p.sec[name]) do
-        local k = l:match("^([^=]+)=")
-        if k and idx[k] then t.sec[name][idx[k]] = l else table.insert(t.sec[name], l) end
+        if not l:match("^!delete ") then
+          local k = l:match("^([^=]+)=")
+          if k and idx[k] then t.sec[name][idx[k]] = l else table.insert(t.sec[name], l) end
+        end
       end
+      if next(dels) and #t.sec[name] == 0 then emptied[name] = true end
     else
-      t.sec[name] = p.sec[name]
+      local kept = {}
+      for _, l in ipairs(p.sec[name]) do
+        if not l:match("^!delete ") then kept[#kept + 1] = l end
+      end
+      t.sec[name] = kept
     end
+  end
+  for name, lines in pairs(t.sec) do
+    local kept, stray = {}, false
+    for _, l in ipairs(lines) do
+      if l:match("^!delete ") then stray = true else kept[#kept + 1] = l end
+    end
+    if stray then
+      t.sec[name] = kept
+      if #kept == 0 then emptied[name] = true end
+    end
+  end
+  if next(emptied) then
+    local order = {}
+    for _, name in ipairs(t.order) do
+      if emptied[name] then t.sec[name] = nil else order[#order + 1] = name end
+    end
+    t.order = order
   end
   return ini_text(t)
 end
@@ -770,16 +824,20 @@ end
 ------------------------------------------------------------
 
 if not reaper.APIExists("ReaPack_AddSetRepository") then
-  msg("ReaPack is not installed, so ReaTooled can't be set up.\n\n" ..
-      "Install ReaTooled with the ReaBoot link from the guide, then run this again.", 0, T_PROBLEM)
+  msg("ReaPack is not installed, so ReaTooled can't be set up. Nothing has been changed.\n\n" ..
+      "To install ReaTooled, drag the ReaTooled.ReaperPkg file from your ReaTooled download onto " ..
+      "REAPER (or double-click it). It installs ReaPack and everything else, then sets up ReaTooled.", 0, T_PROBLEM)
   return
 end
 
 if not exists(CONFIG .. "/keymap.ini") then
-  msg("The ReaTooled configuration isn't installed yet.\n\n" ..
-      "Install ReaTooled with the ReaBoot link from the guide, or in ReaPack " ..
-      "(Extensions > ReaPack > Browse packages) install \"ReaTooled Config\" and " ..
-      "\"ReaTooled Themes\". Then run this again.", 0, T_PROBLEM)
+  msg("The ReaTooled configuration isn't installed yet, so ReaTooled can't be set up. " ..
+      "Nothing has been changed.\n\n" ..
+      "To install it, drag the ReaTooled.ReaperPkg file from your ReaTooled download onto REAPER " ..
+      "(or double-click it).\n\n" ..
+      "If you installed ReaTooled through ReaPack instead: in Extensions > ReaPack > Browse " ..
+      "packages, install \"ReaTooled Config\" and \"ReaTooled Themes\", then run \"Set up " ..
+      "ReaTooled\" again.", 0, T_PROBLEM)
   return
 end
 local CONFIG_VER = (read_file(CONFIG .. "/version.txt") or ""):match("[%d%.]+") or ""
@@ -813,7 +871,9 @@ local function install_deps_then_again(update)
     if update then _G.REATOOLED_UPDATE = "confirmed" else _G.REATOOLED_SETUP_CONFIRMED = true end
     local ok_s, err_s = pcall(dofile, SELF)
     _G.REATOOLED_SETUP_CONFIRMED = nil
-    if not ok_s then msg("Set up ReaTooled couldn't start again:\n\n" .. tostring(err_s), 0, T_PROBLEM) end
+    if not ok_s then msg("Set up ReaTooled couldn't start again:\n\n" .. tostring(err_s) ..
+      "\n\nNothing in your settings has been changed yet. Restart REAPER and run \"Set up " ..
+      "ReaTooled\" again.", 0, T_PROBLEM) end
   end
   DEPS.install({ list = DEPS_NEED, on_done = function(r)
     local failed = {}
@@ -959,8 +1019,12 @@ end
 _G.REATOOLED_UPDATE = nil
 
 local intro = "Set up ReaTooled" .. (CONFIG_VER ~= "" and (" v" .. CONFIG_VER) or "") .. " now?\n\n" ..
-  "Your current settings are backed up first. If any ReaTooled shortcuts clash with " ..
-  "yours, you choose which to keep, then REAPER restarts."
+  "ReaTooled changes how REAPER works: it adds its own keyboard shortcuts and mouse behaviour, " ..
+  "toolbars, menus, theme, window layout and some preferences.\n\n" ..
+  "Your current settings are backed up first, and \"Restore settings from a backup\" puts them " ..
+  "back at any time. If any of ReaTooled's shortcuts clash with yours, you choose which to keep. " ..
+  "You can switch ReaTooled's shortcuts and mouse behaviour off and on with the ReaTooled Shortcuts " ..
+  "button."
 
 if #missing > 0 then
   intro = #missing .. " tool(s) by other developers that ReaTooled uses aren't installed, so the " ..
@@ -978,13 +1042,37 @@ end
 -- The tools by other developers still to install: installed first, after this OK
 if #DEPS_NEED > 0 then
   intro = intro .. "\n\nReaTooled also needs a few more files (free tools by other developers). After " ..
-    "you click OK, ReaPack downloads and installs them, then " .. (UPDATE and "the update" or "setup") ..
+    "you click " .. (UPDATE and "OK" or "Yes") .. ", ReaPack downloads and installs them, then " .. (UPDATE and "the update" or "setup") ..
     " carries on by itself. If ReaPack shows any messages, just click OK. There's no need to " ..
     "restart REAPER yourself: " .. (UPDATE and "the update" or "setup") .. " restarts it for you at the end."
 end
 -- (the package installer asked already; or you did, before the tools were installed)
 local FROM_PACKAGE = _G.REATOOLED_PACKAGE_CONFIRMED == true and not UPDATE
-if not ((UPDATE and CONFIRMED) or FROM_PACKAGE or SETUP_CONFIRMED) and msg(intro, 1, UPDATE and T_UPDATE or TITLE) ~= 1 then return end   -- OK / Cancel
+local STARTER_OFF = RES .. "/Data/ReaTooled/starter_off.txt"
+if not ((UPDATE and CONFIRMED) or FROM_PACKAGE or SETUP_CONFIRMED) then
+  if UPDATE then
+    if msg(intro, 1, T_UPDATE) ~= 1 then return end   -- OK / Cancel
+  else
+    -- Yes / No / Cancel (closing the window = Cancel, so it's the harmless "not now")
+    local a = msg(intro .. "\n\n" ..
+      "Yes: set up ReaTooled now. REAPER restarts at the end.\n" ..
+      "No: don't set up ReaTooled. You won't be asked again, and nothing is changed. To set it " ..
+      "up later, run \"Set up ReaTooled\" from the Actions list.\n" ..
+      "Cancel: not now. You'll be asked again the next time REAPER opens.", 3, TITLE)
+    if a == 7 then
+      reaper.RecursiveCreateDirectory(RES .. "/Data/ReaTooled", 0)
+      write_file(STARTER_OFF, "Written by Set up ReaTooled: you chose not to set up ReaTooled, so the " ..
+        "ReaTooled Starter won't start it by itself. Run \"Set up ReaTooled\" from the Actions list " ..
+        "to set it up.\n")
+      msg("ReaTooled won't ask again, and nothing was changed.\n\nTo set it up later, run " ..
+        "\"Set up ReaTooled\" from the Actions list.", 0, TITLE)
+      return
+    elseif a ~= 6 then
+      os.remove(STARTER_OFF)   -- (not now: asked again at the next start, even after a restore)
+      return
+    end
+  end
+end
 if #DEPS_NEED > 0 then install_deps_then_again(UPDATE); return end
 
 ------------------------------------------------------------
@@ -2061,7 +2149,20 @@ local function clash_window()
   return true
 end
 
+local finish_setup_body
+-- (an unexpected error after the backup: say where the backup is and how to put it back)
 finish_setup = function()
+  local ok, err = pcall(finish_setup_body)
+  if not ok then
+    msg((UPDATE and "Update ReaTooled" or "Set up ReaTooled") .. " stopped because of an unexpected " ..
+      "problem:\n\n" .. tostring(err) ..
+      "\n\nYour settings from before were backed up first, to:\n" .. backup_dir ..
+      "\n\nSome changes may already have been made. To put everything back, run \"Restore " ..
+      "settings from a backup\" (in the Actions list) and choose that backup. Please send a " ..
+      "screenshot of this message to support.", 0, UPDATE and "ReaTooled Update: Problem" or T_PROBLEM)
+  end
+end
+finish_setup_body = function()
   -- Build the new reaper-kb.ini: user's lines (with replacements), then new
   -- script and custom action lines before the first shortcut, then new shortcuts
   local kb_out, inserted = {}, false
@@ -2196,6 +2297,76 @@ finish_setup = function()
     if data then stage_copy("ReaImGui/" .. rel, data) end
   end
 
+  -- Other reaper.ini sections (Data/ReaTooled/Config/reaper_sections.ini), as lines for the
+  -- reaper.ini patch. reaper_sections_rules.txt ("section<tab>key<tab>policy") says how:
+  --   layout   window layout: set at a setup; an update leaves it alone (it's where the
+  --            user's windows are now)
+  --   setting  ReaTooled's choice: set unless the user has their own value, one that isn't
+  --            what the last setup/update installed nor what an earlier ReaTooled installed
+  --            (Startup/ReaTooled_Earlier settings.lua); in updates too
+  --   fill     only where the user has no value
+  -- Without the rules file (an older configuration): all layout, as before.
+  local function section_patch_lines()
+    local cfg = read_file(CONFIG .. "/reaper_sections.ini")
+    if not cfg then return {} end
+    local rules_text = read_file(CONFIG .. "/reaper_sections_rules.txt")
+    local rule = {}
+    for _, l in ipairs(lines_of(rules_text or "")) do
+      local sec, key, pol = l:match("^([^\t]+)\t([^\t]+)\t(%a+)$")
+      if sec then rule[sec] = rule[sec] or {}; rule[sec][key] = pol end
+    end
+    local earlier = {}
+    do
+      local path = RES .. "/Scripts/ReaTooled/Startup/ReaTooled_Earlier settings.lua"
+      if exists(path) then
+        local ok, t = pcall(dofile, path)
+        if ok and type(t) == "table" then earlier = t end
+      end
+    end
+    local n = ini_parse(cfg)
+    local u = ini_parse(read_file(RES .. "/reaper.ini") or "")
+    local b = ini_parse(base_file("reaper_sections.ini") or "")
+    local out = {}
+    for _, name in ipairs(n.order) do
+      local uk, bk = kv(u.sec[name]), kv(b.sec[name])
+      local lines = {}
+      for _, l in ipairs(n.sec[name]) do
+        local k, v = l:match("^([^=]+)=(.*)$")
+        if k then
+          local pol = rules_text and ((rule[name] or {})[k] or "layout") or "layout"
+          local cur = uk[k]
+          local take = false
+          if same_value(cur, v) then
+            take = false
+          elseif pol == "fill" then
+            take = (cur == nil)
+          elseif pol == "setting" then
+            local ours = cur == nil or (bk[k] ~= nil and same_value(cur, bk[k]))
+            for _, ev in ipairs(not ours and (earlier[name] or {})[k] or {}) do
+              if same_value(cur, ev) then ours = true end
+            end
+            take = ours
+            if not ours then
+              upd.keys_kept = upd.keys_kept + 1
+              if #upd.kept_names < 40 then upd.kept_names[#upd.kept_names + 1] = "Settings [" .. name .. "] " .. k end
+            end
+          else   -- layout
+            take = not UPDATE
+          end
+          if take then
+            lines[#lines + 1] = l
+            if UPDATE then upd.keys_updated = upd.keys_updated + 1 end
+          end
+        end
+      end
+      if #lines > 0 then
+        out[#out + 1] = "[" .. name .. "]"
+        for _, l in ipairs(lines) do out[#out + 1] = l end
+      end
+    end
+    return out
+  end
+
   -- Preferences (reaper.ini), merged key by key, plus the theme
   local prefs_patch
   local theme = (read_file(CONFIG .. "/theme.txt") or ""):match("^%s*(.-)%s*$")
@@ -2217,14 +2388,6 @@ finish_setup = function()
       -- (e.g. ReaTooled v2.6.1's, which was never saved as a theme file) would override
       -- the new theme's fonts, so they go (the backup keeps them for Restore).
       for _, k in ipairs(THEME_FONT_KEYS) do prefs[#prefs + 1] = "!delete " .. k end
-    end
-    -- Whole reaper.ini sections (floating toolbar windows), merged key by key too
-    -- (not in an update: they're where the user's windows are)
-    local extra = (not UPDATE) and read_file(CONFIG .. "/reaper_sections.ini") or nil
-    if extra then
-      for _, l in ipairs(lines_of(extra)) do
-        if not l:match("^;") then prefs[#prefs + 1] = l end
-      end
     end
     if UPDATE then
       -- setting by setting: only where the user still has what ReaTooled set last time
@@ -2288,6 +2451,8 @@ finish_setup = function()
       end
       prefs = keep
     end
+    -- Other reaper.ini sections, merged key by key too (see section_patch_lines)
+    for _, l in ipairs(section_patch_lines()) do prefs[#prefs + 1] = l end
     prefs_patch = table.concat(prefs, "\n") .. "\n"
     if #prefs > 1 then stage_merge("reaper.ini", prefs_patch) end
   end
@@ -2599,7 +2764,10 @@ finish_setup = function()
 
   if not launch_helper(restart_now) then
     msg("The finishing step couldn't be prepared (no permission to write in\n" .. PENDING ..
-        ").\n\nPlease contact support.", 0, UPDATE and "ReaTooled Update: Problem" or T_PROBLEM)
+        ").\n\nYour settings from before were backed up to:\n" .. backup_dir ..
+        "\n\nSome changes may already have been made. To put everything back, run \"Restore " ..
+        "settings from a backup\" (in the Actions list) and choose that backup. Please contact " ..
+        "support.", 0, UPDATE and "ReaTooled Update: Problem" or T_PROBLEM)
     return
   end
 

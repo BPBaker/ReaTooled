@@ -1,12 +1,16 @@
 --[[
 -- @description ReaTooled - Recall ReaTooled Button States
--- @version 1.9
--- @date 2026.11.07
+-- @version 1.10
+-- @date 2026.11.23
 -- @author Brendan Baker
 -- @link http://brendanpatrickbaker.com/reatooled/
 -- @about
     # Recalls various ReaTooled Button States
 -- CHANGELOG
+-- v1.10 Layered Editing: REAPER keeps the option itself ("Trim content behind media items when
+--      editing"), so the recall no longer changes it; it only starts the button's sync. (It
+--      used to toggle the option when a check of its own disagreed, so after a restart the
+--      button could take two clicks to match)
 -- v1.9 Recalls "Ripple edit when editing media item left edges" (starts it if it was on)
 -- v1.8 Recalls the pre-roll toggle (its marker) when REAPER's pre-roll is on, and puts back
 --      drags the Shuffle move script left switched off over a razor area
@@ -112,24 +116,11 @@ if tonumber(reaper.GetExtState("ReaTooled", "ReaTooledKeymapOn")) == 1 then
   run(REATOOLED_SHORTCUTS)
 end
 
--- LAYERED EDITING (robust recall)
-do
-  local want_on = (reaper.GetExtState("ReaTooled", "LayeredEditingOn") == "1")
-
-  -- Read actual REAPER option states
-  local TRIM_TOGGLE   = 41119   -- Options: Trim content behind media items (toggle) [for reading]
-  local OFFSET_TOGGLE = 40507   -- Options: Offset overlapping media items vertically (toggle)
-  local trim_is_on = reaper.GetToggleCommandState(TRIM_TOGGLE) == 1
-  local offs_is_on = reaper.GetToggleCommandState(OFFSET_TOGGLE) == 1
-  local layered_is_on = (not trim_is_on) and offs_is_on
-
-  -- Only call the toggle script if we need to change the real setting
-  if LAYERED_EDITING ~= 0 and (want_on ~= layered_is_on) then
-    run(LAYERED_EDITING)  -- the toggle script enforces deterministically
-  end
-
-  -- Ensure toolbar button matches the desired recall state
-  set_button(LAYERED_EDITING, want_on)
+-- LAYERED EDITING: REAPER saves the option itself (41117, "Trim content behind media items
+-- when editing"; layered = off). Only the button's sync is started, the option is left alone.
+if LAYERED_EDITING ~= 0 then
+  reaper.SetExtState("ReaTooled", "LayeredEditingSyncOnly", "1", false)
+  run(LAYERED_EDITING)
 end
 
 -- SWAP LEFT AND RIGHT DRAG (button only: the mouse settings are kept by REAPER)
