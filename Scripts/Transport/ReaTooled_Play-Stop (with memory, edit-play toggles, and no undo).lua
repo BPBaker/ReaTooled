@@ -1,5 +1,5 @@
 -- @description ReaTooled - Transport (LP-first start, v2.4 stop-cursor behavior, Loop Points only) + v1.2-style Play Marker (LP+EC OFF) [ID 0 forced]
--- @version 2.7.7
+-- @version 2.7.8
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -17,6 +17,8 @@
 --   • Never creates undo points.
 
 -- @changelog
+--   v2.7.8
+--     - Before "Set up ReaTooled" has run, leaves your ruler click mouse setting alone
 --   v2.7.7
 --     - With ReaTooled Shortcuts off, leaves your own ruler-click mouse modifier alone.
 --   v2.7.6
@@ -173,7 +175,9 @@ end
 local function ApplyRulerMouseMod()
   -- (ReaTooled Shortcuts off: your own mouse modifiers, left as they are)
   if reaper.GetExtState("ReaTooled", "MouseSetup") == "off" then return end
-  reaper.SetMouseModifier('MM_CTX_RULER_CLK', 0, RULER_MOUSEMOD)
+  if reaper.file_exists(reaper.GetResourcePath():gsub("\\", "/") .. "/Data/ReaTooled/Backups/Before ReaTooled/backup_info.txt") then   -- (not before Set up has backed up the user's own)
+    reaper.SetMouseModifier('MM_CTX_RULER_CLK', 0, RULER_MOUSEMOD)
+  end
 end
 
 -- Clear razor areas via the API (action 42406 would create its own undo point).

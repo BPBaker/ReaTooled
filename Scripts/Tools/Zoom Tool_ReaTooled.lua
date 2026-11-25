@@ -18,6 +18,15 @@
 -- === Find ReaTooled scripts by path ===
 -- Returns the "_RS..." command ID string for a script in Scripts/ReaTooled/,
 -- or "-1" (REAPER's default action) if the file is missing.
+-- Set up ReaTooled hasn't run here: the user's own mouse modifiers haven't been backed up,
+-- so this tool leaves them alone (3.04: running a tool before setup had replaced them)
+if not reaper.file_exists(reaper.GetResourcePath():gsub("\\", "/") .. "/Data/ReaTooled/Backups/Before ReaTooled/backup_info.txt") then
+  reaper.ShowMessageBox("ReaTooled isn't set up yet, so this tool won't change your mouse settings.\n\n" ..
+    "Run \"Set up ReaTooled\" from the Actions list first. It backs up your settings before changing anything.",
+    "ReaTooled", 0)
+  return
+end
+
 local function script_action(rel)
   local path = reaper.GetResourcePath():gsub("\\", "/") .. "/Scripts/ReaTooled/" .. rel
   if not reaper.file_exists(path) then return "-1" end

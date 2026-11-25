@@ -32,17 +32,8 @@
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="3.2026.1123.2204" author="Brendan Baker" time="2026-11-24T03:08:03Z">
-        <changelog><![CDATA[v3.03 - November 23, 2026
-+ Shuffle mode: a yellow frame shows everything being shuffled. With ripple all tracks it runs across all tracks; with ripple per track it goes around the tracks that have items moving (one frame for each group of neighbouring tracks). Items moving along on other tracks (grouped tracks, selected items) get the yellow outline too
-+ Installation: updated installer
-# Link Track and Item and Razor Selection: dragging selected items or razor areas on several tracks keeps all those tracks selected (only the dragged one stayed selected)
-# Link Track and Item and Razor Selection: clicking empty track space keeps that track selected (it was unselected again right away)
-# Editing: "Trim content behind media items when editing" is on again, as in ReaTooled v2, so dragging an item over another trims what's underneath, as in Pro Tools. The Layered Editing button turns it off
-# Layered Editing: the button keeps its setting after a restart (it could take two clicks to match again)
-# Dynamic Split (Cmd+U): back to ReaTooled v2's settings (silence removed, -24 dB threshold). If you changed them yourself, yours are kept
-# Installation and updates no longer overwrite your own REAPER settings that aren't ReaTooled's: recent FX, render formats, SWS settings, MIDI editor and Media Explorer settings, and list column layouts stay yours. Only ReaTooled's window layout and settings are applied
-# Installation: messages point to the ReaTooled installer and say when nothing has been changed. If setup stops with an error, it says where your backup is and how to restore it
+      <version name="3.2026.1124.1856" author="Brendan Baker" time="2026-11-24T23:57:25Z">
+        <changelog><![CDATA[Configuration updated (no new entries in the release notes).
 
 To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or run "Update ReaTooled").]]></changelog>
         <source file="ReaTooled/Config/keymap.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/keymap.ini</source>
@@ -53,7 +44,7 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
         <source file="ReaTooled/Config/themeconfig.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/themeconfig.ini</source>
         <source file="ReaTooled/Config/theme.txt">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/theme.txt</source>
         <source file="ReaTooled/Config/extstate.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/extstate.ini</source>
-        <source file="ReaTooled/Config/version.txt">https://github.com/BPBaker/ReaTooled/releases/download/v3.2026.1123.2204/installs.txt</source>
+        <source file="ReaTooled/Config/version.txt">https://github.com/BPBaker/ReaTooled/releases/download/v3.2026.1124.1856/installs.txt</source>
         <source file="ReaTooled/Config/reaper_sections.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/reaper_sections.ini</source>
         <source file="ReaTooled/Config/reaper_sections_rules.txt">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/reaper_sections_rules.txt</source>
         <source file="ReaTooled/Config/update_rules.txt">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/ReaTooled/Config/update_rules.txt</source>
@@ -121,12 +112,6 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
         <source file="toolbar_icons/150/ReaTooled_toolbar_zoom_out.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/150/ReaTooled_toolbar_zoom_out.png</source>
         <source file="toolbar_icons/150/ReaTooled_toolbar_zoom_out_arrow.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/150/ReaTooled_toolbar_zoom_out_arrow.png</source>
         <source file="toolbar_icons/150/ReaTooled_toolbar_zoom_to_fit.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/150/ReaTooled_toolbar_zoom_to_fit.png</source>
-        <source file="toolbar_icons/150/normal peaks.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/150/normal%20peaks.png</source>
-        <source file="toolbar_icons/150/spectral peaks.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/150/spectral%20peaks.png</source>
-        <source file="toolbar_icons/150/spectrogram &amp; peaks.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/150/spectrogram%20%26%20peaks.png</source>
-        <source file="toolbar_icons/150/spectrogram.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/150/spectrogram.png</source>
-        <source file="toolbar_icons/150/toolbar_playtime.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/150/toolbar_playtime.png</source>
-        <source file="toolbar_icons/150/toolbar_plus.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/150/toolbar_plus.png</source>
         <source file="toolbar_icons/200/ReaTooled_Tab_to_transients.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/200/ReaTooled_Tab_to_transients.png</source>
         <source file="toolbar_icons/200/ReaTooled_toolbar_Ripple or Lock Markers.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/200/ReaTooled_toolbar_Ripple%20or%20Lock%20Markers.png</source>
         <source file="toolbar_icons/200/ReaTooled_toolbar_audio_waveform_render_disk.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/200/ReaTooled_toolbar_audio_waveform_render_disk.png</source>
@@ -149,12 +134,6 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
         <source file="toolbar_icons/200/ReaTooled_toolbar_zoom_out.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/200/ReaTooled_toolbar_zoom_out.png</source>
         <source file="toolbar_icons/200/ReaTooled_toolbar_zoom_out_arrow.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/200/ReaTooled_toolbar_zoom_out_arrow.png</source>
         <source file="toolbar_icons/200/ReaTooled_toolbar_zoom_to_fit.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/200/ReaTooled_toolbar_zoom_to_fit.png</source>
-        <source file="toolbar_icons/200/normal peaks.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/200/normal%20peaks.png</source>
-        <source file="toolbar_icons/200/spectral peaks.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/200/spectral%20peaks.png</source>
-        <source file="toolbar_icons/200/spectrogram &amp; peaks.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/200/spectrogram%20%26%20peaks.png</source>
-        <source file="toolbar_icons/200/spectrogram.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/200/spectrogram.png</source>
-        <source file="toolbar_icons/200/toolbar_playtime.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/200/toolbar_playtime.png</source>
-        <source file="toolbar_icons/200/toolbar_plus.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/200/toolbar_plus.png</source>
         <source file="toolbar_icons/ReaTooled_Tab_to_transients.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/ReaTooled_Tab_to_transients.png</source>
         <source file="toolbar_icons/ReaTooled_toolbar_Ripple or Lock Markers.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/ReaTooled_toolbar_Ripple%20or%20Lock%20Markers.png</source>
         <source file="toolbar_icons/ReaTooled_toolbar_audio_waveform_render_disk.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/ReaTooled_toolbar_audio_waveform_render_disk.png</source>
@@ -177,14 +156,6 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
         <source file="toolbar_icons/ReaTooled_toolbar_zoom_out.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/ReaTooled_toolbar_zoom_out.png</source>
         <source file="toolbar_icons/ReaTooled_toolbar_zoom_out_arrow.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/ReaTooled_toolbar_zoom_out_arrow.png</source>
         <source file="toolbar_icons/ReaTooled_toolbar_zoom_to_fit.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/ReaTooled_toolbar_zoom_to_fit.png</source>
-        <source file="toolbar_icons/normal peaks.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/normal%20peaks.png</source>
-        <source file="toolbar_icons/spectral peaks.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/spectral%20peaks.png</source>
-        <source file="toolbar_icons/spectrogram &amp; peaks.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/spectrogram%20%26%20peaks.png</source>
-        <source file="toolbar_icons/spectrogram.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/spectrogram.png</source>
-        <source file="toolbar_icons/toolbar_one_small_step.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/toolbar_one_small_step.png</source>
-        <source file="toolbar_icons/toolbar_one_small_step_cleanup.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/toolbar_one_small_step_cleanup.png</source>
-        <source file="toolbar_icons/toolbar_playtime.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/toolbar_playtime.png</source>
-        <source file="toolbar_icons/toolbar_plus.png">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Data/toolbar_icons/toolbar_plus.png</source>
       </version>
     </reapack>
     <reapack name="ReaTooled Themes" type="theme" desc="ReaTooled themes">
@@ -195,7 +166,7 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
 {\pard \ql \f0 \sa180 \li0 \fi0 ReaTooled's themes, installed into REAPER's ColorThemes folder. "Default_7.0 ReaTooled v3 Dark" is the default.\par}
 }]]></description>
       </metadata>
-      <version name="3.2026.1123.2204" author="Brendan Baker" time="2026-11-24T03:08:03Z">
+      <version name="3.2026.1124.1856" author="Brendan Baker" time="2026-11-24T23:57:25Z">
         <source file="Assembled_ReaTooled v1.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Assembled_ReaTooled%20v1.ReaperThemeZip</source>
         <source file="Default_7.0 ReaTooled v2 Light.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Default_7.0%20ReaTooled%20v2%20Light.ReaperThemeZip</source>
         <source file="Default_7.0 ReaTooled v3 Dark.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/ColorThemes/Default_7.0%20ReaTooled%20v3%20Dark.ReaperThemeZip</source>
@@ -1328,7 +1299,7 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
 {\pard \ql \f0 \sa180 \li0 \fi0 Starts "Set up ReaTooled" the first time REAPER opens after ReaTooled is installed, so there's nothing to import or run by hand.\par}
 }]]></description>
       </metadata>
-      <version name="1.0" author="Brendan Baker">
+      <version name="1.0" author="Brendan Baker" time="2026-11-24T23:48:25Z">
         <source platform="darwin" file="reaper_reatooled.dylib">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/UserPlugins/reaper_reatooled.dylib</source>
         <source platform="win64" file="reaper_reatooled-x64.dll">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/UserPlugins/reaper_reatooled-x64.dll</source>
         <source platform="linux64" file="reaper_reatooled-x86_64.so">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/UserPlugins/reaper_reatooled-x86_64.so</source>
@@ -1350,8 +1321,8 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="2.4.37" author="Brendan Baker" time="2026-11-24T03:08:03Z">
-        <changelog><![CDATA[ReaTooled_Set up ReaTooled: Clearer messages: the first "Set up ReaTooled now?" says what ReaTooled changes and how to undo it; the "not installed yet" messages point to the ReaTooled installer (ReaTooled.ReaperPkg) and say nothing was changed; if setup stops with an error after the backup, it says where the backup is and how to restore it. The first "Set up ReaTooled now?" has three answers: Yes (set up now), No (don't set up ReaTooled: the ReaTooled Starter stops asking, Data/ReaTooled/starter_off.txt) and Cancel (not now: asked again the next time REAPER opens; closing the window counts as this) Fixed: a setting ReaTooled no longer sets in the mouse modifiers or theme settings is now removed, instead of an "!delete" line being written into reaper-mouse.ini or reaper-themeconfig.ini (lines left there by earlier updates are cleaned out) reaper.ini sections (Data/ReaTooled/Config/reaper_sections_rules.txt says how each setting is treated): window layout is set at a first setup and left alone by updates; ReaTooled's settings (Dynamic Split, Big Clock) are set unless you have your own (one that isn't what this or an earlier ReaTooled installed, see Startup/ReaTooled_Earlier settings.lua), in updates too; list layouts only where you have none. Without the rules file, as before]]></changelog>
+      <version name="2.4.38" author="Brendan Baker" time="2026-11-24T23:46:23Z">
+        <changelog><![CDATA[ReaTooled_Set up ReaTooled: The first "Set up ReaTooled now?" is shorter, with a blank line between the Yes, No and Cancel answers]]></changelog>
         <source file="ReaTooled_Dependencies lib.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Dependencies%20lib.lua</source>
         <source file="ReaTooled_Earlier settings.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Earlier%20settings.lua</source>
         <source file="ReaTooled_Earlier shortcuts.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Startup/ReaTooled_Earlier%20shortcuts.lua</source>
@@ -1630,7 +1601,7 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="1.47" author="Brendan Baker" time="2026-11-24T03:08:03Z">
+      <version name="1.48" author="Brendan Baker" time="2026-11-24T23:46:23Z">
         <changelog><![CDATA[Coming back in from past the right side, the edge follows the mouse from where it's parked (a little slower moving left, so the mouse catches up; PARK_RETURN) instead of the view jumping back to put it under the mouse]]></changelog>
         <source file="ReaTooled_Toggle Ripple edit when editing media item left edges.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Toggles/ReaTooled_Toggle%20Ripple%20edit%20when%20editing%20media%20item%20left%20edges.lua</source>
       </version>
@@ -1664,8 +1635,9 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="1.9" author="Brendan Baker" time="2026-11-24T03:08:03Z">
-        <changelog><![CDATA[ReaTooled_Shuffle move (background): Ripple per track: the frame goes only around the tracks that have items moving (one frame for each run of neighbouring ones), not across the tracks between them]]></changelog>
+      <version name="1.10" author="Brendan Baker" time="2026-11-24T23:46:23Z">
+        <changelog><![CDATA[ReaTooled_Toggle Shuffle mode: Works without the Tools library: it then sets its own item drags for Shuffle (kept in the same record, ModeOverrides) and starts Shuffle move as the Move Tool would, and puts REAPER's drags back when it goes off or REAPER quits. With the rest of ReaTooled installed it works exactly as before
+ReaTooled_Shuffle move (background): Separation's placeholders for empty space are marked, and every marked item is removed when the drag ends, so none can be left behind as an empty item (one could be after an all-tracks razor shuffle that changed direction, when a placeholder was split)]]></changelog>
         <source file="ReaTooled_Toggle Shuffle mode.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/ReaTooled_Toggle%20Shuffle%20mode.lua</source>
         <source file="ReaTooled_Shuffle move (background).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/ReaTooled_Shuffle%20move%20%28background%29.lua</source>
         <source file="ReaTooled_Mouse lib.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/ReaTooled_Mouse%20lib.lua</source>
@@ -1696,8 +1668,15 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="7.16.6" author="Brendan Baker" time="2026-11-24T03:08:03Z">
-        <changelog><![CDATA[ReaTooled_Tools lib: mouse_setup_off() / mouse_setup_on(), for "Toggle ReaTooled Shortcuts": with shortcuts off, the user's own mouse modifiers and no tool; back on, everything as it was when they went off, same tool. The two setups never change each other. Shuffle mode keeps working with shortcuts off (as with the Move Tool)]]></changelog>
+      <version name="7.16.7" author="Brendan Baker" time="2026-11-24T23:46:23Z">
+        <changelog><![CDATA[Default Multi Tool (Smart)_ReaTooled: A plain click on empty track space runs ReaTooled's "Empty track left click": it also clears razor areas, the time selection and track selection, and the loop points with Link Timeline and Edit Selection on
+Move Tool (Grabber)_ReaTooled: A plain click on empty track space runs ReaTooled's "Empty track left click": it also clears razor areas, the time selection and track selection, and the loop points with Link Timeline and Edit Selection on
+Pencil Tool_ReaTooled: Sample edits are turned on only for the item you're about to draw on (no longer toggled for the selected items by running it again)
+Razor Select Tool (Selector)_ReaTooled: A plain click on empty track space runs ReaTooled's "Empty track left click": it also clears razor areas, the time selection and track selection, and the loop points with Link Timeline and Edit Selection on
+ReaTooled_Toggle Separation mode: Works with Shuffle mode: in Shuffle, dragging a razor area shuffles what's in it (the Shuffle move script does it, so REAPER's own razor drag is turned off there)
+Scrub Tool_ReaTooled: Stopping the Trim Tool and the toolbar buttons are shared with the other tools (ReaTooled_Tools lib.lua), which also knows the new Pencil Tool
+Trim Tool_ReaTooled: A plain click on empty track space runs ReaTooled's "Empty track left click": it also clears razor areas, the time selection and track selection, and the loop points with Link Timeline and Edit Selection on
+Zoom Tool_ReaTooled: Stopping the Trim Tool and the toolbar buttons are shared with the other tools (ReaTooled_Tools lib.lua), which also knows the new Pencil Tool]]></changelog>
         <source file="Default Multi Tool (Smart)_ReaTooled.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/Default%20Multi%20Tool%20%28Smart%29_ReaTooled.lua</source>
         <source file="Move Tool (Grabber)_ReaTooled.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/Move%20Tool%20%28Grabber%29_ReaTooled.lua</source>
         <source file="Pencil Tool_ReaTooled.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Tools/Pencil%20Tool_ReaTooled.lua</source>
@@ -1794,7 +1773,7 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="2.7.7" author="Brendan Baker" time="2026-11-16T00:56:40Z">
+      <version name="2.7.8" author="Brendan Baker" time="2026-11-24T23:49:40Z">
         <source file="ReaTooled_Play-Stop (with memory, edit-play toggles, and no undo).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Scripts/Transport/ReaTooled_Play-Stop%20%28with%20memory%2C%20edit-play%20toggles%2C%20and%20no%20undo%29.lua</source>
       </version>
     </reapack>

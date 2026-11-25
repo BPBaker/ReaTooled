@@ -1,5 +1,5 @@
 -- @description ReaTooled - Shuffle move (background, started in Shuffle mode)
--- @version 1.4.3
+-- @version 1.4.4
 -- @date 2026.11.22
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
@@ -52,6 +52,10 @@
 --   Move Tool: any plain drag on an item. Multi tool: plain drags on an item's lower
 --   half; its upper half, edges, fades and handles stay REAPER's.
 -- @changelog
+--   v1.4.4 Separation's placeholders for empty space are marked, and every marked item is
+--          removed when the drag ends, so none can be left behind as an empty item (one could
+--          be after an all-tracks razor shuffle that changed direction, when a placeholder was
+--          split)
 --   v1.4.3 Ripple per track: the frame goes only around the tracks that have items moving
 --          (one frame for each run of neighbouring ones), not across the tracks between them
 --   v1.4.2 The items moving along on other tracks (grouped tracks, selected items, and with
@@ -87,6 +91,7 @@
 --   v1.0 First release
 
 local NS          = "ReaTooled"
+local PLACEHOLDER_KEY = "P_EXT:ReaTooled_ShufflePlaceholder"   -- (marks Separation's empty-space items)
 local TOOL_KEY    = "ShuffleMoveTool"    -- "grabber" / "smart" while wanted (set by the Tools library)
 local HEARTBEAT   = "ShuffleMoveAlive"
 local LINK_CMD_GUID = "_RSed328eb507619b18c1154efa1b048d816cfc2d0c"   -- Link Timeline and Edit Selection
@@ -2539,12 +2544,19 @@ local function razor_prepare(tr, a, b, pressTime)
     if not bg or bg < 0 then bg = reaper.GetThemeColor("col_arrangebg", 0) end
   end
   W.tempSet = {}
+  -- (every item there before the placeholders: an empty item that wasn't is one of theirs)
+  W.before = {}
+  for t = 0, reaper.CountTracks(0) - 1 do
+    local tr2 = reaper.GetTrack(0, t)
+    for i = 0, reaper.CountTrackMediaItems(tr2) - 1 do W.before[reaper.GetTrackMediaItem(tr2, i)] = true end
+  end
   for _, g in ipairs(gaps) do
     local it = reaper.AddMediaItemToTrack(tr)
     if it then
       reaper.SetMediaItemInfo_Value(it, "D_POSITION", g[1])
       reaper.SetMediaItemInfo_Value(it, "D_LENGTH", g[2] - g[1])
       if bg and bg >= 0 then reaper.SetMediaItemInfo_Value(it, "I_CUSTOMCOLOR", bg | 0x1000000) end
+      reaper.GetSetMediaItemInfo_String(it, PLACEHOLDER_KEY, "1", true)   -- (pieces split off it carry it too)
       W.temps[#W.temps + 1] = it
       W.tempSet[it] = true
     end
@@ -2569,6 +2581,25 @@ local function razor_prepare(tr, a, b, pressTime)
   return W, D
 end
 
+-- Every placeholder left anywhere goes: marked ones (pieces split off one carry the mark),
+-- and any empty item (no takes) that wasn't there before the drag
+local function sweep_placeholders(W)
+  local gone = {}
+  for t = 0, reaper.CountTracks(0) - 1 do
+    local tr = reaper.GetTrack(0, t)
+    for i = 0, reaper.CountTrackMediaItems(tr) - 1 do
+      local it = reaper.GetTrackMediaItem(tr, i)
+      local ok, v = reaper.GetSetMediaItemInfo_String(it, PLACEHOLDER_KEY, "", false)
+      if (ok and v == "1") or (W and W.before and not W.before[it] and reaper.CountTakes(it) == 0) then
+        gone[#gone + 1] = it
+      end
+    end
+  end
+  for _, it in ipairs(gone) do
+    if reaper.ValidatePtr2(0, it, "MediaItem*") then reaper.DeleteTrackMediaItem(reaper.GetMediaItem_Track(it), it) end
+  end
+end
+
 -- Everything as it was before the split
 local function wrap_restore(W)
   reaper.PreventUIRefresh(1)
@@ -2581,6 +2612,7 @@ local function wrap_restore(W)
   for it, chunk in pairs(W.chunks) do
     if reaper.ValidatePtr2(0, it, "MediaItem*") then reaper.SetItemStateChunk(it, chunk, false) end
   end
+  sweep_placeholders(W)
   for _, r in ipairs(W.recreate or {}) do   -- (items removed from a crossfade the area cut through)
     if reaper.ValidatePtr2(0, r.tr, "MediaTrack*") then
       local it = reaper.AddMediaItemToTrack(r.tr)
@@ -2600,6 +2632,7 @@ local function wrap_commit(W)
   for _, it in ipairs(W.temps) do
     if reaper.ValidatePtr2(0, it, "MediaItem*") then reaper.DeleteTrackMediaItem(reaper.GetMediaItem_Track(it), it) end
   end
+  sweep_placeholders(W)
   for tr in pairs(W.razorSnap) do
     if reaper.ValidatePtr2(0, tr, "MediaTrack*") then reaper.GetSetMediaTrackInfo_String(tr, "P_RAZOREDITS", "", true) end
   end

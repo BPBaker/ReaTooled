@@ -1,3 +1,11 @@
+v3.04 - November 24, 2026
+ # Installation: ReaTooled now installs when the One Small Step script is already installed. ReaTooled's configuration included two of One Small Step's toolbar icons, so ReaPack refused to install it ("Conflict: ... is already owned by another package") and setup couldn't start
+ # Installation: a few toolbar icons that came from other scripts (Playtime, spectrogram and peaks icons) are no longer installed with ReaTooled. ReaTooled doesn't use them. If one of your toolbar buttons used one, choose its icon again
+ # Installation: if ReaPack stops without installing ReaTooled, the installer says how to see what went wrong (Extensions > ReaPack > Synchronize packages) instead of blaming your internet connection
+ # Tools: before "Set up ReaTooled" has run, the tool buttons (Smart, Grabber, Selector, Trim, Zoom, Pencil, Scrub) and the Shuffle, Separation and left-edge ripple toggles no longer change your mouse settings. They say to run Set up first, which backs up your settings
+ # Shuffle mode: dragging a razor area with Separation and changing direction no longer leaves empty items behind
+ # Installation: the first "Set up ReaTooled now?" is easier to read
+
 v3.03 - November 23, 2026
  + Shuffle mode: a yellow frame shows everything being shuffled. With ripple all tracks it runs across all tracks; with ripple per track it goes around the tracks that have items moving (one frame for each group of neighbouring tracks). Items moving along on other tracks (grouped tracks, selected items) get the yellow outline too
  + Installation: updated installer

@@ -48,6 +48,15 @@
 --        check waits a moment for REAPER to settle)
 --   v1.0 Initial version
 
+-- Set up ReaTooled hasn't run here: the user's own mouse modifiers haven't been backed up,
+-- so this tool leaves them alone (3.04: running a tool before setup had replaced them)
+if not reaper.file_exists(reaper.GetResourcePath():gsub("\\", "/") .. "/Data/ReaTooled/Backups/Before ReaTooled/backup_info.txt") then
+  reaper.ShowMessageBox("ReaTooled isn't set up yet, so this tool won't change your mouse settings.\n\n" ..
+    "Run \"Set up ReaTooled\" from the Actions list first. It backs up your settings before changing anything.",
+    "ReaTooled", 0)
+  return
+end
+
 local NS          = "ReaTooled"
 local RECALL_KEY  = "ShuffleRecall"   -- set by Recall ReaTooled Button States at startup
 local RIPPLE_OFF       = 40309        -- Options: Set ripple editing off

@@ -16,6 +16,15 @@
 -- v2.2  Puts right-drag back to marquee when "Toggle swap left and right drag" had changed it
 -- v2.1  add new item edge ripple mouse modifiers
 
+-- Set up ReaTooled hasn't run here: the user's own mouse modifiers haven't been backed up,
+-- so this tool leaves them alone (3.04: running a tool before setup had replaced them)
+if not reaper.file_exists(reaper.GetResourcePath():gsub("\\", "/") .. "/Data/ReaTooled/Backups/Before ReaTooled/backup_info.txt") then
+  reaper.ShowMessageBox("ReaTooled isn't set up yet, so this tool won't change your mouse settings.\n\n" ..
+    "Run \"Set up ReaTooled\" from the Actions list first. It backs up your settings before changing anything.",
+    "ReaTooled", 0)
+  return
+end
+
 local NS         = "ReaTooled"
 local RUN_KEY    = "TrimToolWorkerRunning"
 local KILL_KEY   = "KillTrimTool"

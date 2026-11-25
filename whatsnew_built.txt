@@ -1,10 +1,7 @@
-v3.03 - November 23, 2026
- + Shuffle mode: a yellow frame shows everything being shuffled. With ripple all tracks it runs across all tracks; with ripple per track it goes around the tracks that have items moving (one frame for each group of neighbouring tracks). Items moving along on other tracks (grouped tracks, selected items) get the yellow outline too
- + Installation: updated installer
- # Link Track and Item and Razor Selection: dragging selected items or razor areas on several tracks keeps all those tracks selected (only the dragged one stayed selected)
- # Link Track and Item and Razor Selection: clicking empty track space keeps that track selected (it was unselected again right away)
- # Editing: "Trim content behind media items when editing" is on again, as in ReaTooled v2, so dragging an item over another trims what's underneath, as in Pro Tools. The Layered Editing button turns it off
- # Layered Editing: the button keeps its setting after a restart (it could take two clicks to match again)
- # Dynamic Split (Cmd+U): back to ReaTooled v2's settings (silence removed, -24 dB threshold). If you changed them yourself, yours are kept
- # Installation and updates no longer overwrite your own REAPER settings that aren't ReaTooled's: recent FX, render formats, SWS settings, MIDI editor and Media Explorer settings, and list column layouts stay yours. Only ReaTooled's window layout and settings are applied
- # Installation: messages point to the ReaTooled installer and say when nothing has been changed. If setup stops with an error, it says where your backup is and how to restore it
+v3.04 - November 24, 2026
+ # Installation: ReaTooled now installs when the One Small Step script is already installed. ReaTooled's configuration included two of One Small Step's toolbar icons, so ReaPack refused to install it ("Conflict: ... is already owned by another package") and setup couldn't start
+ # Installation: a few toolbar icons that came from other scripts (Playtime, spectrogram and peaks icons) are no longer installed with ReaTooled. ReaTooled doesn't use them. If one of your toolbar buttons used one, choose its icon again
+ # Installation: if ReaPack stops without installing ReaTooled, the installer says how to see what went wrong (Extensions > ReaPack > Synchronize packages) instead of blaming your internet connection
+ # Tools: before "Set up ReaTooled" has run, the tool buttons (Smart, Grabber, Selector, Trim, Zoom, Pencil, Scrub) and the Shuffle, Separation and left-edge ripple toggles no longer change your mouse settings. They say to run Set up first, which backs up your settings
+ # Shuffle mode: dragging a razor area with Separation and changing direction no longer leaves empty items behind
+ # Installation: the first "Set up ReaTooled now?" is easier to read

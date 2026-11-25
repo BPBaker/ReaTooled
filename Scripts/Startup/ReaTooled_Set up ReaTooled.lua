@@ -1,6 +1,6 @@
 --[[
 -- @description ReaTooled - Set up ReaTooled
--- @version 2.4.8
+-- @version 2.4.9
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -20,6 +20,8 @@
     When you click OK at the end, REAPER quits, the helper writes those files,
     and the same copy of REAPER opens again by itself.
 -- CHANGELOG
+-- v2.4.9 The first "Set up ReaTooled now?" is shorter, with a blank line between the Yes,
+--        No and Cancel answers
 -- v2.4.8 Clearer messages: the first "Set up ReaTooled now?" says what ReaTooled changes and
 --        how to undo it; the "not installed yet" messages point to the ReaTooled installer
 --        (ReaTooled.ReaperPkg) and say nothing was changed; if setup stops with an error after
@@ -1019,12 +1021,11 @@ end
 _G.REATOOLED_UPDATE = nil
 
 local intro = "Set up ReaTooled" .. (CONFIG_VER ~= "" and (" v" .. CONFIG_VER) or "") .. " now?\n\n" ..
-  "ReaTooled changes how REAPER works: it adds its own keyboard shortcuts and mouse behaviour, " ..
-  "toolbars, menus, theme, window layout and some preferences.\n\n" ..
+  "ReaTooled changes how REAPER works: it adds its own shortcuts, mouse behaviour, toolbars, " ..
+  "menus, theme, layout and some preferences.\n\n" ..
   "Your current settings are backed up first, and \"Restore settings from a backup\" puts them " ..
-  "back at any time. If any of ReaTooled's shortcuts clash with yours, you choose which to keep. " ..
-  "You can switch ReaTooled's shortcuts and mouse behaviour off and on with the ReaTooled Shortcuts " ..
-  "button."
+  "back at any time. If a ReaTooled shortcut clashes with one of yours, you choose which to keep. " ..
+  "The ReaTooled Shortcuts button turns its shortcuts and mouse behaviour off and on."
 
 if #missing > 0 then
   intro = #missing .. " tool(s) by other developers that ReaTooled uses aren't installed, so the " ..
@@ -1055,15 +1056,16 @@ if not ((UPDATE and CONFIRMED) or FROM_PACKAGE or SETUP_CONFIRMED) then
   else
     -- Yes / No / Cancel (closing the window = Cancel, so it's the harmless "not now")
     local a = msg(intro .. "\n\n" ..
-      "Yes: set up ReaTooled now. REAPER restarts at the end.\n" ..
-      "No: don't set up ReaTooled. You won't be asked again, and nothing is changed. To set it " ..
-      "up later, run \"Set up ReaTooled\" from the Actions list.\n" ..
-      "Cancel: not now. You'll be asked again the next time REAPER opens.", 3, TITLE)
+      "YES: Set up ReaTooled now. REAPER restarts at the end.\n\n" ..
+      "NO: Don't set up ReaTooled, and don't ask again. Nothing is changed. You can set it up " ..
+      "later with \"Set up ReaTooled\" in the Actions list.\n\n" ..
+      "CANCEL: Not now. You'll be asked again the next time REAPER opens.", 3, TITLE)
     if a == 7 then
       reaper.RecursiveCreateDirectory(RES .. "/Data/ReaTooled", 0)
       write_file(STARTER_OFF, "Written by Set up ReaTooled: you chose not to set up ReaTooled, so the " ..
         "ReaTooled Starter won't start it by itself. Run \"Set up ReaTooled\" from the Actions list " ..
         "to set it up.\n")
+      os.remove(RES .. "/Data/ReaTooled/package_installed.txt")   -- (installing the package again asks again)
       msg("ReaTooled won't ask again, and nothing was changed.\n\nTo set it up later, run " ..
         "\"Set up ReaTooled\" from the Actions list.", 0, TITLE)
       return
