@@ -1,6 +1,6 @@
 --[[
 -- @description ReaTooled - Set up ReaTooled
--- @version 2.4.9
+-- @version 2.4.10
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -20,6 +20,8 @@
     When you click OK at the end, REAPER quits, the helper writes those files,
     and the same copy of REAPER opens again by itself.
 -- CHANGELOG
+-- v2.4.10 A test REAPER whose ReaTooled repository points at the dev branch stays on dev
+--         (setup no longer switches it back to the release address)
 -- v2.4.9 The first "Set up ReaTooled now?" is shorter, with a blank line between the Yes,
 --        No and Cancel answers
 -- v2.4.8 Clearer messages: the first "Set up ReaTooled now?" says what ReaTooled changes and
@@ -196,6 +198,12 @@
 
 local REPO_NAME = "ReaTooled"   -- must match the index name, never change it
 local REPO_URL  = "https://raw.githubusercontent.com/BPBaker/ReaTooled/main/index.xml"
+-- (a test REAPER pointed at the dev branch, .../dev/index.xml, keeps that address)
+do
+  local ok, url = false, nil
+  if reaper.ReaPack_GetRepositoryInfo then ok, url = reaper.ReaPack_GetRepositoryInfo(REPO_NAME) end
+  if ok and type(url) == "string" and url:find("/BPBaker/ReaTooled/dev/", 1, true) then REPO_URL = url end
+end
 
 -- reaper.ini font settings that belong to the theme
 local THEME_FONT_KEYS = { "lb_font", "lb_font2", "mi_font", "tl_font", "trans_font" }

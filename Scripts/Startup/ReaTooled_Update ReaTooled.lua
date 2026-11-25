@@ -1,6 +1,6 @@
 --[[
 -- @description ReaTooled - Update ReaTooled
--- @version 1.0.6
+-- @version 1.0.7
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -13,6 +13,8 @@
     Also run by ReaTooled's startup once a day (quietly): if a newer release is out, it
     asks whether to update now.
     CHANGELOG
+    v1.0.7 A test REAPER whose ReaTooled repository points at the dev branch checks and
+           updates from dev (no GitHub Releases there); everyone else as before (main)
     v1.0.6 When an update is offered, Cancel opens what's new (whatsnew.txt on GitHub) in your
            browser first, then asks again
     v1.0.5 No longer asks you to close ReaPack's window: the update carries on by itself
@@ -41,6 +43,20 @@ local VERSION_URL = "https://raw.githubusercontent.com/BPBaker/ReaTooled/main/Da
 local RELEASE_URL = "https://github.com/BPBaker/ReaTooled/releases/latest/download/version.txt"
 local REPO_NAME   = "ReaTooled"
 local REPO_URL    = "https://raw.githubusercontent.com/BPBaker/ReaTooled/main/index.xml"
+-- A test REAPER pointed at the dev branch (ReaPack's "ReaTooled" repository at .../dev/index.xml)
+-- checks and updates from dev. Dev builds make no GitHub Release, so both checks read dev's file
+local ON_DEV = false
+do
+  local ok, url = false, nil
+  if reaper.ReaPack_GetRepositoryInfo then ok, url = reaper.ReaPack_GetRepositoryInfo(REPO_NAME) end
+  if ok and type(url) == "string" and url:find("/BPBaker/ReaTooled/dev/", 1, true) then
+    ON_DEV      = true
+    REPO_URL    = url
+    VERSION_URL = (VERSION_URL:gsub("/main/", "/dev/"))
+    RELEASE_URL = VERSION_URL
+    TITLE       = TITLE .. " (dev)"
+  end
+end
 local SYNC_WAIT   = 300   -- seconds to wait for ReaPack's download
 
 local RES     = reaper.GetResourcePath():gsub("\\", "/")
@@ -226,7 +242,7 @@ end
 ------------------------------------------------------------
 
 -- The release notes, in the browser
-local WHATSNEW_URL = "https://github.com/BPBaker/ReaTooled/blob/main/whatsnew.txt"
+local WHATSNEW_URL = "https://github.com/BPBaker/ReaTooled/blob/" .. (ON_DEV and "dev" or "main") .. "/whatsnew.txt"
 local function open_url(url)
   if reaper.CF_ShellExecute then reaper.CF_ShellExecute(url) return end
   if IS_WIN then os.execute('start "" "' .. url .. '"')
