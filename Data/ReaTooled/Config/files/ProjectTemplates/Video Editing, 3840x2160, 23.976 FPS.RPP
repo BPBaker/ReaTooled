@@ -38,7 +38,7 @@
   >
   <APPLYFX_CFG
   >
-  RENDER_FILE /Users/brendanbaker/Desktop
+  RENDER_FILE ""
   RENDER_PATTERN "D45 AHZCIGJE 520 A1-Mix_$starttc_$startframes"
   RENDER_FMT 0 2 0
   RENDER_1X 0

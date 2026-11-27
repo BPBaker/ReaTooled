@@ -32,8 +32,11 @@
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="3.2026.1125.1005" author="Brendan Baker" time="2026-11-25T15:06:10Z">
-        <changelog><![CDATA[Configuration updated (no new entries in the release notes).
+      <version name="3.2026.1127.1140" author="Brendan Baker" time="2026-11-27T17:41:31Z">
+        <changelog><![CDATA[v3.05 - in development
+# Installation: ReaTooled no longer replaces your SWS settings file (S&M.ini). Nothing in it was ReaTooled's, and on a first install it could reset your SWS Resources lists and action counts. Your own SWS settings stay as they are
+# Installation: the Video Editing project template no longer has a render folder from the developer's computer; renders go to each project's own folder
+# Installation: a few settings that only belonged to the developer's computer (recent projects of one script, the update check's own notes) are no longer included
 
 To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or run "Update ReaTooled").]]></changelog>
         <source file="ReaTooled/Config/keymap.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/dev/Data/ReaTooled/Config/keymap.ini</source>
@@ -49,7 +52,6 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
         <source file="ReaTooled/Config/reaper_sections_rules.txt">https://raw.githubusercontent.com/BPBaker/ReaTooled/dev/Data/ReaTooled/Config/reaper_sections_rules.txt</source>
         <source file="ReaTooled/Config/update_rules.txt">https://raw.githubusercontent.com/BPBaker/ReaTooled/dev/Data/ReaTooled/Config/update_rules.txt</source>
         <source file="ReaTooled/Config/screensets.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/dev/Data/ReaTooled/Config/screensets.ini</source>
-        <source file="ReaTooled/Config/sws/S&amp;M.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/dev/Data/ReaTooled/Config/sws/S%26M.ini</source>
         <source file="ReaTooled/Config/sws/sws-autocoloricon.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/dev/Data/ReaTooled/Config/sws/sws-autocoloricon.ini</source>
         <source file="ReaTooled/Config/sws/Xenakios_Commands.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/dev/Data/ReaTooled/Config/sws/Xenakios_Commands.ini</source>
         <source file="ReaTooled/Config/sws/BR.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/dev/Data/ReaTooled/Config/sws/BR.ini</source>
@@ -166,7 +168,7 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
 {\pard \ql \f0 \sa180 \li0 \fi0 ReaTooled's themes, installed into REAPER's ColorThemes folder. "Default_7.0 ReaTooled v3 Dark" is the default.\par}
 }]]></description>
       </metadata>
-      <version name="3.2026.1125.1005" author="Brendan Baker" time="2026-11-25T15:06:10Z">
+      <version name="3.2026.1127.1140" author="Brendan Baker" time="2026-11-27T17:41:31Z">
         <source file="Assembled_ReaTooled v1.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/dev/ColorThemes/Assembled_ReaTooled%20v1.ReaperThemeZip</source>
         <source file="Default_7.0 ReaTooled v2 Light.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/dev/ColorThemes/Default_7.0%20ReaTooled%20v2%20Light.ReaperThemeZip</source>
         <source file="Default_7.0 ReaTooled v3 Dark.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/dev/ColorThemes/Default_7.0%20ReaTooled%20v3%20Dark.ReaperThemeZip</source>

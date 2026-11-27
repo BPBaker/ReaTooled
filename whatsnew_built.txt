@@ -1,7 +1,4 @@
-v3.04 - November 24, 2026
- # Installation: ReaTooled now installs when the One Small Step script is already installed. ReaTooled's configuration included two of One Small Step's toolbar icons, so ReaPack refused to install it ("Conflict: ... is already owned by another package") and setup couldn't start
- # Installation: a few toolbar icons that came from other scripts (Playtime, spectrogram and peaks icons) are no longer installed with ReaTooled. ReaTooled doesn't use them. If one of your toolbar buttons used one, choose its icon again
- # Installation: if ReaPack stops without installing ReaTooled, the installer says how to see what went wrong (Extensions > ReaPack > Synchronize packages) instead of blaming your internet connection
- # Tools: before "Set up ReaTooled" has run, the tool buttons (Smart, Grabber, Selector, Trim, Zoom, Pencil, Scrub) and the Shuffle, Separation and left-edge ripple toggles no longer change your mouse settings. They say to run Set up first, which backs up your settings
- # Shuffle mode: dragging a razor area with Separation and changing direction no longer leaves empty items behind
- # Installation: the first "Set up ReaTooled now?" is easier to read
+v3.05 - in development
+ # Installation: ReaTooled no longer replaces your SWS settings file (S&M.ini). Nothing in it was ReaTooled's, and on a first install it could reset your SWS Resources lists and action counts. Your own SWS settings stay as they are
+ # Installation: the Video Editing project template no longer has a render folder from the developer's computer; renders go to each project's own folder
+ # Installation: a few settings that only belonged to the developer's computer (recent projects of one script, the update check's own notes) are no longer included
