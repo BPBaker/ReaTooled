@@ -32,8 +32,8 @@
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="3.2026.1127.1158" author="Brendan Baker" time="2026-11-27T17:58:56Z">
-        <changelog><![CDATA[# Updates: the ReaTooled Shortcuts button always shows the version you have, even in a toolbar you changed or one from ReaTooled v2
+      <version name="3.2026.1127.1230" author="Brendan Baker" time="2026-11-27T18:31:58Z">
+        <changelog><![CDATA[Configuration updated (no new entries in the release notes).
 
 To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or run "Update ReaTooled").]]></changelog>
         <source file="ReaTooled/Config/keymap.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/dev/Data/ReaTooled/Config/keymap.ini</source>
@@ -165,7 +165,7 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
 {\pard \ql \f0 \sa180 \li0 \fi0 ReaTooled's themes, installed into REAPER's ColorThemes folder. "Default_7.0 ReaTooled v3 Dark" is the default.\par}
 }]]></description>
       </metadata>
-      <version name="3.2026.1127.1158" author="Brendan Baker" time="2026-11-27T17:58:56Z">
+      <version name="3.2026.1127.1230" author="Brendan Baker" time="2026-11-27T18:31:58Z">
         <source file="Assembled_ReaTooled v1.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/dev/ColorThemes/Assembled_ReaTooled%20v1.ReaperThemeZip</source>
         <source file="Default_7.0 ReaTooled v2 Light.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/dev/ColorThemes/Default_7.0%20ReaTooled%20v2%20Light.ReaperThemeZip</source>
         <source file="Default_7.0 ReaTooled v3 Dark.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/dev/ColorThemes/Default_7.0%20ReaTooled%20v3%20Dark.ReaperThemeZip</source>
@@ -1320,8 +1320,7 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="2.4.41" author="Brendan Baker" time="2026-11-27T17:58:56Z">
-        <changelog><![CDATA[ReaTooled_Set up ReaTooled: Updates bring the ReaTooled Shortcuts button's label (the version) up to date even in a toolbar you changed, or one from ReaTooled v2]]></changelog>
+      <version name="2.4.42" author="Brendan Baker" time="2026-11-27T18:22:05Z">
         <source file="ReaTooled_Dependencies lib.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/dev/Scripts/Startup/ReaTooled_Dependencies%20lib.lua</source>
         <source file="ReaTooled_Earlier settings.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/dev/Scripts/Startup/ReaTooled_Earlier%20settings.lua</source>
         <source file="ReaTooled_Earlier shortcuts.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/dev/Scripts/Startup/ReaTooled_Earlier%20shortcuts.lua</source>
@@ -1778,25 +1777,6 @@ Zoom Tool_ReaTooled: Stopping the Trim Tool and the toolbar buttons are shared w
     </reapack>
   </category>
   <category name="Utilities">
-    <reapack name="ReaTooled_Create backup key map.lua" type="script" desc="ReaTooled_Create backup key map">
-      <version name="1.0" author="Brendan Baker">
-        <source file="ReaTooled_Create backup key map.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/dev/Scripts/Utilities/ReaTooled_Create%20backup%20key%20map.lua</source>
-      </version>
-    </reapack>
-    <reapack name="ReaTooled_Merge backup key map with current key map.lua" type="script" desc="ReaTooled - Merge backup key map with current key map">
-      <metadata>
-        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
-{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
-\widowctrl\hyphauto
-{\pard \ql \f0 \sa180 \li0 \fi0 This script compares the "reaper-kb.ini.backup" file created with the script "ReaTooled_Create backup key map.lua" with the current key map saved in "reaper-kb.ini" and prompts the user to add any missing shortcuts from the backup.\par}
-}]]></description>
-        <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
-      </metadata>
-      <version name="1.0" author="Brendan Baker">
-        <changelog><![CDATA[initial release]]></changelog>
-        <source file="ReaTooled_Merge backup key map with current key map.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/dev/Scripts/Utilities/ReaTooled_Merge%20backup%20key%20map%20with%20current%20key%20map.lua</source>
-      </version>
-    </reapack>
     <reapack name="ReaTooled_Scrolling settings.lua" type="script" desc="ReaTooled - Scrolling settings">
       <metadata>
         <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
@@ -1825,11 +1805,6 @@ Zoom Tool_ReaTooled: Stopping the Trim Tool and the toolbar buttons are shared w
       <version name="1.0" author="Brendan Baker" time="2026-11-07T17:37:43Z">
         <changelog><![CDATA[First version]]></changelog>
         <source file="ReaTooled_Shortcut choices.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/dev/Scripts/Utilities/ReaTooled_Shortcut%20choices.lua</source>
-      </version>
-    </reapack>
-    <reapack name="ReaTooled_Update key map from .ReaperConfigZip file.lua" type="script" desc="ReaTooled_Update key map from .ReaperConfigZip file">
-      <version name="1.0" author="Brendan Baker">
-        <source file="ReaTooled_Update key map from .ReaperConfigZip file.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/dev/Scripts/Utilities/ReaTooled_Update%20key%20map%20from%20.ReaperConfigZip%20file.lua</source>
       </version>
     </reapack>
   </category>

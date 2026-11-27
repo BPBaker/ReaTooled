@@ -19,6 +19,11 @@
     without an entry here.
 --]]
 return {
+  -- v3.05: ReaTooled v2's key map utilities, removed (Set up merges shortcuts safely now)
+  ["Utilities/ReaTooled_Create backup key map.lua"] = false,
+  ["Utilities/ReaTooled_Merge backup key map with current key map.lua"] = false,
+  ["Utilities/ReaTooled_Update key map from .ReaperConfigZip file.lua"] = false,
+
   -- 2026-11-07: replaced by Toggles/ReaTooled_Toggle Ripple edit when editing media item left edges.lua
   ["Edit/ReaTooled_Ripple left edge.lua"] = false,
 
