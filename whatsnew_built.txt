@@ -1,4 +1,5 @@
 v3.05 - in development
+ + Scrub tool: new option "Scrub selected tracks only" (Cmd+click or Option+click on the Scrub button), on by default. While the Scrub tool is chosen, only the selected tracks play when you scrub: press on a selected track to scrub all the selected tracks, or on another track to scrub just that one. Choosing another tool puts REAPER's scrub setting back as it was
  + Left-edge ripple works on its own, without the rest of ReaTooled (for example installed by itself from ReaPack). It only changes your mouse settings for the length of a drag
  # Shuffle mode and Separation mode, installed without the rest of ReaTooled, now say they need ReaTooled set up instead of changing your mouse settings
  # Separation mode: turning it off puts the razor-area drag back exactly as it was, including REAPER's own default ("Move areas"); it could become "No action"

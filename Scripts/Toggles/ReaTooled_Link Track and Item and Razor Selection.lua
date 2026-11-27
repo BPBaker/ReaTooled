@@ -1,12 +1,16 @@
 --[[
 @description ReaTooled - Link Track and Item and Razor Selection (Main Function)
-@version 2.25
+@version 2.26
 @date 2026-11-23
 @author Brendan Baker
 @about
  Models and builds upon "Link track and clip selection" from PT.
 
 CHANGELOG
+v2.26
+  - With the Scrub tool, pressing on a track that's already selected keeps the track
+    selection, so you can scrub several selected tracks together; pressing on another
+    track selects just that one
 v2.25
   - Pressing an item that's already selected, or inside a razor area, no longer selects
     just that track: the track selection is left as it is while you drag (so dragging
@@ -189,6 +193,12 @@ local function HandleTrackClick()
         if a and b and t >= a and t <= b then on_selection = true; break end
       end
     end
+  end
+  -- (Scrub tool: pressing on a track that's already selected scrubs all the selected
+  -- tracks, so the selection stays; pressing on another track scrubs just that one)
+  if not on_selection and reaper.GetExtState("ReaTooled", "CurrentTool") == "scrub"
+     and reaper.IsTrackSelected(track) then
+    on_selection = true
   end
   if on_selection then
     hold_sync = true

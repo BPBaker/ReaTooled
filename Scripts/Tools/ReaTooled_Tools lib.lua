@@ -754,6 +754,39 @@ local SEPARATION = { label = "Separation Mode (Move razor areas)",
 local DRAG_SWAP  = { label = "Object Grabber Mode (Marquee left drag, Razor right drag)",
                      file = "ReaTooled_Toggle swap left and right drag.lua", on = ext_on("DragSwap") }
 
+-- Scrub tool: "Scrub selected tracks only" - REAPER's "Only play selected tracks when
+-- scrubbing/jogging" (bit 2 of scrubmode) while the Scrub tool is chosen. On unless turned
+-- off (kept). Choosing another tool, or no tool, puts REAPER's setting back as it was.
+local SCRUB_SEL_KEY    = "ScrubSelectedOnly"     -- "0": off (anything else: on)
+local SCRUB_BEFORE_KEY = "ScrubModeBitBefore"    -- REAPER's setting before the Scrub tool ("0"/"1", kept)
+local SCRUB_BIT = 2
+local function scrubmode_get()
+  local ok, v = reaper.get_config_var_string("scrubmode")
+  return ok and math.tointeger(tonumber(v)) or nil
+end
+local function scrubmode_set(v)
+  if reaper.SNM_SetIntConfigVar then reaper.SNM_SetIntConfigVar("scrubmode", v) end
+end
+function M.scrub_selected_on() return reaper.GetExtState(NS, SCRUB_SEL_KEY) ~= "0" end
+function M.set_scrub_selected(on) reaper.SetExtState(NS, SCRUB_SEL_KEY, on and "1" or "0", true) end
+-- key: the tool now chosen (nil: none)
+function M.apply_scrub_option(key)
+  local v = scrubmode_get()
+  if not v then return end
+  local before = reaper.GetExtState(NS, SCRUB_BEFORE_KEY)
+  if key == "scrub" and M.scrub_selected_on() then
+    if before == "" then reaper.SetExtState(NS, SCRUB_BEFORE_KEY, (v & SCRUB_BIT ~= 0) and "1" or "0", true) end
+    if v & SCRUB_BIT == 0 then scrubmode_set(v | SCRUB_BIT) end
+  elseif before ~= "" then
+    local want = before == "1"
+    if (v & SCRUB_BIT ~= 0) ~= want then scrubmode_set(want and (v | SCRUB_BIT) or (v & ~SCRUB_BIT)) end
+    reaper.DeleteExtState(NS, SCRUB_BEFORE_KEY, true)
+  end
+end
+local SCRUB_SELECTED = { label = "Scrub selected tracks only",
+                         file = "ReaTooled_Toggle Scrub selected tracks only.lua",
+                         on = function() return M.scrub_selected_on() end }
+
 local DRAG_SWAP_OTHER = { label = "Object Grabber Mode (Marquee left drag, Razor right drag: Selector and Multi tools)",
                           file = DRAG_SWAP.file, on = DRAG_SWAP.on }
 
@@ -762,6 +795,7 @@ M.TOOL_OPTIONS = {
   selector = { SEPARATION, DRAG_SWAP },
   smart    = { SEPARATION, DRAG_SWAP },
   trim     = { SEPARATION, DRAG_SWAP_OTHER },
+  scrub    = { SCRUB_SELECTED },
 }
 
 M.BUSY_KEY = "ToolOptionsBusy"   -- set while an option runs (it may re-apply the tool)
@@ -841,6 +875,7 @@ function M.finish(key)
   end
   apply_spot(key)
   apply_shuffle(key)
+  M.apply_scrub_option(key)
   M.light(key)
 end
 
@@ -1038,6 +1073,7 @@ end
 -- No tool: nothing a tool started keeps running, no locking, no arrange override
 local function stop_tools()
   M.kill_trim_tool()
+  M.apply_scrub_option(nil)   -- (REAPER's scrub setting back as it was)
   reaper.SetExtState(NS, SHUFFLE_TOOL_KEY, "", false)   -- (Shuffle move stops by itself)
   reaper.DeleteExtState(NS, M.PENCIL_KEY, true)
   M.temp_forget(every_context())

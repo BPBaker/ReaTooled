@@ -77,7 +77,7 @@ Toggles/ReaTooled_At loop end, move cursor to loop end and clear selection (only
 Toggles/ReaTooled_Cycle Peaks Display Mode.lua	1.0	395c748d
 Toggles/ReaTooled_Hover Edit Mode.lua	1.1	8bbf1827
 Toggles/ReaTooled_Invert mousewheel direction (for natural scrolling).lua	1.1	ea2bc6b6
-Toggles/ReaTooled_Link Track and Item and Razor Selection.lua	2.25	b88e16c5
+Toggles/ReaTooled_Link Track and Item and Razor Selection.lua	2.26	06a231ce
 Toggles/ReaTooled_Loudness normalize new items.lua	1.0	4f7959cd
 Toggles/ReaTooled_Recall ReaTooled Button States.lua	1.10	89284562
 Toggles/ReaTooled_Recall ReaTooled Keymap State.lua	1.0	8f4e193a
@@ -95,7 +95,7 @@ Toggles/ReaTooled_Toggle envelope lanes visible or in lane.lua	1.0	8075ba1e
 Toggles/ReaTooled_Toggle item volume envelope for all items.lua	1.0	bb7b25b0
 Toggles/ReaTooled_Toggle pre-roll (playback and recording).lua	1.5	7c554cf9
 Tools/ReaTooled Shuffle	1.12	23e2e01b
-Tools/ReaTooled Tools	7.16.9	b1defa4a
+Tools/ReaTooled Tools	7.16.10	87fb3294
 Tracks/ReaTooled_Decrease selected track heights.lua	1.1	e3eed735
 Tracks/ReaTooled_Increase selected track heights.lua	1.1	f447135b
 Tracks/ReaTooled_Toggle selected tracks inactive.lua	1.0	effb180d

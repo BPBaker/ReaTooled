@@ -4,13 +4,15 @@ A tiny REAPER extension, installed by ReaBoot/ReaPack like SWS or ReaImGui.
 On the first start after installing, it starts **Set up ReaTooled** by itself,
 so buyers don't need to import anything. After setup it does nothing.
 
-- Waits about 3 seconds after REAPER starts, and until REAPER's main window is
-  in front (so it doesn't jump in front of REAPER's audio device or plug-in
-  scan questions), but never more than about 30 seconds.
+- Waits about 1.5 seconds after REAPER starts, and while another REAPER window
+  is in front (so it doesn't jump in front of REAPER's audio device or plug-in
+  scan questions), but never more than about 8 seconds.
 - Does nothing if ReaTooled is already set up (`ReaTooled/SetupVersion`), if the
   Install ReaTooled file already started Set up this session
   (`ReaTooled/SetupStarted`), after "Restore settings from a backup"
-  (`Data/ReaTooled/starter_off.txt`), or if Set up isn't installed.
+  (`Data/ReaTooled/starter_off.txt`, also written by answering No to setup), or if Set up
+  isn't installed. Installing the ReaTooled package again (it brings
+  `Data/ReaTooled/package_installed.txt`, which No and Restore delete) starts setup again.
 
 ## Changing it
 
