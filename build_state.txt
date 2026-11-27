@@ -94,8 +94,8 @@ Toggles/ReaTooled_Toggle Tab to Transient.lua	1.1	7ce36103
 Toggles/ReaTooled_Toggle envelope lanes visible or in lane.lua	1.0	8075ba1e
 Toggles/ReaTooled_Toggle item volume envelope for all items.lua	1.0	bb7b25b0
 Toggles/ReaTooled_Toggle pre-roll (playback and recording).lua	1.5	7c554cf9
-Tools/ReaTooled Shuffle	1.11	a102fe08
-Tools/ReaTooled Tools	7.16.8	7a4b163d
+Tools/ReaTooled Shuffle	1.12	23e2e01b
+Tools/ReaTooled Tools	7.16.9	b1defa4a
 Tracks/ReaTooled_Decrease selected track heights.lua	1.1	e3eed735
 Tracks/ReaTooled_Increase selected track heights.lua	1.1	f447135b
 Tracks/ReaTooled_Toggle selected tracks inactive.lua	1.0	effb180d

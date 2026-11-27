@@ -17,12 +17,21 @@
 --   item edge, like Pro Tools' Separation Grabber in Shuffle.
 -- @changelog
 --   v1.2 Turned off, the razor-area drag goes back to exactly what it was, also when that
---        was REAPER's own default ("Move areas"); it had become No action. Works without
---        ReaTooled being set up
+--        was REAPER's own default ("Move areas"); it had become No action. Before "Set up
+--        ReaTooled" has run, says it needs ReaTooled set up (and changes nothing)
 --   v1.1 Works with Shuffle mode: in Shuffle, dragging a razor area shuffles what's in
 --        it (the Shuffle move script does it, so REAPER's own razor drag is turned off
 --        there)
 --   v1.0 Initial version
+
+-- Separation mode works on top of ReaTooled's tools and mouse setup: before "Set up ReaTooled" has run
+-- (for example installed on its own from ReaPack) it does nothing and says so
+if not reaper.file_exists(reaper.GetResourcePath():gsub("\\", "/") .. "/Data/ReaTooled/Backups/Before ReaTooled/backup_info.txt") then
+  reaper.ShowMessageBox("Separation mode needs ReaTooled to be set up: it works together with ReaTooled's " ..
+    "tools and mouse setup.\n\nRun \"Set up ReaTooled\" from the Actions list first (it backs up your " ..
+    "settings before changing anything). Nothing was changed.", "ReaTooled", 0)
+  return
+end
 
 local NS        = "ReaTooled"
 local KEY       = "SeparationMode"       -- "1" while on (kept)

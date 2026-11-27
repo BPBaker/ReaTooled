@@ -27,9 +27,9 @@
 --   and REAPER's own item drags come back when it's turned off or REAPER quits. It starts
 --   off after a restart (add it to REAPER's startup actions to have it on).
 -- @changelog
---   v1.9 Works without ReaTooled being set up (installed on its own from ReaPack): when
---        REAPER quits, your item drags are put back and Shuffle goes off, as nothing puts
---        them back at the next start without ReaTooled's startup
+--   v1.9 Before "Set up ReaTooled" has run, says it needs ReaTooled set up (and changes
+--        nothing). If it was left on without ReaTooled's startup, your item drags are put
+--        back when REAPER quits
 --   v1.8 Works without the Tools library: it then sets its own item drags for Shuffle (kept in
 --        the same record, ModeOverrides) and starts Shuffle move as the Move Tool would, and
 --        puts REAPER's drags back when it goes off or REAPER quits. With the rest of ReaTooled
@@ -50,6 +50,15 @@
 --        running script, and it is re-lit if anything turns it off; the startup
 --        check waits a moment for REAPER to settle)
 --   v1.0 Initial version
+
+-- Shuffle mode works on top of ReaTooled's tools and mouse setup: before "Set up ReaTooled" has run
+-- (for example installed on its own from ReaPack) it does nothing and says so
+if not reaper.file_exists(reaper.GetResourcePath():gsub("\\", "/") .. "/Data/ReaTooled/Backups/Before ReaTooled/backup_info.txt") then
+  reaper.ShowMessageBox("Shuffle mode needs ReaTooled to be set up: it works together with ReaTooled's " ..
+    "tools and mouse setup.\n\nRun \"Set up ReaTooled\" from the Actions list first (it backs up your " ..
+    "settings before changing anything). Nothing was changed.", "ReaTooled", 0)
+  return
+end
 
 local NS          = "ReaTooled"
 local RECALL_KEY  = "ShuffleRecall"   -- set by Recall ReaTooled Button States at startup

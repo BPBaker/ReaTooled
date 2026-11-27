@@ -32,9 +32,9 @@
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="3.2026.1127.1254" author="Brendan Baker" time="2026-11-27T18:55:49Z">
-        <changelog><![CDATA[+ Shuffle mode, Separation mode and left-edge ripple work on their own, without the rest of ReaTooled (for example installed one by one from ReaPack). They only change your mouse settings while they're on, and put them back when turned off; without ReaTooled set up, Shuffle also puts them back when REAPER quits
-# Separation mode: turning it off puts the razor-area drag back exactly as it was, including REAPER's own default ("Move areas"); it could become "No action"
+      <version name="3.2026.1127.1319" author="Brendan Baker" time="2026-11-27T19:20:00Z">
+        <changelog><![CDATA[+ Left-edge ripple works on its own, without the rest of ReaTooled (for example installed by itself from ReaPack). It only changes your mouse settings for the length of a drag
+# Shuffle mode and Separation mode, installed without the rest of ReaTooled, now say they need ReaTooled set up instead of changing your mouse settings
 
 To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or run "Update ReaTooled").]]></changelog>
         <source file="ReaTooled/Config/keymap.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/dev/Data/ReaTooled/Config/keymap.ini</source>
@@ -166,7 +166,7 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
 {\pard \ql \f0 \sa180 \li0 \fi0 ReaTooled's themes, installed into REAPER's ColorThemes folder. "Default_7.0 ReaTooled v3 Dark" is the default.\par}
 }]]></description>
       </metadata>
-      <version name="3.2026.1127.1254" author="Brendan Baker" time="2026-11-27T18:55:49Z">
+      <version name="3.2026.1127.1319" author="Brendan Baker" time="2026-11-27T19:20:00Z">
         <source file="Assembled_ReaTooled v1.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/dev/ColorThemes/Assembled_ReaTooled%20v1.ReaperThemeZip</source>
         <source file="Default_7.0 ReaTooled v2 Light.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/dev/ColorThemes/Default_7.0%20ReaTooled%20v2%20Light.ReaperThemeZip</source>
         <source file="Default_7.0 ReaTooled v3 Dark.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/dev/ColorThemes/Default_7.0%20ReaTooled%20v3%20Dark.ReaperThemeZip</source>
@@ -1635,8 +1635,8 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="1.11" author="Brendan Baker" time="2026-11-27T18:55:49Z">
-        <changelog><![CDATA[ReaTooled_Toggle Shuffle mode: Works without ReaTooled being set up (installed on its own from ReaPack): when REAPER quits, your item drags are put back and Shuffle goes off, as nothing puts them back at the next start without ReaTooled's startup]]></changelog>
+      <version name="1.12" author="Brendan Baker" time="2026-11-27T19:20:00Z">
+        <changelog><![CDATA[ReaTooled_Toggle Shuffle mode: Before "Set up ReaTooled" has run, says it needs ReaTooled set up (and changes nothing). If it was left on without ReaTooled's startup, your item drags are put back when REAPER quits]]></changelog>
         <source file="ReaTooled_Toggle Shuffle mode.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/dev/Scripts/Tools/ReaTooled_Toggle%20Shuffle%20mode.lua</source>
         <source file="ReaTooled_Shuffle move (background).lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/dev/Scripts/Tools/ReaTooled_Shuffle%20move%20%28background%29.lua</source>
         <source file="ReaTooled_Mouse lib.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/dev/Scripts/Tools/ReaTooled_Mouse%20lib.lua</source>
@@ -1667,8 +1667,8 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="7.16.8" author="Brendan Baker" time="2026-11-27T18:55:49Z">
-        <changelog><![CDATA[ReaTooled_Toggle Separation mode: Turned off, the razor-area drag goes back to exactly what it was, also when that was REAPER's own default ("Move areas"); it had become No action. Works without ReaTooled being set up]]></changelog>
+      <version name="7.16.9" author="Brendan Baker" time="2026-11-27T19:20:00Z">
+        <changelog><![CDATA[ReaTooled_Toggle Separation mode: Turned off, the razor-area drag goes back to exactly what it was, also when that was REAPER's own default ("Move areas"); it had become No action. Before "Set up ReaTooled" has run, says it needs ReaTooled set up (and changes nothing)]]></changelog>
         <source file="Default Multi Tool (Smart)_ReaTooled.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/dev/Scripts/Tools/Default%20Multi%20Tool%20%28Smart%29_ReaTooled.lua</source>
         <source file="Move Tool (Grabber)_ReaTooled.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/dev/Scripts/Tools/Move%20Tool%20%28Grabber%29_ReaTooled.lua</source>
         <source file="Pencil Tool_ReaTooled.lua" main="main">https://raw.githubusercontent.com/BPBaker/ReaTooled/dev/Scripts/Tools/Pencil%20Tool_ReaTooled.lua</source>
