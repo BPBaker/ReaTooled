@@ -1,4 +1,6 @@
 v3.05 - in development
+ + Shuffle mode, Separation mode and left-edge ripple work on their own, without the rest of ReaTooled (for example installed one by one from ReaPack). They only change your mouse settings while they're on, and put them back when turned off; without ReaTooled set up, Shuffle also puts them back when REAPER quits
+ # Separation mode: turning it off puts the razor-area drag back exactly as it was, including REAPER's own default ("Move areas"); it could become "No action"
  # Updates: entries in the Actions list for ReaTooled scripts that were never installed (earlier releases listed about 20) are cleaned out
  - Removed three old ReaTooled v2 utilities for backing up, merging and replacing the key map. Set up ReaTooled now merges your shortcuts with ReaTooled's (and backs them up first), and the old scripts could replace your whole key map
  # Updates: the ReaTooled Shortcuts button always shows the version you have, even in a toolbar you changed or one from ReaTooled v2

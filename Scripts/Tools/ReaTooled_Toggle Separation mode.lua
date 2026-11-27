@@ -1,5 +1,5 @@
 -- @description ReaTooled - Toggle Separation mode (drag a razor area to move what's in it)
--- @version 1.1
+-- @version 1.2
 -- @date 2026.10.30
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
@@ -16,19 +16,13 @@
 --   shuffles what's in it instead: what follows closes up and it goes back in at an
 --   item edge, like Pro Tools' Separation Grabber in Shuffle.
 -- @changelog
+--   v1.2 Turned off, the razor-area drag goes back to exactly what it was, also when that
+--        was REAPER's own default ("Move areas"); it had become No action. Works without
+--        ReaTooled being set up
 --   v1.1 Works with Shuffle mode: in Shuffle, dragging a razor area shuffles what's in
 --        it (the Shuffle move script does it, so REAPER's own razor drag is turned off
 --        there)
 --   v1.0 Initial version
-
--- Set up ReaTooled hasn't run here: the user's own mouse modifiers haven't been backed up,
--- so this tool leaves them alone (3.04: running a tool before setup had replaced them)
-if not reaper.file_exists(reaper.GetResourcePath():gsub("\\", "/") .. "/Data/ReaTooled/Backups/Before ReaTooled/backup_info.txt") then
-  reaper.ShowMessageBox("ReaTooled isn't set up yet, so this tool won't change your mouse settings.\n\n" ..
-    "Run \"Set up ReaTooled\" from the Actions list first. It backs up your settings before changing anything.",
-    "ReaTooled", 0)
-  return
-end
 
 local NS        = "ReaTooled"
 local KEY       = "SeparationMode"       -- "1" while on (kept)
@@ -48,11 +42,14 @@ local on = reaper.GetExtState(NS, KEY) ~= "1"
 if on then
   local orig = reaper.GetMouseModifier and reaper.GetMouseModifier(CTX, FLAG) or ""
   if orig == nil or orig == "" then orig = "-1" end
-  if orig ~= MOVE_AREAS then reaper.SetExtState(NS, SNAP_KEY, orig, true) end
+  reaper.SetExtState(NS, SNAP_KEY, orig, true)   -- (REAPER's default too: put back exactly)
   reaper.SetMouseModifier(CTX, FLAG, MOVE_AREAS)
 else
   local orig = reaper.GetExtState(NS, SNAP_KEY)
-  if orig == "" then orig = "0 m" end            -- ReaTooled's own setting: No action
+  if orig == "" then   -- (nothing remembered: ReaTooled's own setting if it's set up, else REAPER's)
+    local set_up = reaper.file_exists(reaper.GetResourcePath():gsub("\\", "/") .. "/Data/ReaTooled/Backups/Before ReaTooled/backup_info.txt")
+    orig = set_up and "0 m" or "-1"
+  end
   reaper.SetMouseModifier(CTX, FLAG, orig)
 end
 reaper.SetExtState(NS, KEY, on and "1" or "0", true)

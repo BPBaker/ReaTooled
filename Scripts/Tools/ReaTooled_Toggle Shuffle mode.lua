@@ -1,5 +1,5 @@
 -- @description ReaTooled - Toggle Shuffle mode
--- @version 1.8
+-- @version 1.9
 -- @date 2026.11.11
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
@@ -27,6 +27,9 @@
 --   and REAPER's own item drags come back when it's turned off or REAPER quits. It starts
 --   off after a restart (add it to REAPER's startup actions to have it on).
 -- @changelog
+--   v1.9 Works without ReaTooled being set up (installed on its own from ReaPack): when
+--        REAPER quits, your item drags are put back and Shuffle goes off, as nothing puts
+--        them back at the next start without ReaTooled's startup
 --   v1.8 Works without the Tools library: it then sets its own item drags for Shuffle (kept in
 --        the same record, ModeOverrides) and starts Shuffle move as the Move Tool would, and
 --        puts REAPER's drags back when it goes off or REAPER quits. With the rest of ReaTooled
@@ -48,15 +51,6 @@
 --        check waits a moment for REAPER to settle)
 --   v1.0 Initial version
 
--- Set up ReaTooled hasn't run here: the user's own mouse modifiers haven't been backed up,
--- so this tool leaves them alone (3.04: running a tool before setup had replaced them)
-if not reaper.file_exists(reaper.GetResourcePath():gsub("\\", "/") .. "/Data/ReaTooled/Backups/Before ReaTooled/backup_info.txt") then
-  reaper.ShowMessageBox("ReaTooled isn't set up yet, so this tool won't change your mouse settings.\n\n" ..
-    "Run \"Set up ReaTooled\" from the Actions list first. It backs up your settings before changing anything.",
-    "ReaTooled", 0)
-  return
-end
-
 local NS          = "ReaTooled"
 local RECALL_KEY  = "ShuffleRecall"   -- set by Recall ReaTooled Button States at startup
 local RIPPLE_OFF       = 40309        -- Options: Set ripple editing off
@@ -70,6 +64,8 @@ local dir = script_path:match("^(.*[/\\])") or ""
 local ok, tools = pcall(dofile, dir .. "ReaTooled_Tools lib.lua")
 if not ok or type(tools) ~= "table" then tools = nil end
 local ALONE = tools == nil   -- (on its own: no ReaTooled tools, so Shuffle sets its own drags)
+-- (Set up ReaTooled has run: ReaTooled's startup turns Shuffle back on after a restart)
+local SET_UP = reaper.file_exists(reaper.GetResourcePath():gsub("\\", "/") .. "/Data/ReaTooled/Backups/Before ReaTooled/backup_info.txt")
 local ALIVE = "ShuffleModeAlive"   -- (while on, every moment: the running copy's heartbeat)
 
 -- On its own: what the Tools library would do for Shuffle with the Move Tool
@@ -190,9 +186,12 @@ if recall then
   tools.reapply_tool()   -- the Move/Multi tool's drags for Shuffle (or back to normal)
 elseif options then
   on = tools.shuffle_on()   -- (unchanged: the running copy this replaced goes on)
+  if not SET_UP then tools.reapply_tool() end   -- (the replaced copy gave its drags back)
 else
   -- off -> per track -> all tracks -> off. Turned on while REAPER is already in a
   -- ripple mode, Shuffle starts in that mode.
+  -- (without ReaTooled's startup, Shuffle "on" from before a restart isn't running: it's off)
+  if not SET_UP and reaper.GetExtState(NS, ALIVE) == "" then tools.set_shuffle(false) end
   local wasOn = tools.shuffle_on()
   local toAll
   if wasOn then toAll = not all_ripple() else toAll = all_ripple() end
@@ -255,6 +254,12 @@ reaper.atexit(function()
   if ALONE then
     reaper.SetExtState(NS, "ShuffleMoveTool", "", false)
     tools.drags_off()
+  elseif not SET_UP then
+    -- (with the Tools library but without ReaTooled's startup: nothing would turn Shuffle back
+    -- on after a restart, so REAPER's own drags are put back. When this copy is only being
+    -- replaced, the new one takes them again right away)
+    reaper.SetExtState(NS, "ShuffleMoveTool", "", false)
+    if tools.release_mode_overrides then tools.release_mode_overrides() end
   end
 end)
 watch()

@@ -1,6 +1,6 @@
 --[[
 -- @description ReaTooled - Ripple edit when editing media item left edges
--- @version 1.46
+-- @version 1.49
 -- @date 2026.11.19
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
@@ -36,6 +36,8 @@
     ReaTooled Button States; on its own, without the rest of ReaTooled, add it to REAPER's
     startup actions). Works on its own too: it needs only the js_ReaScriptAPI extension. The rules: "Left edge ripple - design rules.md".
 -- CHANGELOG
+-- v1.49 Works without ReaTooled being set up (installed on its own from ReaPack): it only
+--       changes mouse modifiers for the length of a drag and puts them back
 -- v1.46 Coming back in from past the right side, the edge follows the mouse from where it's parked
 --       (a little slower moving left, so the mouse catches up; PARK_RETURN) instead of the view
 --       jumping back to put it under the mouse
@@ -147,15 +149,6 @@
 --       drag, frames where the mouse hasn't moved skipped. Older history: "Left edge ripple -
 --       history (to v1.16.1).txt"
 --]]
-
--- Set up ReaTooled hasn't run here: the user's own mouse modifiers haven't been backed up,
--- so this tool leaves them alone (3.04: running a tool before setup had replaced them)
-if not reaper.file_exists(reaper.GetResourcePath():gsub("\\", "/") .. "/Data/ReaTooled/Backups/Before ReaTooled/backup_info.txt") then
-  reaper.ShowMessageBox("ReaTooled isn't set up yet, so this tool won't change your mouse settings.\n\n" ..
-    "Run \"Set up ReaTooled\" from the Actions list first. It backs up your settings before changing anything.",
-    "ReaTooled", 0)
-  return
-end
 
 ------------------------------------------------------------
 -- SETTINGS (change, then turn the script off and on again)
