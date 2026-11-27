@@ -1,6 +1,6 @@
 --[[
 -- @description ReaTooled - Set up ReaTooled
--- @version 2.4.11
+-- @version 2.4.12
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -20,6 +20,9 @@
     When you click OK at the end, REAPER quits, the helper writes those files,
     and the same copy of REAPER opens again by itself.
 -- CHANGELOG
+-- v2.4.12 ReaTooled scripts in the Actions list whose file no longer exists are taken out of
+--         the list (earlier releases listed some that were never installed). Reports show
+--         the right Set up version (it had said 2.3.10)
 -- v2.4.11 Updates bring the ReaTooled Shortcuts button's label (the version) up to date even
 --         in a toolbar you changed, or one from ReaTooled v2
 -- v2.4.10 A test REAPER whose ReaTooled repository points at the dev branch stays on dev
@@ -236,8 +239,14 @@ local FOLDERS = {
 ------------------------------------------------------------
 
 local TITLE        = "Set up ReaTooled"
-local SETUP_VER    = "2.3.10"
 local RES          = reaper.GetResourcePath():gsub("\\", "/")
+-- (this script's own version, from its header, so reports and records can't go stale)
+local SETUP_VER    = (function()
+  local f = io.open(RES .. "/Scripts/ReaTooled/Startup/ReaTooled_Set up ReaTooled.lua", "rb")
+  local head = f and f:read(400) or ""
+  if f then f:close() end
+  return head:match("@version%s+([%d%.]+)") or "2.4.12"
+end)()
 local CONFIG       = RES .. "/Data/ReaTooled/Config"
 local PENDING      = RES .. "/Data/ReaTooled/Pending"
 local BACKUP_ROOT  = RES .. "/Data/ReaTooled/Backups"
@@ -1296,6 +1305,22 @@ do  -- the user's shortcuts: renamed ones point at the new script, removed ones 
   for _, line in ipairs(user_lines) do
     local f = kb_fields(line)
     if not (f[1] == "KEY" and ID_GONE[(f[4] or ""):gsub("^_", "")]) then keep[#keep + 1] = renamed(line) end
+  end
+  user_lines = keep
+end
+-- ReaTooled scripts in the Actions list whose file is gone (earlier releases listed some that
+-- were never installed): taken out of the list, so nothing points at a missing script
+local dead_scripts = 0
+do
+  local keep = {}
+  for _, line in ipairs(user_lines) do
+    local f = kb_fields(line)
+    local p = f[1] == "SCR" and (f[6] or ""):gsub("\\", "/") or ""
+    if p:match("^ReaTooled/") and not reaper.file_exists(RES .. "/Scripts/" .. p) then
+      dead_scripts = dead_scripts + 1
+    else
+      keep[#keep + 1] = line
+    end
   end
   user_lines = keep
 end

@@ -32,8 +32,8 @@
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="3.2026.1127.1230" author="Brendan Baker" time="2026-11-27T18:31:58Z">
-        <changelog><![CDATA[Configuration updated (no new entries in the release notes).
+      <version name="3.2026.1127.1249" author="Brendan Baker" time="2026-11-27T18:49:40Z">
+        <changelog><![CDATA[# Updates: entries in the Actions list for ReaTooled scripts that were never installed (earlier releases listed about 20) are cleaned out
 
 To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or run "Update ReaTooled").]]></changelog>
         <source file="ReaTooled/Config/keymap.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/dev/Data/ReaTooled/Config/keymap.ini</source>
@@ -165,7 +165,7 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
 {\pard \ql \f0 \sa180 \li0 \fi0 ReaTooled's themes, installed into REAPER's ColorThemes folder. "Default_7.0 ReaTooled v3 Dark" is the default.\par}
 }]]></description>
       </metadata>
-      <version name="3.2026.1127.1230" author="Brendan Baker" time="2026-11-27T18:31:58Z">
+      <version name="3.2026.1127.1249" author="Brendan Baker" time="2026-11-27T18:49:40Z">
         <source file="Assembled_ReaTooled v1.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/dev/ColorThemes/Assembled_ReaTooled%20v1.ReaperThemeZip</source>
         <source file="Default_7.0 ReaTooled v2 Light.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/dev/ColorThemes/Default_7.0%20ReaTooled%20v2%20Light.ReaperThemeZip</source>
         <source file="Default_7.0 ReaTooled v3 Dark.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/dev/ColorThemes/Default_7.0%20ReaTooled%20v3%20Dark.ReaperThemeZip</source>
@@ -1320,7 +1320,8 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="2.4.42" author="Brendan Baker" time="2026-11-27T18:22:05Z">
+      <version name="2.4.43" author="Brendan Baker" time="2026-11-27T18:49:40Z">
+        <changelog><![CDATA[ReaTooled_Set up ReaTooled: ReaTooled scripts in the Actions list whose file no longer exists are taken out of the list (earlier releases listed some that were never installed). Reports show the right Set up version (it had said 2.3.10)]]></changelog>
         <source file="ReaTooled_Dependencies lib.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/dev/Scripts/Startup/ReaTooled_Dependencies%20lib.lua</source>
         <source file="ReaTooled_Earlier settings.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/dev/Scripts/Startup/ReaTooled_Earlier%20settings.lua</source>
         <source file="ReaTooled_Earlier shortcuts.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/dev/Scripts/Startup/ReaTooled_Earlier%20shortcuts.lua</source>
