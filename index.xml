@@ -32,11 +32,8 @@
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="3.2026.1127.1140" author="Brendan Baker" time="2026-11-27T17:41:31Z">
-        <changelog><![CDATA[v3.05 - in development
-# Installation: ReaTooled no longer replaces your SWS settings file (S&M.ini). Nothing in it was ReaTooled's, and on a first install it could reset your SWS Resources lists and action counts. Your own SWS settings stay as they are
-# Installation: the Video Editing project template no longer has a render folder from the developer's computer; renders go to each project's own folder
-# Installation: a few settings that only belonged to the developer's computer (recent projects of one script, the update check's own notes) are no longer included
+      <version name="3.2026.1127.1158" author="Brendan Baker" time="2026-11-27T17:58:56Z">
+        <changelog><![CDATA[# Updates: the ReaTooled Shortcuts button always shows the version you have, even in a toolbar you changed or one from ReaTooled v2
 
 To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or run "Update ReaTooled").]]></changelog>
         <source file="ReaTooled/Config/keymap.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/dev/Data/ReaTooled/Config/keymap.ini</source>
@@ -168,7 +165,7 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
 {\pard \ql \f0 \sa180 \li0 \fi0 ReaTooled's themes, installed into REAPER's ColorThemes folder. "Default_7.0 ReaTooled v3 Dark" is the default.\par}
 }]]></description>
       </metadata>
-      <version name="3.2026.1127.1140" author="Brendan Baker" time="2026-11-27T17:41:31Z">
+      <version name="3.2026.1127.1158" author="Brendan Baker" time="2026-11-27T17:58:56Z">
         <source file="Assembled_ReaTooled v1.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/dev/ColorThemes/Assembled_ReaTooled%20v1.ReaperThemeZip</source>
         <source file="Default_7.0 ReaTooled v2 Light.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/dev/ColorThemes/Default_7.0%20ReaTooled%20v2%20Light.ReaperThemeZip</source>
         <source file="Default_7.0 ReaTooled v3 Dark.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/dev/ColorThemes/Default_7.0%20ReaTooled%20v3%20Dark.ReaperThemeZip</source>
@@ -1323,9 +1320,8 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="2.4.40" author="Brendan Baker" time="2026-11-25T15:06:10Z">
-        <changelog><![CDATA[ReaTooled_Set up ReaTooled: A test REAPER whose ReaTooled repository points at the dev branch stays on dev (setup no longer switches it back to the release address)
-ReaTooled_Update ReaTooled: A test REAPER whose ReaTooled repository points at the dev branch checks and updates from dev (no GitHub Releases there); everyone else as before (main)]]></changelog>
+      <version name="2.4.41" author="Brendan Baker" time="2026-11-27T17:58:56Z">
+        <changelog><![CDATA[ReaTooled_Set up ReaTooled: Updates bring the ReaTooled Shortcuts button's label (the version) up to date even in a toolbar you changed, or one from ReaTooled v2]]></changelog>
         <source file="ReaTooled_Dependencies lib.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/dev/Scripts/Startup/ReaTooled_Dependencies%20lib.lua</source>
         <source file="ReaTooled_Earlier settings.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/dev/Scripts/Startup/ReaTooled_Earlier%20settings.lua</source>
         <source file="ReaTooled_Earlier shortcuts.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/dev/Scripts/Startup/ReaTooled_Earlier%20shortcuts.lua</source>

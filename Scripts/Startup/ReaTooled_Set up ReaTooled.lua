@@ -1,6 +1,6 @@
 --[[
 -- @description ReaTooled - Set up ReaTooled
--- @version 2.4.10
+-- @version 2.4.11
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -20,6 +20,8 @@
     When you click OK at the end, REAPER quits, the helper writes those files,
     and the same copy of REAPER opens again by itself.
 -- CHANGELOG
+-- v2.4.11 Updates bring the ReaTooled Shortcuts button's label (the version) up to date even
+--         in a toolbar you changed, or one from ReaTooled v2
 -- v2.4.10 A test REAPER whose ReaTooled repository points at the dev branch stays on dev
 --         (setup no longer switches it back to the release address)
 -- v2.4.9 The first "Set up ReaTooled now?" is shorter, with a blank line between the Yes,
@@ -1830,6 +1832,33 @@ local function menus_patch(user_text, new_text, base_text)
       upd.menus_merged[#upd.menus_merged + 1] = name .. " (" .. a .. " added, " .. r .. " removed)"
     else
       upd.menus_kept[#upd.menus_kept + 1] = name   -- (no record of what ReaTooled installed: left alone)
+    end
+  end
+  -- The ReaTooled Shortcuts button's label is the version ("ReaTooled Shortcuts v3.05"), not
+  -- a choice of the user's: it's brought up to date even in a toolbar the user changed or
+  -- one ReaTooled has no record of (v2's said "... [ReaTooled v2.6.1]")
+  local SHORTCUTS_CMD = "_RS7e9fb26fe2faa9088b9d1aadabdbdfc97d417337"
+  for _, name in ipairs(u.order) do
+    local want
+    for _, l in ipairs(n.sec[name] or {}) do
+      local c, lab = l:match("^item_%d+=(%S+)%s?(.*)$")
+      if c == SHORTCUTS_CMD and lab and lab ~= "" then want = lab end
+    end
+    if want then
+      local lines, changed = {}, false
+      for _, l in ipairs(out.sec[name] or u.sec[name]) do
+        local k, c, lab = l:match("^(item_%d+)=(%S+)%s?(.*)$")
+        if c == SHORTCUTS_CMD and lab ~= want and (lab:find("^ReaTooled Shortcuts v") or lab:find("%[ReaTooled v")) then
+          l = k .. "=" .. c .. " " .. want
+          changed = true
+        end
+        lines[#lines + 1] = l
+      end
+      if changed then
+        if not out.sec[name] then out.order[#out.order + 1] = name end
+        out.sec[name] = lines
+        upd.menus_merged[#upd.menus_merged + 1] = name .. " (ReaTooled Shortcuts button label)"
+      end
     end
   end
   return ini_text(out)

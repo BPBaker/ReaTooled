@@ -1,4 +1,5 @@
 v3.05 - in development
+ # Updates: the ReaTooled Shortcuts button always shows the version you have, even in a toolbar you changed or one from ReaTooled v2
  # Installation: ReaTooled no longer replaces your SWS settings file (S&M.ini). Nothing in it was ReaTooled's, and on a first install it could reset your SWS Resources lists and action counts. Your own SWS settings stay as they are
  # Installation: the Video Editing project template no longer has a render folder from the developer's computer; renders go to each project's own folder
  # Installation: a few settings that only belonged to the developer's computer (recent projects of one script, the update check's own notes) are no longer included
