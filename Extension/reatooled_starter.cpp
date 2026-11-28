@@ -7,7 +7,9 @@
 //
 // It waits until REAPER has finished starting (about 1.5 seconds) and while another REAPER
 // window is in front (the audio device or plug-in scan questions, the evaluation notice), but
-// never more than about 8 seconds, then starts Set up once.
+// never more than about 8 seconds, then starts Set up once. Until ReaTooled is set up it keeps
+// checking about once a second, so installing the package again after a No starts it again
+// in the same session.
 // If the "Install ReaTooled" first-run file already started Set up in this
 // session (ExtState ReaTooled/SetupStarted), it does nothing. After
 // "Restore settings from a backup", or answering No to "Set up ReaTooled now?" (both write
@@ -113,9 +115,38 @@ static void finish() {
   if (g_rec) g_rec->Register("-timer", (void *)on_timer);
 }
 
+// Launch Set up (or, from the package, the installer that leads to it)
+static void launch(const std::string &path) {
+  SetExtState(SECTION, "SetupStarted", "1", false);
+  int id = AddRemoveReaScript(true, 0, path.c_str(), true);
+  if (id > 0) Main_OnCommand(id, 0);
+}
+
+// After the first check it keeps an eye out (about once a second) until ReaTooled is set up:
+// if package_installed.txt goes (No, or a restore) and then comes back (the package was
+// installed again in this session), it asks again straight away instead of at the next start.
+static bool g_watching = false, g_armed = false, g_relaunch = false;
+
 static void on_timer() {
   if (g_done) return;
-  if (++g_ticks < MIN_TICKS) return;
+  ++g_ticks;
+
+  if (g_watching) {
+    if (g_ticks % 30) return;
+    if (HasExtState(SECTION, "SetupVersion")) { finish(); return; }   // set up: nothing more to do
+    std::string res = GetResourcePath(), mark = res + MARK_REL;
+#ifdef _WIN32
+    for (auto &c : mark) if (c == '/') c = '\\';
+#endif
+    bool there = file_exists(mark.c_str());
+    if (!there) { g_armed = true; return; }
+    if (!g_armed) return;
+    g_armed = false;                         // the package was installed again: wait as at a start
+    g_watching = false; g_relaunch = true; g_ticks = 0; g_stable = 0;
+    return;
+  }
+
+  if (g_ticks < MIN_TICKS) return;
 
   // Wait while another REAPER window (audio device, plug-in scan ...) is in front
   if (!JS_Window_GetForeground && g_rec) {
@@ -129,11 +160,9 @@ static void on_timer() {
     if (++g_stable < STABLE_TICKS) return;
   }
 
-  finish();
-
-  if (HasExtState(SECTION, "SetupVersion")) return;          // already set up
-  const char *started = GetExtState(SECTION, "SetupStarted");  // started this session already
-  if (started && !strcmp(started, "1")) return;
+  if (HasExtState(SECTION, "SetupVersion")) { finish(); return; }   // already set up
+  g_watching = true;                                               // from here on: keep an eye out
+  g_armed = false;
 
   std::string res = GetResourcePath(), path = res + SETUP_REL, off = res + OFF_REL, mark = res + MARK_REL;
 #ifdef _WIN32
@@ -141,15 +170,18 @@ static void on_timer() {
   for (auto &c : off) if (c == '/') c = '\\';
   for (auto &c : mark) if (c == '/') c = '\\';
 #endif
-  if (file_exists(off.c_str())) {
-    if (!file_exists(mark.c_str())) return;                    // turned off (a restore, or "No")
-    remove_file(off);                                          // the package was installed again: ask again
+  bool relaunch = g_relaunch;
+  g_relaunch = false;
+  if (!relaunch) {
+    const char *started = GetExtState(SECTION, "SetupStarted");  // started this session already
+    if (started && !strcmp(started, "1")) return;
   }
-  if (!file_exists(path.c_str())) return;                      // ReaTooled not installed (yet)
-
-  SetExtState(SECTION, "SetupStarted", "1", false);
-  int id = AddRemoveReaScript(true, 0, path.c_str(), true);
-  if (id > 0) Main_OnCommand(id, 0);
+  if (file_exists(off.c_str())) {
+    if (!file_exists(mark.c_str())) { g_armed = true; return; }  // turned off (a restore, or "No")
+    remove_file(off);                                            // the package was installed again: ask again
+  }
+  if (!file_exists(path.c_str())) return;                        // ReaTooled not installed (yet)
+  launch(path);
 }
 
 template <typename T> static bool get(T &fn, const char *name) {

@@ -12,7 +12,9 @@ so buyers don't need to import anything. After setup it does nothing.
   (`ReaTooled/SetupStarted`), after "Restore settings from a backup"
   (`Data/ReaTooled/starter_off.txt`, also written by answering No to setup), or if Set up
   isn't installed. Installing the ReaTooled package again (it brings
-  `Data/ReaTooled/package_installed.txt`, which No and Restore delete) starts setup again.
+  `Data/ReaTooled/package_installed.txt`, which No and Restore delete) starts setup again,
+  straight away if REAPER is still open (it checks about once a second until
+  ReaTooled is set up).
 
 ## Changing it
 
