@@ -1,6 +1,6 @@
 --[[
 -- @description ReaTooled - Restore settings from a backup
--- @version 1.1.5
+-- @version 1.1.6
 -- @author Brendan Baker
 -- @link https://brendanpatrickbaker.com/reatooled/
 -- @about
@@ -19,6 +19,7 @@
     restoring that backup. REAPER quits, the files are put back, and the same
     copy of REAPER opens again.
 -- CHANGELOG
+-- v1.1.6 Installing the ReaTooled package again after a restore starts setup again (asking first)
 -- v1.1.5 With ReaTooled Shortcuts off (your own mouse modifiers in place), turns them back on
 --        first (and off again if you cancel). "Put everything back exactly" puts back the
 --        backup's mouse modifiers exactly; "Keep my later changes" also keeps what you changed
@@ -940,6 +941,7 @@ end
 -- (running Set up yourself turns it back on)
 write_file(RES .. "/Data/ReaTooled/starter_off.txt",
   "Written by Restore settings from a backup: the ReaTooled Starter won't start Set up by itself.\n")
+os.remove(RES .. "/Data/ReaTooled/package_installed.txt")   -- (installing the package again asks again)
 
 -- Script settings are changed now (REAPER saves them when it quits)
 for _, e in ipairs(plan.ext) do

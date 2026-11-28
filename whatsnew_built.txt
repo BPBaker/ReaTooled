@@ -6,6 +6,8 @@ v3.05 - in development
  # Updates: entries in the Actions list for ReaTooled scripts that were never installed (earlier releases listed about 20) are cleaned out
  - Removed three old ReaTooled v2 utilities for backing up, merging and replacing the key map. Set up ReaTooled now merges your shortcuts with ReaTooled's (and backs them up first), and the old scripts could replace your whole key map
  # Updates: the ReaTooled Shortcuts button always shows the version you have, even in a toolbar you changed or one from ReaTooled v2
+ # Installation: the Welcome to ReaTooled window comes up within a few seconds of REAPER opening. The ReaTooled Starter could wait up to 30 seconds on macOS. It still waits while one of REAPER's own questions (audio device, plug-in scan) is in front
+ # Installation: installing the ReaTooled package again after answering No, or after "Restore settings from a backup", asks again whether to set up ReaTooled. Before, the ReaTooled Starter stayed quiet and setup had to be started from the Actions list
  # Installation: ReaTooled no longer replaces your SWS settings file (S&M.ini). Nothing in it was ReaTooled's, and on a first install it could reset your SWS Resources lists and action counts. Your own SWS settings stay as they are
  # Installation: the Video Editing project template no longer has a render folder from the developer's computer; renders go to each project's own folder
  # Installation: a few settings that only belonged to the developer's computer (recent projects of one script, the update check's own notes) are no longer included

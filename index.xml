@@ -32,8 +32,9 @@
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="3.2026.1127.1457" author="Brendan Baker" time="2026-11-27T20:57:50Z">
-        <changelog><![CDATA[+ Scrub tool: new option "Scrub selected tracks only" (Cmd+click or Option+click on the Scrub button), on by default. While the Scrub tool is chosen, only the selected tracks play when you scrub: press on a selected track to scrub all the selected tracks, or on another track to scrub just that one. Choosing another tool puts REAPER's scrub setting back as it was
+      <version name="3.2026.1127.1524" author="Brendan Baker" time="2026-11-27T21:25:00Z">
+        <changelog><![CDATA[# Installation: the Welcome to ReaTooled window comes up within a few seconds of REAPER opening. The ReaTooled Starter could wait up to 30 seconds on macOS. It still waits while one of REAPER's own questions (audio device, plug-in scan) is in front
+# Installation: installing the ReaTooled package again after answering No, or after "Restore settings from a backup", asks again whether to set up ReaTooled. Before, the ReaTooled Starter stayed quiet and setup had to be started from the Actions list
 
 To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or run "Update ReaTooled").]]></changelog>
         <source file="ReaTooled/Config/keymap.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/dev/Data/ReaTooled/Config/keymap.ini</source>
@@ -165,7 +166,7 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
 {\pard \ql \f0 \sa180 \li0 \fi0 ReaTooled's themes, installed into REAPER's ColorThemes folder. "Default_7.0 ReaTooled v3 Dark" is the default.\par}
 }]]></description>
       </metadata>
-      <version name="3.2026.1127.1457" author="Brendan Baker" time="2026-11-27T20:57:50Z">
+      <version name="3.2026.1127.1524" author="Brendan Baker" time="2026-11-27T21:25:00Z">
         <source file="Assembled_ReaTooled v1.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/dev/ColorThemes/Assembled_ReaTooled%20v1.ReaperThemeZip</source>
         <source file="Default_7.0 ReaTooled v2 Light.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/dev/ColorThemes/Default_7.0%20ReaTooled%20v2%20Light.ReaperThemeZip</source>
         <source file="Default_7.0 ReaTooled v3 Dark.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/dev/ColorThemes/Default_7.0%20ReaTooled%20v3%20Dark.ReaperThemeZip</source>
@@ -1298,7 +1299,7 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
 {\pard \ql \f0 \sa180 \li0 \fi0 Starts "Set up ReaTooled" the first time REAPER opens after ReaTooled is installed, so there's nothing to import or run by hand.\par}
 }]]></description>
       </metadata>
-      <version name="1.0" author="Brendan Baker" time="2026-11-24T23:48:25Z">
+      <version name="1.1" author="Brendan Baker" time="2026-11-27T21:25:00Z">
         <source platform="darwin" file="reaper_reatooled.dylib">https://raw.githubusercontent.com/BPBaker/ReaTooled/dev/UserPlugins/reaper_reatooled.dylib</source>
         <source platform="win64" file="reaper_reatooled-x64.dll">https://raw.githubusercontent.com/BPBaker/ReaTooled/dev/UserPlugins/reaper_reatooled-x64.dll</source>
         <source platform="linux64" file="reaper_reatooled-x86_64.so">https://raw.githubusercontent.com/BPBaker/ReaTooled/dev/UserPlugins/reaper_reatooled-x86_64.so</source>
@@ -1320,8 +1321,8 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="2.4.43" author="Brendan Baker" time="2026-11-27T18:49:40Z">
-        <changelog><![CDATA[ReaTooled_Set up ReaTooled: ReaTooled scripts in the Actions list whose file no longer exists are taken out of the list (earlier releases listed some that were never installed). Reports show the right Set up version (it had said 2.3.10)]]></changelog>
+      <version name="2.4.44" author="Brendan Baker" time="2026-11-27T21:25:00Z">
+        <changelog><![CDATA[ReaTooled_Restore settings from a backup: Installing the ReaTooled package again after a restore starts setup again (asking first)]]></changelog>
         <source file="ReaTooled_Dependencies lib.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/dev/Scripts/Startup/ReaTooled_Dependencies%20lib.lua</source>
         <source file="ReaTooled_Earlier settings.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/dev/Scripts/Startup/ReaTooled_Earlier%20settings.lua</source>
         <source file="ReaTooled_Earlier shortcuts.lua">https://raw.githubusercontent.com/BPBaker/ReaTooled/dev/Scripts/Startup/ReaTooled_Earlier%20shortcuts.lua</source>
