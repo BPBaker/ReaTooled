@@ -32,9 +32,8 @@
 }]]></description>
         <link rel="website" href="https://brendanpatrickbaker.com/reatooled/">ReaTooled</link>
       </metadata>
-      <version name="3.2026.1127.1524" author="Brendan Baker" time="2026-11-27T21:25:00Z">
-        <changelog><![CDATA[# Installation: the Welcome to ReaTooled window comes up within a few seconds of REAPER opening. The ReaTooled Starter could wait up to 30 seconds on macOS. It still waits while one of REAPER's own questions (audio device, plug-in scan) is in front
-# Installation: installing the ReaTooled package again after answering No, or after "Restore settings from a backup", asks again whether to set up ReaTooled. Before, the ReaTooled Starter stayed quiet and setup had to be started from the Actions list
+      <version name="3.2026.1128.614" author="Brendan Baker" time="2026-11-28T12:14:31Z">
+        <changelog><![CDATA[Configuration updated (no new entries in the release notes).
 
 To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or run "Update ReaTooled").]]></changelog>
         <source file="ReaTooled/Config/keymap.ini">https://raw.githubusercontent.com/BPBaker/ReaTooled/dev/Data/ReaTooled/Config/keymap.ini</source>
@@ -166,7 +165,7 @@ To apply the new settings, restart REAPER and click Yes when ReaTooled asks (or 
 {\pard \ql \f0 \sa180 \li0 \fi0 ReaTooled's themes, installed into REAPER's ColorThemes folder. "Default_7.0 ReaTooled v3 Dark" is the default.\par}
 }]]></description>
       </metadata>
-      <version name="3.2026.1127.1524" author="Brendan Baker" time="2026-11-27T21:25:00Z">
+      <version name="3.2026.1128.614" author="Brendan Baker" time="2026-11-28T12:14:31Z">
         <source file="Assembled_ReaTooled v1.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/dev/ColorThemes/Assembled_ReaTooled%20v1.ReaperThemeZip</source>
         <source file="Default_7.0 ReaTooled v2 Light.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/dev/ColorThemes/Default_7.0%20ReaTooled%20v2%20Light.ReaperThemeZip</source>
         <source file="Default_7.0 ReaTooled v3 Dark.ReaperThemeZip">https://raw.githubusercontent.com/BPBaker/ReaTooled/dev/ColorThemes/Default_7.0%20ReaTooled%20v3%20Dark.ReaperThemeZip</source>
